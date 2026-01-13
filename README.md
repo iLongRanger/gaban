@@ -90,31 +90,30 @@ V3M 1T8
 
 ---
 
-## Project Structure
+##Project Structure 
+
 gleam-leads/
-├─ src/
-│ ├─ config/
-│ │ └─ settings.json
-│ ├─ providers/
-│ │ └─ googlePlaces.js
-│ ├─ enrich/
-│ │ ├─ websiteCrawler.js
-│ │ └─ extractors.js
-│ ├─ scoring/
-│ │ ├─ scoreLead.js
-│ │ └─ rules.js
-│ ├─ export/
-│ │ └─ sheets.js
-│ ├─ utils/
-│ │ ├─ geo.js
-│ │ ├─ dedupe.js
-│ │ └─ logger.js
-│ └─ run.js
-├─ .env
-├─ package.json
-└─ README.md
-
-
+├── src/
+│ ├── config/
+│ │ └── settings.json
+│ ├── providers/
+│ │ └── googlePlaces.js
+│ ├── enrich/
+│ │ ├── websiteCrawler.js
+│ │ └── extractors.js
+│ ├── scoring/
+│ │ ├── scoreLead.js
+│ │ └── rules.js
+│ ├── export/
+│ │ └── sheets.js
+│ ├── utils/
+│ │ ├── geo.js
+│ │ ├── dedupe.js
+│ │ └── logger.js
+│ └── run.js
+├── .env
+├── package.json
+└── README.md
 ---
 
 ## Google Sheets Output
