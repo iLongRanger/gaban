@@ -48,8 +48,6 @@ Target users: Christine & husband (internal use only).
 New Westminster, BC
 V3M 1T8
 
-yaml
-Copy code
 
 - Radius: **50 km**
 - Coverage includes:
@@ -116,8 +114,6 @@ gleam-leads/
 ├─ package.json
 └─ README.md
 
-yaml
-Copy code
 
 ---
 
@@ -234,9 +230,6 @@ Low-confidence leads are excluded from Top 20 but retained in raw data.
 ## Running the App
 node src/run.js
 
-yaml
-Copy code
-
 ---
 
 ## Cost
@@ -246,127 +239,4 @@ Copy code
 
 ---
 
-## Status
-✅ Planning locked  
-🚧 Implementation in progress  
-
-Next step: Google Places collector + Google Sheets export
-🧩 GitHub Issues & Milestones Checklist
-🏁 Milestone 0 — Project Setup
- Initialize Node.js project
-
- Create repo structure
-
- Add .env template
-
- Configure ESLint / Prettier (optional)
-
- Create README.md
-
-🔑 Milestone 1 — Google API & Sheets Setup
- Create Google Cloud project
-
- Enable Google Places API
-
- Enable Google Sheets API
-
- Set billing & usage limits
-
- Create service account
-
- Share Google Sheet with service account
-
- Verify write access to Sheets
-
-🔍 Milestone 2 — Lead Discovery (Google Places)
- Implement Nearby/Text search
-
- Handle pagination
-
- Fetch Place Details
-
- Normalize raw lead data
-
- Store raw results in memory
-
- Deduplicate by place_id
-
-🚫 Milestone 3 — Filtering & Exclusions
- Distance calculation from office
-
- Exclude no-phone listings
-
- Detect malls / food courts
-
- Detect home-based businesses
-
- Chain / franchise heuristics
-
- Log exclusion reasons
-
-🕵️ Milestone 4 — Website Enrichment
- Crawl homepage
-
- Crawl contact/about/team pages
-
- Extract emails
-
- Extract Instagram links
-
- Extract possible contact names
-
- Handle crawl failures gracefully
-
-📊 Milestone 5 — Lead Scoring
- Implement scoring rules
-
- Add tier classification
-
- Add score explanation summary
-
- Validate score distribution
-
-🏆 Milestone 6 — Top 20 Selection
- Sort by score
-
- Enforce hard rules
-
- Select Top 20
-
- Mark outreach readiness
-
-📤 Milestone 7 — Google Sheets Export
- Auto-create tabs if missing
-
- Write Leads_Raw
-
- Write Leads_Enriched
-
- Write Shortlist_Top20
-
- Write Settings
-
- Ensure idempotent updates
-
-🧪 Milestone 8 — QA & Dry Runs
- Test single run
-
- Validate exclusions
-
- Verify scoring accuracy
-
- Confirm Sheets formatting
-
- Confirm cost usage
-
-🚀 Milestone 9 — V1 Lock
- Clean up logs
-
- Add run summary output
-
- Tag v1.0
-
- Document setup steps
-
- Ready for daily use
 
