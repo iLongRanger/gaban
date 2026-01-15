@@ -22,6 +22,173 @@
 
 ---
 
+### Contact Extractor Service (AI-Powered)
+
+#### `extractDecisionMaker(lead)`
+Uses Claude AI to intelligently identify the primary decision maker from multiple sources.
+
+**Parameters:**
+- `lead` (Lead): Lead with website and social media URLs
+
+**Returns:** `Promise<ContactInfo>`
+
+**ContactInfo:**
+```typescript
+{
+  name: string,
+  title: string,
+  email: string | null,
+  phone: string | null,
+  confidence: number,  // 0-1
+  source: 'website' | 'instagram' | 'facebook' | 'linkedin',
+  reasoning: string,  // AI explanation
+  alternative_contacts: Array<{
+    name: string,
+    title: string,
+    likelihood: 'high' | 'medium' | 'low'
+  }>
+}
+```
+
+**Example:**
+```typescript
+const contact = await contactExtractor.extractDecisionMaker(lead);
+
+console.log(`Decision Maker: ${contact.name} (${contact.title})`);
+console.log(`Confidence: ${(contact.confidence * 100).toFixed(0)}%`);
+console.log(`Source: ${contact.source}`);
+console.log(`Reasoning: ${contact.reasoning}`);
+
+// Output:
+// Decision Maker: Maria Rodriguez (Owner & Executive Chef)
+// Confidence: 92%
+// Source: website
+// Reasoning: Maria Rodriguez is identified as the founder and owner on the About page. Her role as Executive Chef and business owner makes her the primary decision maker for operational services like cleaning contracts.
+```
+
+#### `scrapeAllSources(lead)`
+Aggregates contact information from multiple sources.
+
+**Parameters:**
+- `lead` (Lead): Lead with URLs
+
+**Returns:** `Promise<ScrapedContact[]>`
+
+**ScrapedContact:**
+```typescript
+{
+  name: string | null,
+  title: string | null,
+  email: string | null,
+  phone: string | null,
+  source: 'website' | 'instagram' | 'facebook',
+  context: string,  // Surrounding text for AI analysis
+  confidence: number
+}
+```
+
+**Example:**
+```typescript
+const contacts = await contactExtractor.scrapeAllSources(lead);
+
+// contacts = [
+//   {
+//     name: "Maria Rodriguez",
+//     title: "Owner & Executive Chef",
+//     email: "maria@tacoheaven.com",
+//     source: "website",
+//     context: "Taco Heaven was founded by Maria Rodriguez in 2020...",
+//     confidence: 0.9
+//   },
+//   {
+//     name: null,
+//     email: "info@tacoheaven.com",
+//     source: "website",
+//     context: "Contact us at info@tacoheaven.com for inquiries",
+//     confidence: 0.6
+//   },
+//   {
+//     name: "Carlos Rodriguez",
+//     title: "General Manager",
+//     email: null,
+//     source: "website",
+//     context: "Managed by Carlos Rodriguez, our GM ensures...",
+//     confidence: 0.8
+//   }
+// ]
+```
+
+#### `identifyDecisionMaker(contacts, businessName, category)`
+Uses Claude AI to analyze contacts and identify the best decision maker.
+
+**Parameters:**
+- `contacts` (ScrapedContact[]): All scraped contacts
+- `businessName` (string): Business name for context
+- `category` (string): Business category (e.g., "Italian Restaurant")
+
+**Returns:** `Promise<ClaudeContactResponse>`
+
+**Internal AI Prompt Example:**
+```typescript
+const prompt = `
+Given these contacts from "${businessName}" (${category}):
+
+${contacts.map((c, i) => `
+Contact ${i + 1}:
+- Name: ${c.name || 'Unknown'}
+- Title: ${c.title || 'Unknown'}
+- Email: ${c.email || 'None'}
+- Context: ${c.context}
+- Source: ${c.source}
+`).join('\n')}
+
+Identify the PRIMARY decision maker for commercial cleaning services.
+This person should be:
+- The owner, general manager, or someone with authority over operations
+- Able to approve service contracts
+- The main point of contact for B2B vendors
+
+Respond ONLY with valid JSON:
+{
+  "name": "Full Name",
+  "title": "Their Role",
+  "email": "their@email.com or null",
+  "phone": "phone number or null",
+  "confidence": 0.0 to 1.0,
+  "reasoning": "Why this person is the decision maker",
+  "alternativeContacts": [
+    {"name": "...", "title": "...", "likelihood": "high|medium|low"}
+  ]
+}
+`;
+```
+
+**Example Response:**
+```typescript
+{
+  name: "Maria Rodriguez",
+  title: "Owner & Executive Chef",
+  email: "maria@tacoheaven.com",
+  phone: null,
+  confidence: 0.92,
+  reasoning: "Maria Rodriguez is identified as the founder and owner, with dual responsibilities as Executive Chef. As owner, she has final authority over operational decisions including service contracts. Her email is directly available, making her the ideal first contact.",
+  alternativeContacts: [
+    {
+      name: "Carlos Rodriguez",
+      title: "General Manager",
+      likelihood: "high"
+    },
+    {
+      name: "Info Team",
+      title: "General Inquiries",
+      likelihood: "low"
+    }
+  ]
+}
+```
+
+---
+
 ## Overview
 
 ### Purpose
@@ -289,13 +456,14 @@ Input: Geographic Center + Radius
 
 **Runtime**
 - Node.js v18+ (ES6 modules)
-- JavaScript (may migrate to TypeScript in V2)
+- TypeScript (for type safety and better developer experience)
 
 **Core Dependencies**
 ```json
 {
   "dependencies": {
     "@googlemaps/google-maps-services-js": "^3.3.0",
+    "@anthropic-ai/sdk": "^0.27.0",
     "googleapis": "^118.0.0",
     "playwright": "^1.40.0",
     "axios": "^1.6.0",
@@ -315,10 +483,16 @@ Input: Geographic Center + Radius
   - Endpoints: `spreadsheets.values.update`, `spreadsheets.batchUpdate`
   - Quota: Unlimited reads, 100 writes/100 seconds/user
 
+- **Anthropic Claude API**: Intelligent contact extraction
+  - Model: Claude Sonnet 4
+  - Use cases: Decision maker identification, contact validation, context understanding
+  - Cost: ~$0.003 per lead (minimal)
+
 **Development Tools**
 - ESLint (code quality)
 - Prettier (formatting)
-- Jest (testing - planned for V2)
+- Jest (testing)
+- TypeScript compiler
 
 ### Project Structure
 
@@ -327,38 +501,45 @@ gleam-leads/
 ├─ src/
 │  ├─ config/
 │  │  ├─ settings.json         # Runtime configuration
-│  │  └─ constants.js           # Hardcoded values
+│  │  └─ constants.ts           # Hardcoded values
 │  │
 │  ├─ providers/
-│  │  ├─ googlePlaces.js        # Google Places API client
-│  │  └─ googleSheets.js        # Google Sheets API client
+│  │  ├─ googlePlaces.ts        # Google Places API client
+│  │  ├─ googleSheets.ts        # Google Sheets API client
+│  │  └─ anthropicClient.ts     # Claude AI API client
 │  │
 │  ├─ services/
-│  │  ├─ discoveryService.js    # Lead discovery orchestration
-│  │  ├─ filteringService.js    # Exclusion rules application
-│  │  ├─ enrichmentService.js   # Website crawling coordination
-│  │  └─ scoringService.js      # Lead scoring logic
+│  │  ├─ discoveryService.ts    # Lead discovery orchestration
+│  │  ├─ filteringService.ts    # Exclusion rules application
+│  │  ├─ enrichmentService.ts   # Enrichment coordination
+│  │  └─ scoringService.ts      # Lead scoring logic
 │  │
 │  ├─ enrich/
-│  │  ├─ websiteCrawler.js      # Playwright-based crawler
-│  │  ├─ extractors.js          # Email/Instagram/Name extraction
-│  │  └─ businessAgeValidator.js # Review date analysis
+│  │  ├─ websiteCrawler.ts      # Playwright-based crawler
+│  │  ├─ socialMediaScraper.ts  # Instagram/Facebook scraping
+│  │  ├─ ContactExtractorService.ts  # AI-powered contact extraction
+│  │  └─ businessAgeValidator.ts # Review date analysis
 │  │
 │  ├─ scoring/
-│  │  ├─ scoreLead.js           # Main scoring function
-│  │  └─ rules.js               # Scoring rule definitions
+│  │  ├─ scoreLead.ts           # Main scoring function
+│  │  └─ rules.ts               # Scoring rule definitions
 │  │
 │  ├─ export/
-│  │  └─ sheetsExporter.js      # Google Sheets write logic
+│  │  └─ sheetsExporter.ts      # Google Sheets write logic
 │  │
 │  ├─ utils/
-│  │  ├─ geo.js                 # Distance calculations
-│  │  ├─ dedupe.js              # Duplicate removal
-│  │  ├─ logger.js              # Winston logger setup
-│  │  ├─ retry.js               # Retry helper (planned)
-│  │  └─ rateLimit.js           # Rate limiter (planned)
+│  │  ├─ geo.ts                 # Distance calculations
+│  │  ├─ dedupe.ts              # Duplicate removal
+│  │  ├─ logger.ts              # Winston logger setup
+│  │  ├─ retry.ts               # Retry helper
+│  │  └─ rateLimit.ts           # Rate limiter
 │  │
-│  └─ run.js                    # Main entry point
+│  ├─ types/
+│  │  ├─ Lead.ts                # Lead type definitions
+│  │  ├─ Contact.ts             # Contact type definitions
+│  │  └─ Config.ts              # Configuration types
+│  │
+│  └─ run.ts                    # Main entry point
 │
 ├─ logs/
 │  └─ app.log                   # Runtime logs
@@ -368,6 +549,7 @@ gleam-leads/
 ├─ .gitignore
 ├─ package.json
 ├─ package-lock.json
+├─ tsconfig.json
 └─ README.md
 ```
 
@@ -410,17 +592,24 @@ gleam-leads/
 - Assigns tiers (A/B/C)
 - Generates score breakdown explanations
 
-**enrich/websiteCrawler.js**
-- Uses Playwright to load pages
-- Extracts HTML content
-- Handles timeouts and errors
-- Navigates to /contact, /about, /team subpages
+**providers/anthropicClient.ts**
+- Wraps Anthropic Claude API
+- Handles authentication and rate limiting
+- Provides clean interface for AI operations
+- Manages token usage and costs
 
-**enrich/extractors.js**
-- Parses HTML with Cheerio
-- Email regex matching
-- Instagram URL extraction
-- Contact name heuristics (looks for "Owner", "Manager", etc)
+**enrich/ContactExtractorService.ts**
+- AI-powered decision maker identification
+- Multi-source contact aggregation (website, social media)
+- Context-aware contact prioritization
+- Confidence scoring for extracted contacts
+- Validates contact information quality
+
+**enrich/socialMediaScraper.ts**
+- Scrapes Instagram business profiles
+- Extracts Facebook page information
+- Finds LinkedIn company pages
+- Returns structured contact data
 
 **scoring/scoreLead.js**
 - Main scoring algorithm
@@ -509,7 +698,9 @@ This installs:
    - **Places API (New)**
    - **Google Sheets API**
 
-**c) Create API Key (for Places API)**
+**d) Create API Keys**
+
+**For Places API:**
 1. Go to "APIs & Services" > "Credentials"
 2. Click "Create Credentials" > "API Key"
 3. Copy the key
@@ -518,7 +709,15 @@ This installs:
    - API restrictions: Places API only
 5. Save
 
-**d) Create Service Account (for Sheets API)**
+**For Anthropic Claude API:**
+1. Go to [Anthropic Console](https://console.anthropic.com)
+2. Create account or sign in
+3. Navigate to "API Keys"
+4. Click "Create Key"
+5. Copy the key (starts with `sk-ant-`)
+6. Set spending limit: $10/month (recommended for testing)
+
+**For Sheets API Service Account:**
 1. Go to "APIs & Services" > "Credentials"
 2. Click "Create Credentials" > "Service Account"
 3. Name: "gleam-sheets-writer"
@@ -570,6 +769,9 @@ Edit `.env`:
 # Google Places API
 GOOGLE_PLACES_API_KEY=AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
+# Anthropic Claude API
+ANTHROPIC_API_KEY=sk-ant-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
 # Google Sheets API
 GOOGLE_SHEET_ID=1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0t
 SERVICE_ACCOUNT_PATH=./service-account.json
@@ -585,6 +787,11 @@ RATING_MIN=3.5
 RATING_MAX=4.6
 REVIEW_MIN=10
 REVIEW_MAX=500
+
+# AI Configuration
+CLAUDE_MODEL=claude-sonnet-4-20250514
+CLAUDE_MAX_TOKENS=2000
+ENABLE_AI_EXTRACTION=true
 
 # Operational
 LOG_LEVEL=info
@@ -899,7 +1106,7 @@ console.log('Exclusions:', reasons);
 ### Enrichment Service
 
 #### `enrichLeads(leads, config)`
-Crawls websites to extract contact information.
+Crawls websites and uses AI to extract contact information.
 
 **Parameters:**
 - `leads` (Lead[]): Leads to enrich
@@ -911,29 +1118,60 @@ Crawls websites to extract contact information.
 ```typescript
 {
   ...Lead,
+  // Contact Information
   email_found: string | null,
   instagram_url: string | null,
+  facebook_url: string | null,
   contact_person: string | null,
+  contact_title: string | null,
+  contact_confidence: number,  // 0-1 (AI confidence score)
+  
+  // Enrichment Status
   enrichment_attempted: boolean,
   enrichment_success: boolean,
-  enrichment_error: string | null
+  enrichment_error: string | null,
+  sources_checked: string[],  // ['website', 'instagram', 'facebook']
+  
+  // AI Analysis
+  ai_analysis: {
+    decision_maker_identified: boolean,
+    alternative_contacts: Array<{name: string, title: string, likelihood: string}>,
+    reasoning: string
+  }
 }
 ```
 
 **Example:**
-```javascript
+```typescript
 const enriched = await enrichmentService.enrichLeads(
   validLeads,
   config.enrichment
 );
 
-const withEmail = enriched.filter(l => l.email_found);
-console.log(`Found emails for ${withEmail.length} leads`);
+const withDecisionMaker = enriched.filter(l => 
+  l.ai_analysis.decision_maker_identified && 
+  l.contact_confidence > 0.8
+);
+
+console.log(`Found decision makers for ${withDecisionMaker.length} leads`);
+
+// Example output for one lead:
+// {
+//   business_name: "Joe's Pizza",
+//   contact_person: "Joe Mancini",
+//   contact_title: "Owner & Head Chef",
+//   email_found: "joe@joespizza.com",
+//   contact_confidence: 0.95,
+//   ai_analysis: {
+//     decision_maker_identified: true,
+//     reasoning: "Joe Mancini is identified as the founder and owner on the About page, making him the primary decision maker for business services."
+//   }
+// }
 ```
 
 **Concurrent Processing:**
 Enrichment runs in batches to avoid overwhelming target sites:
-```javascript
+```typescript
 // Internal implementation detail
 const batches = chunk(leads, config.max_concurrent_crawls);
 for (const batch of batches) {
@@ -1197,14 +1435,31 @@ interface Lead {
 ```
 
 ### EnrichedLead
-Lead with website scraping results.
+Lead with AI-powered contact extraction results.
 
 ```typescript
 interface EnrichedLead extends Lead {
-  // Enrichment Results
+  // Primary Contact (AI-Identified Decision Maker)
+  contact_person: string | null;
+  contact_title: string | null;
+  contact_confidence: number;    // 0-1 (AI confidence)
+  
+  // Contact Methods
   email_found: string | null;
   instagram_url: string | null;
-  contact_person: string | null;
+  facebook_url: string | null;
+  
+  // AI Analysis
+  ai_analysis: {
+    decision_maker_identified: boolean;
+    reasoning: string;
+    alternative_contacts: Array<{
+      name: string;
+      title: string;
+      likelihood: 'high' | 'medium' | 'low';
+    }>;
+    sources_analyzed: string[];  // ['website', 'instagram', 'facebook']
+  };
   
   // Enrichment Status
   enrichment_attempted: boolean;
@@ -1215,6 +1470,7 @@ interface EnrichedLead extends Lead {
   // Outreach Readiness
   outreach_ready: 'Y' | 'N';
   best_contact_method: 'email' | 'sms' | 'instagram' | 'phone';
+  personalization_notes: string;  // AI-generated talking points
 }
 ```
 
@@ -1277,16 +1533,17 @@ Quality over quantity. We want leads that are:
 
 #### 1. Outreach Readiness (0-40 points)
 ```
-Email found:          +20
-Website exists:       +10
-Instagram found:      +5
-Contact person found: +5
+Email found:            +20
+Website exists:         +10
+Instagram found:        +5
+Contact person found:   +5 (BONUS: +10 if AI confirmed decision maker with >80% confidence)
 ```
 
-**Rationale:** Email is king for B2B outreach. Website shows professionalism. Instagram indicates social media presence. Knowing a name personalizes outreach.
+**Rationale:** Email is king for B2B outreach. Website shows professionalism. Instagram indicates social media presence. **AI-confirmed decision makers are worth double** because reaching the right person dramatically increases conversion.
 
 **Example:**
-- Lead with email, website, Instagram, name: **40 points**
+- Lead with email, website, Instagram, AI-confirmed owner (95% confidence): **45 points** (bonus applied!)
+- Lead with email, website, Instagram, generic name: **40 points**
 - Lead with just phone number: **0 points**
 
 #### 2. Rating Fit (0-25 points)
@@ -1427,134 +1684,404 @@ Auto-generated explanation for each score:
 ## Enrichment Pipeline
 
 ### Overview
-Enrichment extracts contact information from business websites using web scraping.
+Enrichment extracts contact information from business websites and social media using **AI-powered analysis** to identify decision makers.
 
 ### Pipeline Stages
 
 ```
 Input: Lead with website URL
          ↓
-1. Website Accessible?
-   ├─ YES → Continue
-   └─ NO → Mark enrichment_error, skip
+1. Multi-Source Scraping
+   ├─ Website (homepage, /contact, /about, /team)
+   ├─ Instagram business profile
+   └─ Facebook page (if available)
          ↓
-2. Load Homepage
-   - Timeout: 15 seconds
-   - User agent: Random desktop browser
-   - JavaScript enabled (Playwright)
+2. Raw Contact Extraction
+   - All names found
+   - All emails found
+   - All titles/roles found
+   - Context around each contact
          ↓
-3. Extract from Homepage
-   - Emails (regex)
-   - Instagram links
-   - Contact names (heuristics)
+3. AI Analysis (Claude Sonnet 4)
+   - Analyze all contacts with context
+   - Identify PRIMARY decision maker
+   - Assess confidence (0-100%)
+   - Provide reasoning
+   - List alternative contacts
          ↓
-4. Navigate to Subpages
-   - /contact
-   - /about
-   - /team
-   (if exist)
+4. Contact Validation
+   - Verify email format
+   - Check social media URLs
+   - Validate name patterns
          ↓
-5. Extract from Subpages
-   - Repeat extraction
-   - Aggregate results
+5. Personalization Generation
+   - Extract talking points
+   - Note business history
+   - Identify unique characteristics
          ↓
-6. Consolidate
-   - Best email (prioritize info@, contact@)
-   - Instagram (validate URL)
-   - Contact person (prioritize "Owner", "Manager")
-         ↓
-Output: EnrichedLead
+Output: EnrichedLead with AI-verified decision maker
 ```
 
-### Extraction Details
+### Detailed Flow
 
-#### Email Extraction
-**Regex Pattern:**
-```javascript
-const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+#### Stage 1: Multi-Source Scraping
+
+**Website Crawling:**
+```typescript
+async function scrapeWebsite(lead: Lead): Promise<ScrapedContact[]> {
+  const contacts: ScrapedContact[] = [];
+  const pages = ['', '/contact', '/about', '/team'];
+  
+  for (const path of pages) {
+    try {
+      const html = await crawler.fetch(lead.website + path);
+      
+      // Extract all potential contacts with context
+      const pageContacts = extractContactsWithContext(html);
+      contacts.push(...pageContacts);
+      
+    } catch (error) {
+      logger.warn(`Failed to crawl ${path}:`, error.message);
+    }
+  }
+  
+  return contacts;
+}
 ```
 
-**Prioritization:**
-1. `contact@domain.com`
-2. `info@domain.com`
-3. `hello@domain.com`
-4. Any other email
-5. Exclude: `noreply@`, `support@` (generic)
-
-**Example:**
-```
-Found emails: 
-- sales@joespizza.com
-- noreply@mailchimp.com (excluded)
-- joe@joespizza.com
-
-Selected: sales@joespizza.com
-```
-
-#### Instagram Extraction
-**URL Patterns:**
-```javascript
-const instagramRegex = /instagram\.com\/([a-zA-Z0-9._]+)/;
+**Instagram Scraping:**
+```typescript
+async function scrapeInstagram(lead: Lead): Promise<ScrapedContact> {
+  if (!lead.instagram_url) return null;
+  
+  const profile = await instagramScraper.getProfile(lead.instagram_url);
+  
+  return {
+    name: profile.fullName,
+    bio: profile.biography,
+    email: profile.publicEmail,
+    source: 'instagram',
+    context: profile.biography
+  };
+}
 ```
 
-**Sources:**
-1. Direct links on website
-2. Social media icons (href attributes)
-3. Footer links
+#### Stage 2: Raw Contact Extraction
 
-**Validation:**
-- Must be valid Instagram username
-- Exclude Instagram ads links
-- Verify account exists (optional, costs API quota)
-
-#### Contact Person Extraction
-**Heuristics:**
-- Look for "Owner:", "Manager:", "Chef:"
-- Proximity to name (within 50 chars)
-- Capitalized names (e.g., "Joe Smith")
-- Context keywords: "founded by", "created by", "chef"
-
-**Example HTML:**
-```html
-<p>Joe's Pizza was founded by <strong>Joe Mancini</strong> in 2018...</p>
+**Context Extraction:**
+```typescript
+function extractContactsWithContext(html: string): ScrapedContact[] {
+  const $ = cheerio.load(html);
+  const contacts: ScrapedContact[] = [];
+  
+  // Find emails with surrounding context
+  $('body').find('*').each((i, elem) => {
+    const text = $(elem).text();
+    const emailMatch = text.match(emailRegex);
+    
+    if (emailMatch) {
+      contacts.push({
+        email: emailMatch[0],
+        context: getContext(elem, 200), // 200 chars around email
+        source: 'website'
+      });
+    }
+  });
+  
+  // Find names with titles
+  $('h2, h3, p, div').each((i, elem) => {
+    const text = $(elem).text();
+    
+    if (hasNamePattern(text)) {
+      const name = extractName(text);
+      const title = extractTitle(text);
+      
+      contacts.push({
+        name,
+        title,
+        context: text,
+        source: 'website'
+      });
+    }
+  });
+  
+  return contacts;
+}
 ```
 
-**Extracted:**
+**Example Extracted Contacts:**
+```typescript
+[
+  {
+    name: "Maria Rodriguez",
+    title: "Owner & Executive Chef",
+    email: "maria@tacoheaven.com",
+    context: "Taco Heaven was founded by Maria Rodriguez in 2020. As Owner & Executive Chef, Maria brings 15 years of authentic Mexican cuisine experience...",
+    source: "website"
+  },
+  {
+    name: null,
+    email: "info@tacoheaven.com",
+    context: "For general inquiries, email us at info@tacoheaven.com",
+    source: "website"
+  },
+  {
+    name: "Carlos Rodriguez",
+    title: "General Manager",
+    context: "Our General Manager Carlos Rodriguez oversees daily operations...",
+    source: "website"
+  },
+  {
+    name: "Taco Heaven Vancouver",
+    bio: "Authentic Mexican cuisine 🌮 Est. 2020 | Owner: @mariarodriguez",
+    email: "bookings@tacoheaven.com",
+    source: "instagram"
+  }
+]
+```
+
+#### Stage 3: AI Analysis (The Magic! ✨)
+
+**Claude AI Prompt:**
+```typescript
+const prompt = `You are analyzing contacts for "${lead.business_name}", a ${lead.category}.
+
+I need you to identify the PRIMARY decision maker for commercial cleaning services.
+
+Here are all the contacts I found:
+
+${contacts.map((c, i) => `
+Contact ${i + 1}:
+- Name: ${c.name || 'Unknown'}
+- Title: ${c.title || 'Not specified'}
+- Email: ${c.email || 'Not found'}
+- Source: ${c.source}
+- Context: "${c.context}"
+`).join('\n')}
+
+DECISION CRITERIA:
+- Look for: Owner, General Manager, Operations Manager, or similar authority
+- They should be able to approve service contracts (cleaning, maintenance)
+- Prioritize owners > general managers > operations managers > other roles
+- If multiple candidates, choose the one with highest authority
+- Consider context clues: "founded by", "manages", "oversees operations"
+
+IMPORTANT RULES:
+1. NEVER invent information - only use what's provided
+2. If no clear decision maker exists, set confidence below 0.5
+3. Provide clear reasoning for your choice
+4. List 1-2 alternative contacts if they exist
+
+Respond with ONLY valid JSON (no markdown, no explanations):
+{
+  "name": "Full name or null",
+  "title": "Their role or null",
+  "email": "email@domain.com or null",
+  "phone": "phone number or null",
+  "confidence": 0.0 to 1.0,
+  "reasoning": "1-2 sentence explanation",
+  "alternativeContacts": [
+    {"name": "...", "title": "...", "likelihood": "high|medium|low"}
+  ]
+}`;
+
+const response = await anthropic.messages.create({
+  model: 'claude-sonnet-4-20250514',
+  max_tokens: 2000,
+  messages: [{ role: 'user', content: prompt }]
+});
+
+const analysis = JSON.parse(response.content[0].text);
+```
+
+**AI Response Example:**
 ```json
 {
-  "contact_person": "Joe Mancini",
-  "context": "founded by"
+  "name": "Maria Rodriguez",
+  "title": "Owner & Executive Chef",
+  "email": "maria@tacoheaven.com",
+  "phone": null,
+  "confidence": 0.92,
+  "reasoning": "Maria Rodriguez is clearly identified as the founder and owner, with full authority over business decisions. Her dual role as Executive Chef shows hands-on involvement. Direct email available.",
+  "alternativeContacts": [
+    {
+      "name": "Carlos Rodriguez",
+      "title": "General Manager",
+      "likelihood": "high"
+    }
+  ]
 }
+```
+
+#### Stage 4: Contact Validation
+
+**Email Validation:**
+```typescript
+function validateEmail(email: string): boolean {
+  // Check format
+  if (!emailRegex.test(email)) return false;
+  
+  // Exclude common non-decision-maker emails
+  const excludePatterns = [
+    'noreply@',
+    'donotreply@',
+    'newsletter@',
+    'marketing@'
+  ];
+  
+  return !excludePatterns.some(pattern => email.includes(pattern));
+}
+```
+
+**Confidence Adjustment:**
+```typescript
+function adjustConfidence(analysis: ClaudeResponse, lead: Lead): number {
+  let confidence = analysis.confidence;
+  
+  // Boost confidence if email domain matches website
+  if (analysis.email && lead.website) {
+    const domain = new URL(lead.website).hostname;
+    if (analysis.email.includes(domain)) {
+      confidence = Math.min(1.0, confidence + 0.05);
+    }
+  }
+  
+  // Reduce confidence if only generic info@ or contact@
+  if (analysis.email?.startsWith('info@') || analysis.email?.startsWith('contact@')) {
+    confidence = Math.max(0.5, confidence - 0.1);
+  }
+  
+  return confidence;
+}
+```
+
+#### Stage 5: Personalization Generation
+
+**Extract Talking Points:**
+```typescript
+async function generatePersonalizationNotes(
+  lead: EnrichedLead,
+  analysis: ClaudeResponse
+): Promise<string> {
+  const prompt = `Based on this restaurant information:
+  
+Business: ${lead.business_name}
+Category: ${lead.category}
+Decision Maker: ${analysis.name} (${analysis.title})
+Rating: ${lead.google_rating} (${lead.review_count} reviews)
+Context: ${analysis.reasoning}
+
+Generate 2-3 brief, specific talking points for a cold outreach email about commercial cleaning services. Focus on:
+- Personalization (mention their role, business details)
+- Pain points relevant to their restaurant type
+- Value proposition alignment
+
+Keep it under 100 words, bullet points.`;
+
+  const response = await anthropic.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 500,
+    messages: [{ role: 'user', content: prompt }]
+  });
+  
+  return response.content[0].text;
+}
+```
+
+**Example Output:**
+```
+- Maria's focus on authentic Mexican cuisine (owner-chef) suggests high standards for cleanliness in the kitchen
+- 145 reviews with 4.3★ rating shows strong customer base that expects consistent quality
+- As founder (2020), still in growth phase where professional cleaning partnership could support expansion
 ```
 
 ### Error Handling
 
-**Crawl Failures:**
-- Timeout (15s exceeded)
-- SSL certificate issues
-- 404/403/500 errors
-- JavaScript errors
-
-**Action:** Log error, continue pipeline (don't block other leads)
-
-**Example Log:**
+**Scraping Failures:**
+```typescript
+try {
+  await page.goto(url, { timeout: 15000 });
+} catch (error) {
+  if (error.name === 'TimeoutError') {
+    logger.warn(`Timeout for ${url}, trying fallback...`);
+    // Try with faster timeout and no JavaScript
+    return await fallbackScrape(url);
+  }
+  
+  // Log and continue with available data
+  logger.error(`Scrape failed for ${url}:`, error.message);
+  return [];
+}
 ```
-[WARN] Enrichment failed for "Joe's Pizza": Timeout after 15000ms
-[INFO] Continuing with available data (phone only)
+
+**AI API Failures:**
+```typescript
+try {
+  const analysis = await identifyDecisionMaker(contacts);
+} catch (error) {
+  if (error.status === 429) {
+    // Rate limit - wait and retry
+    logger.warn('Claude API rate limit, waiting 60s...');
+    await sleep(60000);
+    return await retry(identifyDecisionMaker, [contacts], 1);
+  }
+  
+  // Fall back to heuristic-based selection
+  logger.error('AI analysis failed, using fallback logic');
+  return selectDecisionMakerHeuristic(contacts);
+}
 ```
 
-### Rate Limiting
-**Respectful Crawling:**
-- Max 3 concurrent requests
-- 2-second delay between requests to same domain
-- Respect robots.txt (future enhancement)
+**Fallback Logic (No AI):**
+```typescript
+function selectDecisionMakerHeuristic(contacts: ScrapedContact[]): ContactInfo {
+  // Prioritize by title keywords
+  const titlePriority = ['owner', 'founder', 'ceo', 'general manager', 'manager'];
+  
+  for (const keyword of titlePriority) {
+    const match = contacts.find(c => 
+      c.title?.toLowerCase().includes(keyword)
+    );
+    
+    if (match) {
+      return {
+        name: match.name,
+        title: match.title,
+        email: match.email,
+        confidence: 0.6, // Lower confidence without AI
+        source: match.source,
+        reasoning: `Selected based on title keyword: "${keyword}"`
+      };
+    }
+  }
+  
+  // If no title match, return first contact with email
+  const withEmail = contacts.find(c => c.email);
+  return {
+    name: withEmail?.name || null,
+    email: withEmail?.email || null,
+    confidence: 0.3,
+    reasoning: 'No clear decision maker found, using first available email'
+  };
+}
+```
 
 ### Performance
-**Typical Timing:**
-- Homepage load: 2-5 seconds
-- Subpage loads: 1-3 seconds each
-- Total per lead: 5-15 seconds
-- **100 leads: ~15 minutes**
+
+**Typical Timing (per lead):**
+- Website crawling: 5-10 seconds
+- Social media scraping: 2-3 seconds
+- AI analysis: 1-2 seconds
+- Total: **8-15 seconds per lead**
+
+**For 100 leads (3 concurrent):**
+- Total enrichment time: **~25-30 minutes**
+
+**Cost Per Lead:**
+- Google Places API: $0.00 (already queried in discovery)
+- Website crawling: $0.00 (self-hosted)
+- Claude API: ~$0.003 per lead (2000 tokens)
+- **Total: $0.003/lead or $0.30 per 100 leads**
 
 ---
 
@@ -1595,12 +2122,18 @@ Valid leads with enrichment data.
 A-M: (same as Leads_Raw)
 N: email_found
 O: contact_person
-P: instagram_url
-Q: enrichment_attempted
-R: enrichment_success
-S: outreach_ready (Y/N)
-T: best_contact_method
-U: enriched_at
+P: contact_title
+Q: contact_confidence (AI confidence %)
+R: instagram_url
+S: facebook_url
+T: ai_decision_maker_identified (Y/N)
+U: ai_reasoning
+V: enrichment_attempted
+W: enrichment_success
+X: outreach_ready (Y/N)
+Y: best_contact_method
+Z: personalization_notes
+AA: enriched_at
 ```
 
 **Purpose:** Full lead database for review
@@ -1610,12 +2143,12 @@ Final outreach list.
 
 **Columns:**
 ```
-A-T: (same as Leads_Enriched)
-U: lead_score
-V: lead_tier (A/B/C)
-W: score_breakdown (JSON)
-X: score_reason_summary
-Y: scored_at
+A-AA: (same as Leads_Enriched)
+AB: lead_score
+AC: lead_tier (A/B/C)
+AD: score_breakdown (JSON)
+AE: score_reason_summary
+AF: scored_at
 ```
 
 **Purpose:** Daily outreach list for sales team
@@ -1625,6 +2158,7 @@ Y: scored_at
 - Tier B: Yellow background
 - Tier C: Orange background
 - Header row: Bold, frozen
+- AI-confirmed decision makers: Star icon ⭐ in contact_person column
 
 #### Tab 4: Settings
 Runtime configuration snapshot.
@@ -1926,14 +2460,27 @@ describe('calculateDistance', () => {
 - Place Details: $0.017 per request
 - Typical run: ~300 nearby + ~150 details = **$13.05**
 
+**Anthropic Claude API:**
+- Claude Sonnet 4: $3.00 per million input tokens, $15.00 per million output tokens
+- Typical use: ~1500 input tokens + 500 output tokens per lead
+- Cost per lead: ~$0.003
+- For 150 leads: **$0.45**
+
 **With Free Tier:**
-- $200 free credit per month
-- ~15 full runs per month = **$0 cost**
+- Google: $200 free credit per month
+- Anthropic: Set budget limit (recommended: $10/month)
+- Typical monthly cost: **$0** (within free tier)
+
+**Total Per Run:**
+- Google Places: $13.05
+- Claude AI: $0.45
+- **Total: $13.50 per run**
+- **Runs per month (in free tier): ~14 runs**
 
 **Google Sheets API:**
 - Free (no quota limits for our usage)
 
-**Total Monthly Cost: $0** (within free tier)
+**Total Monthly Cost: $0** (within combined free tiers)
 
 ### Cost Monitoring
 
@@ -1957,8 +2504,14 @@ Google Places API:
 - Place Details: 567 requests ($9.64)
 Total: $49.13 / $200.00 (24.6%)
 
-Remaining credit: $150.87
-Estimated runs left: 11
+Anthropic Claude API:
+- Input tokens: 850,000 ($2.55)
+- Output tokens: 280,000 ($4.20)
+Total: $6.75 / $10.00 (67.5%)
+
+Combined total: $55.88
+Remaining credit: $144.12
+Estimated runs left: 10
 ```
 
 ### Rate Limits
@@ -2025,7 +2578,76 @@ ERROR: Failed to write to Google Sheets: Permission denied
 
 3. Wait 1-2 minutes for permissions to propagate
 
-#### Issue: Crawl Timeouts
+#### Issue: AI Extraction Failing
+
+**Symptoms:**
+```
+WARN: AI analysis failed for "Joe's Pizza": API timeout
+INFO: Falling back to heuristic selection
+```
+
+**Causes:**
+- Anthropic API rate limit
+- API key invalid
+- Network timeout
+- Model unavailable
+
+**Solutions:**
+1. Check API key:
+   ```bash
+   echo $ANTHROPIC_API_KEY | cut -c1-10
+   # Should start with: sk-ant-api
+   ```
+
+2. Verify API status:
+   https://status.anthropic.com
+
+3. Check rate limits in Anthropic Console
+
+4. Temporarily disable AI and use fallback:
+   ```json
+   "ai_extraction": {
+     "enabled": false
+   }
+   ```
+
+5. System will automatically fall back to heuristic-based selection
+
+#### Issue: Low AI Confidence Scores
+
+**Symptoms:**
+```
+INFO: 80% of leads have confidence < 0.7
+WARN: Many decision makers uncertain
+```
+
+**Causes:**
+- Websites lack clear "About" or "Team" pages
+- No owner/manager information visible
+- Generic contact info only (info@, contact@)
+
+**Solutions:**
+1. This is expected for some leads - AI is correctly identifying uncertainty
+
+2. Review low-confidence leads manually:
+   ```bash
+   npm run review-low-confidence
+   ```
+
+3. Adjust confidence threshold if needed:
+   ```json
+   "ai_extraction": {
+     "confidence_threshold": 0.5  // Lower from 0.7
+   }
+   ```
+
+4. Enable additional sources (Facebook, LinkedIn):
+   ```json
+   "social_media": {
+     "facebook": true,
+     "linkedin": true
+   }
+   ```
 
 **Symptoms:**
 ```
