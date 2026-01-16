@@ -1,0 +1,22 @@
+{
+  "search": {
+    "radius_km": 50,
+    "type": "restaurant",
+    "language": "en",
+    "include_details": true
+  },
+  "filters": {
+    "rating": {
+      "min": 3.5,
+      "max": 4.6
+    },
+    "reviews": {
+      "min": 10,
+      "max": 500
+    },
+    "require_phone": true
+  },
+  "operational": {
+    "dry_run": false
+  }
+}
