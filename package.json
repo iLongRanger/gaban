@@ -5,8 +5,7 @@
   "type": "module",
   "main": "src/cli/run.js",
   "scripts": {
-    "start": "node src/cli/run.js",
-    "test": "node --test"
+
   },
   "dependencies": {
     "@googlemaps/google-maps-services-js": "^3.3.0",
