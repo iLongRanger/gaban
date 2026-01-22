@@ -3157,12 +3157,16 @@ OFFICE_LAT=49.2026           # Office latitude
 OFFICE_LNG=-122.9106         # Office longitude
 OFFICE_ADDRESS=              # Human-readable address
 
-# Search Parameters
+# Search Parameters (override settings.json)
 SEARCH_RADIUS_KM=50          # Search radius
+SEARCH_TYPE=restaurant       # Google Places type
+SEARCH_LANGUAGE=en           # Results language
+INCLUDE_DETAILS=true         # Fetch place details for phone/website
 RATING_MIN=3.5               # Minimum rating
 RATING_MAX=4.6               # Maximum rating
 REVIEW_MIN=10                # Minimum reviews
 REVIEW_MAX=500               # Maximum reviews
+REQUIRE_PHONE=true           # Require phone number in filtering
 
 # Operational
 LOG_LEVEL=info               # debug, info, warn, error
