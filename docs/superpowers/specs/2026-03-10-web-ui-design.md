@@ -25,8 +25,12 @@ A Next.js web application that replaces Google Sheets as the primary interface f
 - **better-sqlite3** — synchronous SQLite for single-user local use
 - **Tailwind CSS** — styling
 - **API Routes** — mutations (status updates, draft edits, notes)
-- New `sqliteService.js` in the pipeline writes leads + drafts to SQLite after scoring/drafting
+- New `sqliteService.js` runs during Phase 5 (Export), writing scored leads and drafts to SQLite
 - Google Sheets export becomes optional backup
+- Database file at `data/gaban.sqlite`. Schema created on first run via `db.ts`
+- `sqliteService.js` maps pipeline field names: `formatted_address` → `address`, `location.lat`/`location.lng` → `latitude`/`longitude`
+- If SQLite write fails, falls back to CSV (same as current Sheets fallback behavior)
+- `week` label is passed from the pipeline orchestrator (computed in `run.js`)
 
 ### Project Structure
 
@@ -77,10 +81,14 @@ src/
 | latitude | REAL | |
 | longitude | REAL | |
 | distance_km | REAL | |
+| subtypes | TEXT | JSON array string, e.g. ["gym", "fitness center"] |
+| working_hours | TEXT | Nullable |
+| business_status | TEXT | e.g. OPERATIONAL |
+| reviews_data | TEXT | JSON array of {review_text, review_rating} |
 | instagram | TEXT | Nullable |
 | facebook | TEXT | Nullable |
 | total_score | INTEGER | |
-| factor_scores | TEXT | JSON string |
+| factor_scores | TEXT | JSON string, keys: size (max 20), cleanliness_pain (max 20), location (max 15), online_presence (max 15), business_age (max 15), no_current_cleaner (max 15) |
 | reasoning | TEXT | |
 | status | TEXT | new, contacted, interested, rejected, closed |
 | week | TEXT | e.g. 2026-W11 |
@@ -93,13 +101,17 @@ src/
 |--------|------|-------|
 | id | INTEGER | Primary key, autoincrement |
 | lead_id | INTEGER | FK → leads.id |
-| style | TEXT | curious_neighbor, value_lead, compliment_question |
+| style | TEXT | curious_neighbor, value_lead, compliment_question. UNIQUE(lead_id, style) |
 | email_subject | TEXT | |
 | email_body | TEXT | |
 | dm | TEXT | |
 | edited_email_body | TEXT | Nullable, user's tweaked version |
 | edited_dm | TEXT | Nullable, user's tweaked version |
 | selected | INTEGER | Boolean, which style was picked |
+| created_at | TEXT | ISO timestamp |
+| updated_at | TEXT | ISO timestamp |
+
+Each lead has exactly 3 draft rows, one per style.
 
 ### `lead_notes`
 
@@ -123,7 +135,7 @@ src/
 ### 2. Lead Detail (`/leads/[id]`)
 
 - Full business info (address, phone, website, socials — clickable links)
-- Score breakdown (6 factors as bars/list)
+- Score breakdown — 6 factors rendered as bars with labels: size (max 20), cleanliness_pain (max 20), location (max 15), online_presence (max 15), business_age (max 15), no_current_cleaner (max 15). Review snippets from `reviews_data` shown below for context.
 - Three outreach tabs (one per style):
   - View original draft
   - Click "Edit" for inline editing → saves to edited fields
@@ -138,7 +150,7 @@ src/
 - Search by business name/address
 - Filter by status, week, score range (slider)
 - Filters combine with AND logic
-- Quick stats at top: total leads, contacted rate, conversion to interested
+- Quick stats at top: total leads, contacted rate, conversion to interested (defined as leads with status=interested / total leads)
 
 ## Key Interactions
 
@@ -163,6 +175,6 @@ src/
 
 ### Pipeline Integration
 
-- New `sqliteService.js` writes to SQLite after Phase 4 (drafting)
+- New `sqliteService.js` runs during Phase 5 (Export), writing scored leads and drafts to SQLite
 - Runs alongside or instead of `sheetsService.js`
 - `seen_leads.json` dedup store continues unchanged
