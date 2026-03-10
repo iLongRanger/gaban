@@ -1,3 +1,4 @@
 node_modules/
 .env
+data/seen_leads.json
 logs/
