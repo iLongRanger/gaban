@@ -1,4 +1,6 @@
 import { calculateDistance } from '../utils/geo.js';
+import { isChain } from '../config/chains.js';
+import { hasBeenSeen } from '../utils/seenLeads.js';
 
 export default class FilteringService {
   constructor({ settings, logger } = {}) {
@@ -6,12 +8,12 @@ export default class FilteringService {
     this.logger = logger;
   }
 
-  filterLeads(leads, officeLocation) {
+  filterLeads(leads, officeLocation, seenLeads) {
     const passed = [];
     const excluded = [];
 
     for (const lead of leads) {
-      const reason = this.getExclusionReason(lead, officeLocation);
+      const reason = this.getExclusionReason(lead, officeLocation, seenLeads);
       if (reason) {
         excluded.push({ ...lead, exclusion_reason: reason });
       } else {
@@ -19,42 +21,36 @@ export default class FilteringService {
       }
     }
 
-    this.logger?.info(
-      `Filtering complete: ${passed.length} passed, ${excluded.length} excluded.`
-    );
-
+    this.logger?.info(`Filtering complete: ${passed.length} passed, ${excluded.length} excluded.`);
     return { passed, excluded };
   }
 
-  getExclusionReason(lead, officeLocation) {
-    const { filters, search } = this.settings;
+  getExclusionReason(lead, officeLocation, seenLeads) {
+    if (hasBeenSeen(seenLeads, lead.place_id)) {
+      return 'already_seen';
+    }
 
-    if (!lead.location) {
+    if (lead.business_status === 'CLOSED_PERMANENTLY') {
+      return 'permanently_closed';
+    }
+
+    if (isChain(lead.business_name)) {
+      return 'chain_franchise';
+    }
+
+    if (!lead.location || lead.location.lat === null) {
       return 'missing_location';
     }
 
     const distance = calculateDistance(officeLocation, lead.location);
-    if (distance > search.radius_km) {
+    if (distance > this.settings.search.radius_km) {
       return 'outside_radius';
     }
 
-    if (filters.require_phone && !lead.formatted_phone_number) {
-      return 'missing_phone';
-    }
-
-    if (
-      lead.rating !== null &&
-      (lead.rating < filters.rating.min || lead.rating > filters.rating.max)
-    ) {
-      return 'rating_out_of_range';
-    }
-
-    if (
-      lead.user_ratings_total !== null &&
-      (lead.user_ratings_total < filters.reviews.min ||
-        lead.user_ratings_total > filters.reviews.max)
-    ) {
-      return 'review_count_out_of_range';
+    if (this.settings.filters.require_contact) {
+      if (!lead.phone && !lead.email && !lead.website) {
+        return 'no_contact_info';
+      }
     }
 
     return null;
