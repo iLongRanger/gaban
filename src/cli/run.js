@@ -1,65 +1,20 @@
+// src/cli/run.js
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
+import { google } from 'googleapis';
 import logger from '../utils/logger.js';
+import { getCategoriesForWeek } from '../config/categories.js';
+import { loadSeenLeads, saveSeenLeads, markAsSeen } from '../utils/seenLeads.js';
 import DiscoveryService from '../services/discoveryService.js';
 import FilteringService from '../services/filteringService.js';
+import ScoringService from '../services/scoringService.js';
+import DraftingService from '../services/draftingService.js';
+import SheetsService from '../services/sheetsService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-function parseNumber(value, fallback) {
-  if (value === undefined || value === null || value === '') {
-    return fallback;
-  }
-  const parsed = Number.parseFloat(value);
-  return Number.isNaN(parsed) ? fallback : parsed;
-}
-
-function parseBoolean(value, fallback) {
-  if (value === undefined || value === null || value === '') {
-    return fallback;
-  }
-  return ['true', '1', 'yes', 'y'].includes(String(value).toLowerCase());
-}
-
-function applyEnvOverrides(settings) {
-  return {
-    ...settings,
-    search: {
-      ...settings.search,
-      radius_km: parseNumber(process.env.SEARCH_RADIUS_KM, settings.search.radius_km),
-      type: process.env.SEARCH_TYPE || settings.search.type,
-      language: process.env.SEARCH_LANGUAGE || settings.search.language,
-      include_details: parseBoolean(
-        process.env.INCLUDE_DETAILS,
-        settings.search.include_details
-      )
-    },
-    filters: {
-      ...settings.filters,
-      rating: {
-        ...settings.filters.rating,
-        min: parseNumber(process.env.RATING_MIN, settings.filters.rating.min),
-        max: parseNumber(process.env.RATING_MAX, settings.filters.rating.max)
-      },
-      reviews: {
-        ...settings.filters.reviews,
-        min: parseNumber(process.env.REVIEW_MIN, settings.filters.reviews.min),
-        max: parseNumber(process.env.REVIEW_MAX, settings.filters.reviews.max)
-      },
-      require_phone: parseBoolean(
-        process.env.REQUIRE_PHONE,
-        settings.filters.require_phone
-      )
-    },
-    operational: {
-      ...settings.operational,
-      dry_run: parseBoolean(process.env.DRY_RUN, settings.operational.dry_run)
-    }
-  };
-}
 
 async function loadSettings() {
   const settingsPath = path.resolve(__dirname, '../config/settings.json');
@@ -67,40 +22,133 @@ async function loadSettings() {
   return JSON.parse(raw);
 }
 
+function getWeekNumber() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 1);
+  const diff = now - start;
+  const oneWeek = 604800000;
+  return Math.ceil(diff / oneWeek);
+}
+
+function getWeekLabel() {
+  const now = new Date();
+  const week = getWeekNumber();
+  return `${now.getFullYear()}-W${String(week).padStart(2, '0')}`;
+}
+
+async function createSheetsAuth() {
+  const credentialsPath = process.env.GOOGLE_SHEETS_CREDENTIALS;
+  if (!credentialsPath) return null;
+
+  const auth = new google.auth.GoogleAuth({
+    keyFile: credentialsPath,
+    scopes: ['https://www.googleapis.com/auth/spreadsheets']
+  });
+  return auth;
+}
+
 async function run() {
   dotenv.config();
+  const settings = await loadSettings();
 
-  const settings = applyEnvOverrides(await loadSettings());
-  const officeLocation = {
-    lat: parseNumber(process.env.OFFICE_LAT, 49.2026),
-    lng: parseNumber(process.env.OFFICE_LNG, -122.9106)
-  };
-
-  const apiKey = process.env.GOOGLE_PLACES_API_KEY;
-  const discovery = new DiscoveryService({ apiKey, logger });
-  const filtering = new FilteringService({ settings, logger });
-
-  logger.info('Starting discovery phase.');
+  logger.info('=== Gleam Lead Scraper - Weekly Run ===');
 
   if (settings.operational.dry_run) {
-    logger.info('Dry run enabled. Skipping Google Places API calls.');
+    logger.info('Dry run enabled. Exiting.');
     return;
   }
 
-  const leads = await discovery.discoverNearbyRestaurants({
-    location: officeLocation,
-    radiusMeters: settings.search.radius_km * 1000,
-    type: settings.search.type,
-    language: settings.search.language,
-    includeDetails: settings.search.include_details
+  // Resolve paths
+  const dataDir = path.resolve(__dirname, '../../data');
+  await fs.mkdir(dataDir, { recursive: true });
+  const seenLeadsPath = path.resolve(dataDir, 'seen_leads.json');
+
+  // Load seen leads
+  const seenLeads = await loadSeenLeads(seenLeadsPath);
+  logger.info(`Loaded ${Object.keys(seenLeads).length} previously seen leads.`);
+
+  // Phase 1: Discovery
+  const weekNum = getWeekNumber();
+  const categories = getCategoriesForWeek(weekNum);
+  logger.info(`Week ${getWeekLabel()} — Categories: ${categories.join(', ')}`);
+
+  const discovery = new DiscoveryService({
+    apiKey: process.env.OUTSCRAPER_API_KEY,
+    logger
   });
 
-  logger.info(`Discovered ${leads.length} leads.`);
+  const rawLeads = await discovery.discoverLeads({
+    categories,
+    location: 'New Westminster, BC',
+    limit: settings.search.limit_per_category,
+    language: settings.search.language,
+    region: settings.search.region
+  });
+  logger.info(`Discovered ${rawLeads.length} raw leads.`);
 
-  const { passed, excluded } = filtering.filterLeads(leads, officeLocation);
+  // Phase 2: Filtering
+  const officeLocation = settings.office_location;
+  const filtering = new FilteringService({ settings, logger });
+  const { passed, excluded } = filtering.filterLeads(rawLeads, officeLocation, seenLeads);
+  logger.info(`Filtered: ${passed.length} passed, ${excluded.length} excluded.`);
 
-  logger.info(`Leads ready for enrichment: ${passed.length}.`);
-  logger.info(`Excluded leads: ${excluded.length}.`);
+  if (passed.length === 0) {
+    logger.warn('No leads passed filtering. Exiting.');
+    return;
+  }
+
+  // Phase 3: Scoring
+  const scoring = new ScoringService({
+    apiKey: process.env.ANTHROPIC_API_KEY,
+    model: settings.scoring.model,
+    logger
+  });
+  const scoredLeads = await scoring.scoreLeads(passed, officeLocation);
+  const topLeads = scoring.selectTopN(scoredLeads, settings.scoring.top_n);
+  logger.info(`Scored ${scoredLeads.length} leads. Selected top ${topLeads.length}.`);
+
+  // Phase 4: Drafting
+  const drafting = new DraftingService({
+    apiKey: process.env.ANTHROPIC_API_KEY,
+    model: settings.drafting.model,
+    logger
+  });
+  const drafts = await drafting.draftAllLeads(topLeads);
+  logger.info(`Drafted outreach for ${drafts.length} leads.`);
+
+  // Phase 5: Export
+  const weekLabel = getWeekLabel();
+  const sheetsId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
+
+  try {
+    const auth = await createSheetsAuth();
+    if (auth && sheetsId) {
+      const sheetsService = new SheetsService({
+        spreadsheetId: sheetsId,
+        auth,
+        logger
+      });
+      await sheetsService.exportResults(topLeads, drafts, weekLabel);
+      logger.info('Exported to Google Sheets.');
+    } else {
+      throw new Error('Google Sheets not configured');
+    }
+  } catch (error) {
+    logger.warn(`Sheets export failed: ${error.message}. Falling back to CSV.`);
+    const csvPath = path.resolve(dataDir, `leads-${weekLabel}.csv`);
+    const sheetsService = new SheetsService({ logger });
+    await sheetsService.exportToCSV(topLeads, drafts, csvPath);
+    logger.info(`Saved fallback CSV to ${csvPath}`);
+  }
+
+  // Update seen leads
+  for (const lead of topLeads) {
+    markAsSeen(seenLeads, lead.place_id, lead.business_name);
+  }
+  await saveSeenLeads(seenLeadsPath, seenLeads);
+  logger.info(`Updated seen leads file (${Object.keys(seenLeads).length} total).`);
+
+  logger.info('=== Run complete ===');
 }
 
 run().catch((error) => {
