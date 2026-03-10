@@ -1,20 +1,23 @@
 {
   "search": {
     "radius_km": 50,
-    "type": "restaurant",
+    "limit_per_category": 50,
     "language": "en",
-    "include_details": true
+    "region": "CA"
   },
   "filters": {
-    "rating": {
-      "min": 3.5,
-      "max": 4.6
-    },
-    "reviews": {
-      "min": 10,
-      "max": 500
-    },
-    "require_phone": true
+    "require_contact": true
+  },
+  "scoring": {
+    "model": "claude-haiku-4-5-20251001",
+    "top_n": 4
+  },
+  "drafting": {
+    "model": "claude-haiku-4-5-20251001"
+  },
+  "office_location": {
+    "lat": 49.2026,
+    "lng": -122.9106
   },
   "operational": {
     "dry_run": false
