@@ -5,11 +5,15 @@
   "type": "module",
   "main": "src/cli/run.js",
   "scripts": {
-
+    "start": "node src/cli/run.js",
+    "test": "node --test tests/",
+    "test:watch": "node --test --watch tests/"
   },
   "dependencies": {
-    "@googlemaps/google-maps-services-js": "^3.3.0",
+    "@anthropic-ai/sdk": "^0.78.0",
     "dotenv": "^16.3.0",
+    "googleapis": "^171.4.0",
+    "outscraper": "^2.2.2",
     "winston": "^3.11.0"
   }
 }
