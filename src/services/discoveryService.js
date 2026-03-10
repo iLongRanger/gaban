@@ -1,109 +1,59 @@
-import { Client } from '@googlemaps/google-maps-services-js';
+import Outscraper from 'outscraper';
 
 export default class DiscoveryService {
   constructor({ apiKey, logger, client } = {}) {
     this.apiKey = apiKey;
     this.logger = logger;
-    this.client = client || new Client({});
+    this.client = client || new Outscraper(apiKey);
   }
 
-  async discoverNearbyRestaurants({
-    location,
-    radiusMeters,
-    type,
-    language,
-    includeDetails
-  }) {
-    if (!this.apiKey) {
-      throw new Error('GOOGLE_PLACES_API_KEY is required to run discovery.');
-    }
+  async discoverLeads({ categories, location, limit, language, region }) {
+    const allLeads = [];
 
-    this.logger?.info(
-      `Requesting nearby places: ${type} within ${radiusMeters}m of ${location.lat},${location.lng}.`
-    );
+    for (const category of categories) {
+      const query = `${category} near ${location}`;
+      this.logger?.info(`Querying Outscraper: "${query}" (limit: ${limit})`);
 
-    const response = await this.client.placesNearby({
-      params: {
-        key: this.apiKey,
-        location,
-        radius: radiusMeters,
-        type,
-        language
-      }
-    });
+      try {
+        const response = await this.client.googleMapsSearch(
+          [query], limit, language, region
+        );
 
-    const places = response.data.results || [];
+        const places = response?.[0] || [];
+        const normalized = places.map(place => this.normalize(place));
+        allLeads.push(...normalized);
 
-    if (!includeDetails) {
-      return places.map((place) => this.normalizeNearbyResult(place));
-    }
-
-    const detailedLeads = [];
-    for (const place of places) {
-      const details = await this.fetchPlaceDetails(place.place_id, language);
-      if (details) {
-        detailedLeads.push(this.normalizeDetailsResult(details));
+        this.logger?.info(`Found ${normalized.length} results for "${category}".`);
+      } catch (error) {
+        this.logger?.error(`Outscraper query failed for "${category}": ${error.message}`);
       }
     }
 
-    return detailedLeads;
+    return allLeads;
   }
 
-  normalizeNearbyResult(place) {
+  normalize(place) {
     return {
-      place_id: place.place_id,
-      business_name: place.name,
+      place_id: place.place_id || null,
+      business_name: place.name || null,
+      type: place.type || null,
+      subtypes: place.subtypes || null,
+      formatted_address: place.full_address || null,
+      phone: place.phone || null,
+      website: place.site || null,
+      email: place.email_1 || null,
       rating: place.rating ?? null,
-      user_ratings_total: place.user_ratings_total ?? null,
-      formatted_address: place.vicinity ?? null,
-      formatted_phone_number: null,
-      website: null,
-      location: place.geometry?.location ?? null,
-      types: place.types || []
-    };
-  }
-
-  async fetchPlaceDetails(placeId, language) {
-    try {
-      const response = await this.client.placeDetails({
-        params: {
-          key: this.apiKey,
-          place_id: placeId,
-          fields: [
-            'place_id',
-            'name',
-            'rating',
-            'user_ratings_total',
-            'formatted_address',
-            'formatted_phone_number',
-            'website',
-            'geometry',
-            'types'
-          ],
-          language
-        }
-      });
-
-      return response.data.result || null;
-    } catch (error) {
-      this.logger?.warn(
-        `Failed to fetch details for place ${placeId}: ${error.message}`
-      );
-      return null;
-    }
-  }
-
-  normalizeDetailsResult(place) {
-    return {
-      place_id: place.place_id,
-      business_name: place.name,
-      rating: place.rating ?? null,
-      user_ratings_total: place.user_ratings_total ?? null,
-      formatted_address: place.formatted_address ?? null,
-      formatted_phone_number: place.formatted_phone_number ?? null,
-      website: place.website ?? null,
-      location: place.geometry?.location ?? null,
-      types: place.types || []
+      reviews_count: place.reviews ?? null,
+      location: {
+        lat: place.latitude ?? null,
+        lng: place.longitude ?? null
+      },
+      photo_count: place.photo_count ?? null,
+      working_hours: place.working_hours || null,
+      business_status: place.business_status || null,
+      facebook: place.facebook || null,
+      instagram: place.instagram || null,
+      reviews_data: place.reviews_data || []
     };
   }
 }
