@@ -1,5 +1,6 @@
 {
   "search": {
+    "location": "New Westminster, BC",
     "radius_km": 50,
     "limit_per_category": 50,
     "language": "en",

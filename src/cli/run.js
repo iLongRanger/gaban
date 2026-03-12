@@ -12,6 +12,8 @@ import FilteringService from '../services/filteringService.js';
 import ScoringService from '../services/scoringService.js';
 import DraftingService from '../services/draftingService.js';
 import SheetsService from '../services/sheetsService.js';
+import SqliteService from '../services/sqliteService.js';
+import { initDb } from '../web/lib/db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -79,7 +81,7 @@ async function run() {
 
   const rawLeads = await discovery.discoverLeads({
     categories,
-    location: 'New Westminster, BC',
+    location: settings.search.location,
     limit: settings.search.limit_per_category,
     language: settings.search.language,
     region: settings.search.region
@@ -118,27 +120,19 @@ async function run() {
 
   // Phase 5: Export
   const weekLabel = getWeekLabel();
-  const sheetsId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
 
+  // Primary: SQLite
   try {
-    const auth = await createSheetsAuth();
-    if (auth && sheetsId) {
-      const sheetsService = new SheetsService({
-        spreadsheetId: sheetsId,
-        auth,
-        logger
-      });
-      await sheetsService.exportResults(topLeads, drafts, weekLabel);
-      logger.info('Exported to Google Sheets.');
-    } else {
-      throw new Error('Google Sheets not configured');
-    }
+    const db = initDb();
+    const sqliteService = new SqliteService({ db, logger });
+    sqliteService.exportResults(topLeads, drafts, weekLabel);
+    logger.info('Exported to SQLite.');
   } catch (error) {
-    logger.warn(`Sheets export failed: ${error.message}. Falling back to CSV.`);
-    const csvPath = path.resolve(dataDir, `leads-${weekLabel}.csv`);
+    logger.warn('SQLite export failed: ' + error.message + '. Falling back to CSV.');
+    const csvPath = path.resolve(dataDir, 'leads-' + weekLabel + '.csv');
     const sheetsService = new SheetsService({ logger });
     await sheetsService.exportToCSV(topLeads, drafts, csvPath);
-    logger.info(`Saved fallback CSV to ${csvPath}`);
+    logger.info('Saved fallback CSV to ' + csvPath);
   }
 
   // Update seen leads
