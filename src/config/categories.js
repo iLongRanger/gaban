@@ -9,3 +9,5 @@ export function getCategoriesForWeek(weekNumber) {
   const index = ((weekNumber - 1) % CATEGORY_SCHEDULE.length + CATEGORY_SCHEDULE.length) % CATEGORY_SCHEDULE.length;
   return CATEGORY_SCHEDULE[index];
 }
+
+export const ALL_CATEGORIES = [...new Set(CATEGORY_SCHEDULE.flat())];
