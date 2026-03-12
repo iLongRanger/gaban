@@ -39,7 +39,7 @@ Add a settings page, pipeline runner, and scheduling to the existing Gaban web U
 | Column | Type | Notes |
 |--------|------|-------|
 | id | INTEGER PK | auto-increment |
-| preset_id | INTEGER | FK → presets.id, ON DELETE SET NULL |
+| preset_id | INTEGER | FK → presets.id, ON DELETE SET NULL (nullable to preserve run history when a preset is deleted) |
 | status | TEXT NOT NULL | `pending`, `running`, `completed`, `failed`, `cancelled` |
 | phase | TEXT | current phase: discovery, filtering, scoring, drafting, export |
 | leads_found | INTEGER | result count after completion |
@@ -92,13 +92,15 @@ Config JSON shape (maps to the nested `settings.json` structure):
 
 The `categories` field replaces the weekly rotation schedule — when provided, those categories are used directly instead of looking up the current week's categories.
 
-When `--config` is not provided, fall back to current behavior (settings.json + hardcoded values) so the CLI continues to work standalone.
+As part of this work, add `search.location` to `settings.json` (default: `"New Westminster, BC"`) and remove the hardcoded value from `run.js`. This way the merge-on-top behavior works consistently for all fields.
+
+When `--config` is not provided, fall back to current behavior (settings.json) so the CLI continues to work standalone.
 
 ### Spawning from the web UI
 
 1. `POST /api/runs` receives `{ preset_id }`.
 2. Server reads the preset from SQLite, writes a temp JSON config file.
-3. Spawns `node src/cli/run.js --config /tmp/preset-<id>.json` as a child process.
+3. Spawns `node src/cli/run.js --config <os.tmpdir()>/preset-<id>.json` as a child process (uses `os.tmpdir()` for cross-platform compatibility).
 4. Creates a `pipeline_runs` row with status `running`.
 5. Stdout/stderr are captured line-by-line and appended to the `log` column.
 6. On process exit code 0 → status `completed`; non-zero → status `failed`.
@@ -191,7 +193,7 @@ Standard shape: `{ error: "message" }` with appropriate HTTP status codes.
   - Search location (text input)
   - Radius km (number slider, range 5–100)
   - Office location lat/lng (two number inputs)
-  - Categories (multi-select checkboxes from the fixed list defined in `src/config/categories.js`: restaurants, offices, clinics, gyms, schools, retail stores, community centers, industrial facilities)
+  - Categories (multi-select checkboxes from a fixed list; add a new `ALL_CATEGORIES` export to `src/config/categories.js` by flattening `CATEGORY_SCHEDULE` into unique values: restaurants, offices, clinics, gyms, schools, retail stores, community centers, industrial facilities). The presets API validates category values against this list on create/update, rejecting unknown categories.
   - Top N leads (number input, range 1–20)
   - "Set as default" toggle
   - Save / Delete buttons
