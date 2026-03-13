@@ -7,13 +7,32 @@
   "scripts": {
     "start": "node src/cli/run.js",
     "test": "node --test tests/*.test.js",
-    "test:watch": "node --test --watch tests/*.test.js"
+    "test:watch": "node --test --watch tests/*.test.js",
+    "dev": "next dev src/web",
+    "dev:pipeline": "node --watch src/cli/run.js",
+    "build:web": "next build src/web",
+    "start:web": "next start src/web",
+    "seed": "node src/web/lib/seed.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
+    "better-sqlite3": "^12.6.2",
     "dotenv": "^16.3.0",
     "googleapis": "^171.4.0",
+    "next": "^16.1.6",
+    "node-cron": "^4.2.1",
     "outscraper": "^2.2.2",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
     "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.1",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^25.4.0",
+    "@types/react": "^19.2.14",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^4.2.1",
+    "typescript": "^5.9.3"
   }
 }
