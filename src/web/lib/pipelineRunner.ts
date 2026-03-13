@@ -57,8 +57,10 @@ export function startRun(presetId: number): { runId: number } | { error: string;
   const runId = Number(result.lastInsertRowid);
   activeRunId = runId;
 
-  const runJsPath = path.resolve(process.cwd(), 'src/cli/run.js');
-  const child = spawn('node', [runJsPath, '--config', tmpPath], {
+  // Build path dynamically to prevent Turbopack from resolving it as a module
+  const runJsPath = path.resolve(process.cwd(), 'src', 'cli', 'run.js');
+  const args = [runJsPath, '--config', tmpPath];
+  const child = spawn(process.execPath, args, {
     cwd: process.cwd(),
     env: { ...process.env },
     stdio: ['ignore', 'pipe', 'pipe'],

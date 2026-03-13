@@ -1,8 +1,8 @@
-import cron from 'node-cron';
+import cron, { type ScheduledTask } from 'node-cron';
 import { getDb } from './db.js';
 import { startRun, getActiveRunId } from './pipelineRunner';
 
-const jobs = new Map<number, cron.ScheduledTask>();
+const jobs = new Map<number, ScheduledTask>();
 
 export function registerSchedule(scheduleId: number, cronExpr: string, presetId: number) {
   unregisterSchedule(scheduleId);
