@@ -24,6 +24,19 @@ async function loadSettings() {
   return JSON.parse(raw);
 }
 
+export function mergeConfig(base, override) {
+  if (!override) return base;
+  const result = { ...base };
+  for (const key of Object.keys(override)) {
+    if (typeof override[key] === 'object' && !Array.isArray(override[key]) && override[key] !== null) {
+      result[key] = { ...base[key], ...override[key] };
+    } else {
+      result[key] = override[key];
+    }
+  }
+  return result;
+}
+
 function getWeekNumber() {
   const now = new Date();
   const start = new Date(now.getFullYear(), 0, 1);
@@ -51,7 +64,16 @@ async function createSheetsAuth() {
 
 async function run() {
   dotenv.config();
-  const settings = await loadSettings();
+  let settings = await loadSettings();
+
+  // Parse --config flag
+  const configFlagIndex = process.argv.indexOf('--config');
+  if (configFlagIndex !== -1 && process.argv[configFlagIndex + 1]) {
+    const configPath = process.argv[configFlagIndex + 1];
+    const raw = await fs.readFile(configPath, 'utf-8');
+    const override = JSON.parse(raw);
+    settings = mergeConfig(settings, override);
+  }
 
   logger.info('=== Gleam Lead Scraper - Weekly Run ===');
 
@@ -71,7 +93,7 @@ async function run() {
 
   // Phase 1: Discovery
   const weekNum = getWeekNumber();
-  const categories = getCategoriesForWeek(weekNum);
+  const categories = settings.categories || getCategoriesForWeek(weekNum);
   logger.info(`Week ${getWeekLabel()} — Categories: ${categories.join(', ')}`);
 
   const discovery = new DiscoveryService({
@@ -145,7 +167,10 @@ async function run() {
   logger.info('=== Run complete ===');
 }
 
-run().catch((error) => {
-  logger.error(`Run failed: ${error.message}`);
-  process.exit(1);
-});
+const isMainModule = process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/\\/g, '/'));
+if (isMainModule) {
+  run().catch((error) => {
+    logger.error(`Run failed: ${error.message}`);
+    process.exit(1);
+  });
+}
