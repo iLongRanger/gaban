@@ -89,6 +89,95 @@ CREATE TABLE IF NOT EXISTS schedules (
   last_run_at TEXT,
   created_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS campaigns (
+  id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+  name               TEXT NOT NULL,
+  preset_id          INTEGER NOT NULL REFERENCES presets(id),
+  status             TEXT NOT NULL DEFAULT 'draft',
+  daily_cap          INTEGER NOT NULL DEFAULT 10,
+  start_date         TEXT,
+  end_date           TEXT,
+  timezone           TEXT NOT NULL DEFAULT 'America/Vancouver',
+  send_window_start  TEXT NOT NULL DEFAULT '09:00',
+  send_window_end    TEXT NOT NULL DEFAULT '17:00',
+  send_days          TEXT NOT NULL DEFAULT 'mon,tue,wed,thu,fri',
+  touch_styles       TEXT NOT NULL DEFAULT '["curious_neighbor","value_lead","compliment_question"]',
+  created_at         TEXT NOT NULL,
+  updated_at         TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS campaign_leads (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  campaign_id    INTEGER NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+  lead_id        INTEGER NOT NULL REFERENCES leads(id),
+  status         TEXT NOT NULL DEFAULT 'queued',
+  touch_count    INTEGER NOT NULL DEFAULT 0,
+  added_at       TEXT NOT NULL,
+  last_touch_at  TEXT,
+  completed_at   TEXT,
+  outcome        TEXT,
+  UNIQUE(campaign_id, lead_id)
+);
+
+CREATE TABLE IF NOT EXISTS email_sends (
+  id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+  campaign_lead_id   INTEGER NOT NULL REFERENCES campaign_leads(id) ON DELETE CASCADE,
+  touch_number       INTEGER NOT NULL,
+  template_style     TEXT NOT NULL,
+  subject            TEXT NOT NULL,
+  body               TEXT NOT NULL,
+  recipient_email    TEXT NOT NULL,
+  gmail_message_id   TEXT,
+  gmail_thread_id    TEXT,
+  scheduled_for      TEXT NOT NULL,
+  sent_at            TEXT,
+  status             TEXT NOT NULL DEFAULT 'scheduled',
+  error_message      TEXT,
+  created_at         TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS email_events (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  send_id      INTEGER NOT NULL REFERENCES email_sends(id) ON DELETE CASCADE,
+  type         TEXT NOT NULL,
+  detected_at  TEXT NOT NULL,
+  raw_payload  TEXT
+);
+
+CREATE TABLE IF NOT EXISTS suppression_list (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  email_hash  TEXT UNIQUE,
+  domain      TEXT,
+  reason      TEXT NOT NULL,
+  source      TEXT NOT NULL,
+  added_at    TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS meetings (
+  id                INTEGER PRIMARY KEY AUTOINCREMENT,
+  campaign_lead_id  INTEGER NOT NULL REFERENCES campaign_leads(id) ON DELETE CASCADE,
+  scheduled_for     TEXT NOT NULL,
+  kind              TEXT NOT NULL,
+  notes             TEXT,
+  completed         INTEGER NOT NULL DEFAULT 0,
+  created_at        TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS contracts (
+  id                INTEGER PRIMARY KEY AUTOINCREMENT,
+  campaign_lead_id  INTEGER NOT NULL REFERENCES campaign_leads(id) ON DELETE CASCADE,
+  signed_date       TEXT NOT NULL,
+  value_monthly     REAL,
+  notes             TEXT,
+  created_at        TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS system_settings (
+  key         TEXT PRIMARY KEY,
+  value       TEXT NOT NULL,
+  updated_at  TEXT NOT NULL
+);
 `;
 
 export function initDb(dbPath) {
