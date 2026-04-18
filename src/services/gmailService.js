@@ -1,17 +1,24 @@
 import { google } from 'googleapis';
 
+function sanitizeHeader(value, field) {
+  if (typeof value !== 'string') throw new Error(`${field} must be a string`);
+  if (/[\r\n]/.test(value)) throw new Error(`${field} must not contain line breaks`);
+  return value;
+}
+
 function buildRawMessage({ to, from, subject, body, inReplyTo }) {
   const headers = [
-    `From: ${from}`,
-    `To: ${to}`,
-    `Subject: ${subject}`,
+    `From: ${sanitizeHeader(from, 'from')}`,
+    `To: ${sanitizeHeader(to, 'to')}`,
+    `Subject: ${sanitizeHeader(subject, 'subject')}`,
     'MIME-Version: 1.0',
     'Content-Type: text/plain; charset="UTF-8"',
     'Content-Transfer-Encoding: 8bit',
   ];
   if (inReplyTo) {
-    headers.push(`In-Reply-To: ${inReplyTo}`);
-    headers.push(`References: ${inReplyTo}`);
+    const safe = sanitizeHeader(inReplyTo, 'inReplyTo');
+    headers.push(`In-Reply-To: ${safe}`);
+    headers.push(`References: ${safe}`);
   }
   const raw = headers.join('\r\n') + '\r\n\r\n' + body;
   return Buffer.from(raw, 'utf8').toString('base64url');
@@ -47,7 +54,7 @@ export class GmailService {
       ? `${this.sender.name} <${this.sender.email}>`
       : this.sender.email;
 
-    const raw = buildRawMessage({ to, from, subject, body, threadId, inReplyTo });
+    const raw = buildRawMessage({ to, from, subject, body, inReplyTo });
 
     const requestBody = { raw };
     if (threadId) requestBody.threadId = threadId;

@@ -91,4 +91,17 @@ describe('GmailService', () => {
     await assert.rejects(() => svc.send({ to: 'x@y.com', body: 'b' }), /subject/i);
     await assert.rejects(() => svc.send({ to: 'x@y.com', subject: 's' }), /body/i);
   });
+
+  it('rejects header values containing CRLF (injection guard)', async () => {
+    const { fake } = makeFakeClient({ sendResult: { id: 'm', threadId: 't' } });
+    const svc = new GmailService({ client: fake, sender });
+    await assert.rejects(
+      () => svc.send({ to: 'x@y.com\r\nBcc: evil@x.com', subject: 's', body: 'b' }),
+      /line breaks/i,
+    );
+    await assert.rejects(
+      () => svc.send({ to: 'x@y.com', subject: 'Hi\nBcc: evil@x.com', body: 'b' }),
+      /line breaks/i,
+    );
+  });
 });
