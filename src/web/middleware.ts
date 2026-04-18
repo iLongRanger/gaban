@@ -3,7 +3,7 @@ import { verifySessionCookie } from '@/lib/auth.js';
 
 export const runtime = 'nodejs'; // Required: auth uses node:crypto
 
-const PUBLIC_PATHS = ['/login', '/api/auth'];
+const PUBLIC_PATHS = ['/login', '/api/auth', '/u/'];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
