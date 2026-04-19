@@ -55,7 +55,7 @@ export class SuppressionService {
     if (!source) throw new Error('source required');
     const now = new Date().toISOString();
     this.db.prepare(
-      `INSERT INTO suppression_list (email_hash, domain, reason, source, added_at)
+      `INSERT OR IGNORE INTO suppression_list (email_hash, domain, reason, source, added_at)
        VALUES (NULL, ?, ?, ?, ?)`
     ).run(domain.toLowerCase().trim(), reason, source, now);
   }

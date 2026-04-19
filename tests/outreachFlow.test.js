@@ -113,6 +113,12 @@ describe('Outreach end-to-end flow', () => {
     db.prepare(
       `UPDATE email_sends SET status = 'cancelled' WHERE campaign_lead_id = ? AND status = 'scheduled'`
     ).run(row.campaign_lead_id);
+    const insertEvent = db.prepare(
+      `INSERT OR IGNORE INTO email_events (send_id, type, detected_at) VALUES (?, 'unsubscribed', ?)`
+    );
+    insertEvent.run(payload.sendId, now);
+    // Double-click simulation: second insert must be a no-op
+    insertEvent.run(payload.sendId, now);
 
     // Assertions
     assert.strictEqual(suppression.isSuppressed('dest@example.com'), true);
@@ -120,6 +126,10 @@ describe('Outreach end-to-end flow', () => {
     assert.strictEqual(cl.status, 'unsubscribed');
     const fu = db.prepare(`SELECT status FROM email_sends WHERE touch_number = 2`).get();
     assert.strictEqual(fu.status, 'cancelled');
+    const events = db.prepare(
+      `SELECT COUNT(*) AS c FROM email_events WHERE send_id = ? AND type = 'unsubscribed'`
+    ).get(payload.sendId);
+    assert.strictEqual(events.c, 1);
   });
 
   it('rejects invalid unsubscribe tokens', () => {

@@ -178,6 +178,11 @@ CREATE TABLE IF NOT EXISTS system_settings (
   value       TEXT NOT NULL,
   updated_at  TEXT NOT NULL
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_suppression_domain
+  ON suppression_list(domain) WHERE email_hash IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_email_events_unsub
+  ON email_events(send_id, type) WHERE type = 'unsubscribed';
 `;
 
 export function initDb(dbPath) {

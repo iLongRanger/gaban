@@ -44,7 +44,7 @@ export default async function UnsubscribePage({ params }: PageProps) {
     ).run(row.campaign_lead_id);
 
     db.prepare(
-      `INSERT INTO email_events (send_id, type, detected_at) VALUES (?, 'unsubscribed', ?)`
+      `INSERT OR IGNORE INTO email_events (send_id, type, detected_at) VALUES (?, 'unsubscribed', ?)`
     ).run(sendId, now);
   } catch (err) {
     errorMessage = err instanceof Error ? err.message : 'Unknown error';
