@@ -1,8 +1,12 @@
 import cron, { type ScheduledTask } from 'node-cron';
 import { getDb } from './db.js';
 import { startRun, getActiveRunId } from './pipelineRunner';
+import { SendQueueWorker } from '../../services/sendQueueWorker.js';
+import { createGmailClientFromEnv, GmailService } from '../../services/gmailService.js';
 
 const jobs = new Map<number, ScheduledTask>();
+let outreachWorkerJob: ScheduledTask | null = null;
+let outreachWorkerRunning = false;
 
 export function registerSchedule(scheduleId: number, cronExpr: string, presetId: number) {
   unregisterSchedule(scheduleId);
@@ -44,9 +48,59 @@ export function loadSchedulesOnStartup() {
   console.log(`Loaded ${schedules.length} scheduled jobs`);
 }
 
+function hasGmailEnv() {
+  return Boolean(
+    process.env.GMAIL_OAUTH_CLIENT_ID &&
+    process.env.GMAIL_OAUTH_CLIENT_SECRET &&
+    process.env.GMAIL_OAUTH_REFRESH_TOKEN &&
+    process.env.GMAIL_SENDER_EMAIL
+  );
+}
+
+export function loadOutreachWorkerOnStartup() {
+  if (outreachWorkerJob) return;
+  if (!hasGmailEnv()) {
+    console.warn('Outreach send worker not started: Gmail environment is incomplete');
+    return;
+  }
+
+  const db = getDb();
+  const client = createGmailClientFromEnv();
+  const mailer = new GmailService({
+    client,
+    sender: {
+      email: process.env.GMAIL_SENDER_EMAIL!,
+      name: process.env.GMAIL_SENDER_NAME,
+    },
+    logger: console,
+  });
+  const worker = new SendQueueWorker({
+    db,
+    mailer,
+    capService: undefined,
+    suppressionService: undefined,
+    logger: console,
+  });
+
+  outreachWorkerJob = cron.schedule('* * * * *', async () => {
+    if (outreachWorkerRunning) return;
+    outreachWorkerRunning = true;
+    try {
+      await worker.tick({ now: new Date(), limit: 1 });
+    } finally {
+      outreachWorkerRunning = false;
+    }
+  }, { timezone: 'America/Vancouver' });
+
+  console.log('Loaded outreach send worker');
+}
+
 export function stopAllSchedules() {
   for (const [id, task] of jobs) {
     task.stop();
   }
   jobs.clear();
+  outreachWorkerJob?.stop();
+  outreachWorkerJob = null;
+  outreachWorkerRunning = false;
 }

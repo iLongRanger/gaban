@@ -183,6 +183,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_suppression_domain
   ON suppression_list(domain) WHERE email_hash IS NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS uq_email_events_unsub
   ON email_events(send_id, type) WHERE type = 'unsubscribed';
+CREATE INDEX IF NOT EXISTS idx_email_sends_status_scheduled_for
+  ON email_sends(status, scheduled_for);
+CREATE INDEX IF NOT EXISTS idx_campaign_leads_campaign_status
+  ON campaign_leads(campaign_id, status);
 `;
 
 export function initDb(dbPath) {
