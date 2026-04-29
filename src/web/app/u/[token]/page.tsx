@@ -1,3 +1,4 @@
+import '@/lib/loadEnv.js';
 import { getDb } from '@/lib/db.js';
 import { verifyUnsubscribeToken } from '../../../../services/unsubscribeTokenService.js';
 import { SuppressionService } from '../../../../services/suppressionService.js';

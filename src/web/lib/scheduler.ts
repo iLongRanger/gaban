@@ -1,3 +1,4 @@
+import './loadEnv.js';
 import cron, { type ScheduledTask } from 'node-cron';
 import { getDb } from './db.js';
 import { startRun, getActiveRunId } from './pipelineRunner';
