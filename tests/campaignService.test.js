@@ -74,4 +74,42 @@ describe('CampaignService', () => {
       });
     }, /does not have an email/i);
   });
+
+  it('pauses and resumes campaigns', () => {
+    const preset = seedPreset(db);
+    const leadId = seedLeadWithDrafts(db, 'pause');
+    const service = new CampaignService({ db });
+    const campaign = service.createCampaign({
+      presetId: preset.id,
+      name: 'Pause campaign',
+      leadIds: [leadId],
+      startAt: '2026-05-04T16:00:00.000Z',
+    });
+
+    assert.strictEqual(service.pauseCampaign(campaign.id), true);
+    assert.strictEqual(db.prepare('SELECT status FROM campaigns WHERE id = ?').get(campaign.id).status, 'paused');
+    assert.strictEqual(service.resumeCampaign(campaign.id), true);
+    assert.strictEqual(db.prepare('SELECT status FROM campaigns WHERE id = ?').get(campaign.id).status, 'active');
+  });
+
+  it('cancels future sends for a campaign lead', () => {
+    const preset = seedPreset(db);
+    const leadId = seedLeadWithDrafts(db, 'cancel');
+    const service = new CampaignService({ db });
+    service.createCampaign({
+      presetId: preset.id,
+      name: 'Cancel campaign',
+      leadIds: [leadId],
+      startAt: '2026-05-04T16:00:00.000Z',
+    });
+    const campaignLead = db.prepare('SELECT id FROM campaign_leads LIMIT 1').get();
+
+    const changed = service.cancelFutureSends(campaignLead.id, { reason: 'manual pause' });
+
+    assert.strictEqual(changed, 3);
+    const remaining = db.prepare("SELECT COUNT(*) AS c FROM email_sends WHERE status = 'scheduled'").get();
+    assert.strictEqual(remaining.c, 0);
+    const cancelled = db.prepare("SELECT COUNT(*) AS c FROM email_sends WHERE status = 'cancelled'").get();
+    assert.strictEqual(cancelled.c, 3);
+  });
 });

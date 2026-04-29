@@ -37,7 +37,11 @@ export default async function CampaignsPage() {
       ) : (
         <div className="space-y-3">
           {campaigns.map((campaign) => (
-            <div key={campaign.id} className="bg-white border border-gray-200 rounded-lg p-4">
+            <Link
+              key={campaign.id}
+              href={`/campaigns/${campaign.id}`}
+              className="block bg-white border border-gray-200 rounded-lg p-4 hover:border-gray-300 hover:shadow-sm transition"
+            >
               <div className="flex items-start justify-between">
                 <div>
                   <h2 className="font-semibold text-gray-900">{campaign.name}</h2>
@@ -68,7 +72,7 @@ export default async function CampaignsPage() {
                   <span className="font-medium">{campaign.timezone}</span>
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}
