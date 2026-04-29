@@ -1,4 +1,11 @@
 node_modules/
 .env
+.claude/settings.local.json
+.superpowers/
 data/seen_leads.json
+data/gaban.sqlite
+data/gaban.sqlite-wal
+data/gaban.sqlite-shm
 logs/
+src/web/.next/
+src/web/tsconfig.tsbuildinfo

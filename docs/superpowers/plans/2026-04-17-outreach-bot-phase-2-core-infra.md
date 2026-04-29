@@ -14,6 +14,8 @@
 
 ## Prerequisites (Phase 1 — manual, before any task below)
 
+**2026-04-28 update:** Phase 1 has moved from Google Workspace/Gmail to Microsoft 365/Exchange Online. Use `docs/superpowers/runbooks/2026-04-17-outreach-bot-phase-1-setup.md` as the source of truth for current infrastructure setup. The older Gmail-specific prerequisites below are retained only as historical context until this Phase 2 plan is rewritten for Microsoft Graph.
+
 These are one-time infra steps. Complete and tick each before starting Task 1.
 
 - [ ] Google Workspace: add new user `outreach@outreach.gleampro.ca` ($7/mo seat).

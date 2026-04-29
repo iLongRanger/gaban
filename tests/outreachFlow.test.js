@@ -2,7 +2,7 @@ import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { initDb } from '../src/web/lib/db.js';
 import { buildOutreachEmail } from '../src/services/emailTemplateService.js';
-import { GmailService } from '../src/services/gmailService.js';
+import { MicrosoftGraphMailService } from '../src/services/microsoftGraphService.js';
 import { SuppressionService } from '../src/services/suppressionService.js';
 import { verifyUnsubscribeToken } from '../src/services/unsubscribeTokenService.js';
 
@@ -32,13 +32,9 @@ function seedCampaignLead(db) {
   return { campaignLeadId: cl.id };
 }
 
-function makeFakeGmailClient() {
+function makeFakeGraphClient() {
   return {
-    users: {
-      messages: {
-        send: async () => ({ data: { id: 'mock-msg-id', threadId: 'mock-thread-id' } }),
-      },
-    },
+    sendMail: async () => ({ accepted: true, status: 202 }),
   };
 }
 
@@ -72,12 +68,12 @@ describe('Outreach end-to-end flow', () => {
       config: CONFIG,
     });
 
-    // Send via Gmail (mocked)
-    const gmail = new GmailService({
-      client: makeFakeGmailClient(),
-      sender: { email: 'outreach@outreach.gleampro.ca', name: 'GleamPro' },
+    // Send via Microsoft Graph (mocked)
+    const graph = new MicrosoftGraphMailService({
+      client: makeFakeGraphClient(),
+      sender: { email: 'outreach@gleamlift.ca', name: 'GleamPro Cleaning' },
     });
-    const gmailResult = await gmail.send({
+    const graphResult = await graph.send({
       to: 'dest@example.com',
       subject: composed.subject,
       body: composed.body,
@@ -86,7 +82,7 @@ describe('Outreach end-to-end flow', () => {
     // Persist send result
     db.prepare(
       `UPDATE email_sends SET gmail_message_id = ?, gmail_thread_id = ?, sent_at = ?, status = 'sent' WHERE id = ?`
-    ).run(gmailResult.gmail_message_id, gmailResult.gmail_thread_id, now, sendId);
+    ).run(graphResult.provider, null, now, sendId);
 
     // Schedule a follow-up (to prove cancellation later)
     db.prepare(
