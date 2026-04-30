@@ -62,6 +62,15 @@ async function createSheetsAuth() {
   return auth;
 }
 
+export function validateRequiredEnv(env = process.env) {
+  const missing = ['OUTSCRAPER_API_KEY', 'ANTHROPIC_API_KEY']
+    .filter((key) => !env[key] || env[key].includes('your_'));
+
+  if (missing.length > 0) {
+    throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
+  }
+}
+
 async function run() {
   dotenv.config();
   let settings = await loadSettings();
@@ -81,6 +90,8 @@ async function run() {
     logger.info('Dry run enabled. Exiting.');
     return;
   }
+
+  validateRequiredEnv();
 
   // Resolve paths
   const dataDir = path.resolve(__dirname, '../../data');

@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { mergeConfig } from '../src/cli/run.js';
+import { mergeConfig, validateRequiredEnv } from '../src/cli/run.js';
 
 describe('mergeConfig', () => {
   const base = {
@@ -36,5 +36,21 @@ describe('mergeConfig', () => {
     const result = mergeConfig(base, override);
     assert.strictEqual(result.scoring.top_n, 8);
     assert.strictEqual(result.scoring.model, 'claude-haiku-4-5-20251001');
+  });
+});
+
+describe('validateRequiredEnv', () => {
+  it('throws when pipeline API keys are missing', () => {
+    assert.throws(
+      () => validateRequiredEnv({ OUTSCRAPER_API_KEY: 'outscraper-key' }),
+      /ANTHROPIC_API_KEY/
+    );
+  });
+
+  it('allows configured pipeline API keys', () => {
+    assert.doesNotThrow(() => validateRequiredEnv({
+      OUTSCRAPER_API_KEY: 'outscraper-key',
+      ANTHROPIC_API_KEY: 'anthropic-key'
+    }));
   });
 });
