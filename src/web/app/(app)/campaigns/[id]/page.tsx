@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getDb } from '@/lib/db.js';
 import CampaignActions from '@/components/CampaignActions';
+import OutcomeForm from '@/components/OutcomeForm';
 
 export const dynamic = 'force-dynamic';
 
@@ -155,6 +156,7 @@ export default async function CampaignDetailPage({
                   </div>
                 ))}
               </div>
+              <OutcomeForm campaignLeadId={lead.id} />
             </div>
           );
         })}

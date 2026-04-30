@@ -20,6 +20,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <Link href="/responses" className="px-3 py-2 rounded hover:bg-gray-800 transition-colors">
           Responses
         </Link>
+        <Link href="/outcomes" className="px-3 py-2 rounded hover:bg-gray-800 transition-colors">
+          Outcomes
+        </Link>
         <Link href="/settings" className="px-3 py-2 rounded hover:bg-gray-800 transition-colors">
           Settings
         </Link>
