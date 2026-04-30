@@ -3,11 +3,14 @@ import cron, { type ScheduledTask } from 'node-cron';
 import { getDb } from './db.js';
 import { startRun, getActiveRunId } from './pipelineRunner';
 import { SendQueueWorker } from '../../services/sendQueueWorker.js';
+import { EmailResponseMonitor } from '../../services/emailResponseMonitor.js';
 import { createGmailClientFromEnv, GmailService } from '../../services/gmailService.js';
 
 const jobs = new Map<number, ScheduledTask>();
 let outreachWorkerJob: ScheduledTask | null = null;
 let outreachWorkerRunning = false;
+let responseMonitorJob: ScheduledTask | null = null;
+let responseMonitorRunning = false;
 
 export function registerSchedule(scheduleId: number, cronExpr: string, presetId: number) {
   unregisterSchedule(scheduleId);
@@ -82,6 +85,13 @@ export function loadOutreachWorkerOnStartup() {
     suppressionService: undefined,
     logger: console,
   });
+  const ResponseMonitor = EmailResponseMonitor as any;
+  const monitor = new ResponseMonitor({
+    db,
+    gmail: mailer,
+    senderEmail: process.env.GMAIL_SENDER_EMAIL!,
+    logger: console,
+  });
 
   outreachWorkerJob = cron.schedule('* * * * *', async () => {
     if (outreachWorkerRunning) return;
@@ -93,7 +103,17 @@ export function loadOutreachWorkerOnStartup() {
     }
   }, { timezone: 'America/Vancouver' });
 
-  console.log('Loaded outreach send worker');
+  responseMonitorJob = cron.schedule('*/5 * * * *', async () => {
+    if (responseMonitorRunning) return;
+    responseMonitorRunning = true;
+    try {
+      await monitor.poll({ now: new Date(), maxResults: 25 });
+    } finally {
+      responseMonitorRunning = false;
+    }
+  }, { timezone: 'America/Vancouver' });
+
+  console.log('Loaded outreach send worker and response monitor');
 }
 
 export function stopAllSchedules() {
@@ -104,4 +124,7 @@ export function stopAllSchedules() {
   outreachWorkerJob?.stop();
   outreachWorkerJob = null;
   outreachWorkerRunning = false;
+  responseMonitorJob?.stop();
+  responseMonitorJob = null;
+  responseMonitorRunning = false;
 }

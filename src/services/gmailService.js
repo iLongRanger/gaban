@@ -69,4 +69,24 @@ export class GmailService {
       gmail_thread_id: response.data.threadId,
     };
   }
+
+  async listMessages({ query = 'in:inbox newer_than:7d', maxResults = 25 } = {}) {
+    const response = await this.client.users.messages.list({
+      userId: 'me',
+      q: query,
+      maxResults,
+    });
+    return response.data.messages || [];
+  }
+
+  async getMessage({ id, format = 'metadata', metadataHeaders } = {}) {
+    if (!id) throw new Error('id required');
+    const response = await this.client.users.messages.get({
+      userId: 'me',
+      id,
+      format,
+      metadataHeaders,
+    });
+    return response.data;
+  }
 }

@@ -12,6 +12,14 @@ function makeFakeClient({ sendResult, sendError }) {
           if (sendError) throw sendError;
           return { data: sendResult };
         },
+        list: async (args) => {
+          calls.push(args);
+          return { data: { messages: [{ id: 'msg-1', threadId: 'thread-1' }] } };
+        },
+        get: async (args) => {
+          calls.push(args);
+          return { data: { id: args.id, threadId: 'thread-1', payload: { headers: [] } } };
+        },
       },
     },
   };
@@ -103,5 +111,23 @@ describe('GmailService', () => {
       () => svc.send({ to: 'x@y.com', subject: 'Hi\nBcc: evil@x.com', body: 'b' }),
       /line breaks/i,
     );
+  });
+
+  it('lists and gets inbox messages', async () => {
+    const { fake, calls } = makeFakeClient({ sendResult: { id: 'm', threadId: 't' } });
+    const svc = new GmailService({ client: fake, sender });
+
+    const messages = await svc.listMessages({ query: 'in:inbox newer_than:1d', maxResults: 10 });
+    const message = await svc.getMessage({
+      id: 'msg-1',
+      metadataHeaders: ['From', 'Subject'],
+    });
+
+    assert.deepStrictEqual(messages, [{ id: 'msg-1', threadId: 'thread-1' }]);
+    assert.strictEqual(message.id, 'msg-1');
+    assert.strictEqual(calls[0].q, 'in:inbox newer_than:1d');
+    assert.strictEqual(calls[0].maxResults, 10);
+    assert.strictEqual(calls[1].format, 'metadata');
+    assert.deepStrictEqual(calls[1].metadataHeaders, ['From', 'Subject']);
   });
 });
