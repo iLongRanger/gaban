@@ -5,6 +5,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen bg-gray-50">
       <nav className="w-56 bg-gray-900 text-gray-100 p-4 flex flex-col gap-2">
         <h1 className="text-lg font-bold mb-4 px-2">Gaban</h1>
+        <Link href="/dashboard" className="px-3 py-2 rounded hover:bg-gray-800 transition-colors">
+          Dashboard
+        </Link>
         <Link href="/" className="px-3 py-2 rounded hover:bg-gray-800 transition-colors">
           Weekly Leads
         </Link>
