@@ -92,6 +92,52 @@ describe('CampaignService', () => {
     assert.strictEqual(db.prepare('SELECT status FROM campaigns WHERE id = ?').get(campaign.id).status, 'active');
   });
 
+  it('shifts pending sends forward when a paused campaign resumes', () => {
+    const preset = seedPreset(db);
+    const leadId = seedLeadWithDrafts(db, 'shift');
+    const service = new CampaignService({ db });
+    const campaign = service.createCampaign({
+      presetId: preset.id,
+      name: 'Shift campaign',
+      leadIds: [leadId],
+      startAt: '2026-05-04T16:00:00.000Z',
+    });
+
+    service.pauseCampaign(campaign.id, { at: '2026-05-04T17:00:00.000Z' });
+    assert.strictEqual(service.resumeCampaign(campaign.id, { at: '2026-05-09T18:00:00.000Z' }), true);
+
+    const sends = db.prepare('SELECT touch_number, scheduled_for FROM email_sends ORDER BY touch_number').all();
+    assert.deepStrictEqual(sends.map((send) => send.scheduled_for), [
+      '2026-05-11T16:00:00.000Z',
+      '2026-05-15T16:00:00.000Z',
+      '2026-05-25T16:00:00.000Z',
+    ]);
+  });
+
+  it('reschedules only remaining touches when touch 1 was already sent', () => {
+    const preset = seedPreset(db);
+    const leadId = seedLeadWithDrafts(db, 'partial');
+    const service = new CampaignService({ db });
+    const campaign = service.createCampaign({
+      presetId: preset.id,
+      name: 'Partial campaign',
+      leadIds: [leadId],
+      startAt: '2026-05-04T16:00:00.000Z',
+    });
+    db.prepare("UPDATE email_sends SET status = 'sent', sent_at = ? WHERE touch_number = 1")
+      .run('2026-05-04T16:00:00.000Z');
+
+    service.pauseCampaign(campaign.id, { at: '2026-05-05T17:00:00.000Z' });
+    service.resumeCampaign(campaign.id, { at: '2026-05-09T18:00:00.000Z' });
+
+    const sends = db.prepare('SELECT touch_number, status, scheduled_for FROM email_sends ORDER BY touch_number').all();
+    assert.strictEqual(sends[0].scheduled_for, '2026-05-04T16:00:00.000Z');
+    assert.deepStrictEqual(sends.slice(1).map((send) => send.scheduled_for), [
+      '2026-05-11T16:00:00.000Z',
+      '2026-05-19T16:00:00.000Z',
+    ]);
+  });
+
   it('cancels future sends for a campaign lead', () => {
     const preset = seedPreset(db);
     const leadId = seedLeadWithDrafts(db, 'cancel');

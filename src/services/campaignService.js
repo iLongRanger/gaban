@@ -1,6 +1,7 @@
-import { scheduleSequence } from './sequenceScheduler.js';
+import { nextSendTime, scheduleSequence } from './sequenceScheduler.js';
 
 const DEFAULT_TOUCH_STYLES = ['curious_neighbor', 'value_lead', 'compliment_question'];
+const TOUCH_OFFSETS = { 1: 0, 2: 4, 3: 10 };
 
 function parseJson(value, fallback) {
   try {
@@ -125,10 +126,70 @@ export class CampaignService {
   }
 
   resumeCampaign(id, { at = new Date().toISOString() } = {}) {
-    const result = this.db.prepare(
-      `UPDATE campaigns SET status = 'active', updated_at = ? WHERE id = ?`
-    ).run(at, id);
-    return result.changes > 0;
+    const resume = this.db.transaction(() => {
+      const campaign = this.db.prepare('SELECT * FROM campaigns WHERE id = ?').get(id);
+      if (!campaign) return false;
+
+      this.db.prepare(
+        `UPDATE campaigns SET status = 'active', updated_at = ? WHERE id = ?`
+      ).run(at, id);
+
+      this.reschedulePendingSends(id, { at });
+      return true;
+    });
+    return resume();
+  }
+
+  reschedulePendingSends(campaignId, { at = new Date().toISOString(), minGapMinutes = 2 } = {}) {
+    const campaign = this.db.prepare('SELECT * FROM campaigns WHERE id = ?').get(campaignId);
+    if (!campaign) throw new Error('campaign not found');
+    const options = campaignScheduleOptions(campaign);
+    const otherScheduledTimes = this.db.prepare(
+      `SELECT es.scheduled_for
+       FROM email_sends es
+       JOIN campaign_leads cl ON cl.id = es.campaign_lead_id
+       WHERE es.status = 'scheduled' AND cl.campaign_id != ?
+       ORDER BY es.scheduled_for`
+    ).all(campaignId).map((row) => row.scheduled_for);
+
+    const campaignLeads = this.db.prepare(
+      `SELECT id FROM campaign_leads WHERE campaign_id = ? ORDER BY id`
+    ).all(campaignId);
+
+    let changed = 0;
+    const existingTimes = [...otherScheduledTimes];
+
+    for (const campaignLead of campaignLeads) {
+      const pending = this.db.prepare(
+        `SELECT id, touch_number
+         FROM email_sends
+         WHERE campaign_lead_id = ? AND status = 'scheduled'
+         ORDER BY touch_number ASC`
+      ).all(campaignLead.id);
+      if (pending.length === 0) continue;
+
+      const firstOffset = TOUCH_OFFSETS[pending[0].touch_number] ?? 0;
+      const touchOffsets = pending.map((send) => (TOUCH_OFFSETS[send.touch_number] ?? firstOffset) - firstOffset);
+      const resumedStart = nextSendTime(at, options);
+      const sequence = scheduleSequence({
+        startAt: resumedStart,
+        existingScheduledTimes: existingTimes,
+        touchOffsets,
+        minGapMinutes,
+        options,
+      });
+
+      for (let i = 0; i < pending.length; i += 1) {
+        const scheduledFor = sequence[i].scheduledFor;
+        this.db.prepare(
+          `UPDATE email_sends SET scheduled_for = ?, error_message = NULL WHERE id = ?`
+        ).run(scheduledFor, pending[i].id);
+        existingTimes.push(scheduledFor);
+        changed += 1;
+      }
+    }
+
+    return changed;
   }
 
   cancelFutureSends(campaignLeadId, { reason = 'cancelled' } = {}) {
