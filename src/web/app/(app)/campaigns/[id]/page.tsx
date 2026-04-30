@@ -15,6 +15,9 @@ function statusClasses(status: string) {
   if (status === 'scheduled') return 'bg-blue-100 text-blue-700';
   if (status === 'failed') return 'bg-red-100 text-red-700';
   if (status === 'cancelled') return 'bg-gray-100 text-gray-600';
+  if (status === 'replied') return 'bg-green-100 text-green-700';
+  if (status === 'bounced') return 'bg-red-100 text-red-700';
+  if (status === 'unsubscribed') return 'bg-amber-100 text-amber-700';
   if (status === 'sending') return 'bg-amber-100 text-amber-700';
   return 'bg-gray-100 text-gray-700';
 }
@@ -60,6 +63,8 @@ export default async function CampaignDetailPage({
   const sentCount = sends.filter((send) => send.status === 'sent').length;
   const scheduledCount = sends.filter((send) => send.status === 'scheduled').length;
   const failedCount = sends.filter((send) => send.status === 'failed').length;
+  const replyCount = leads.filter((lead) => lead.status === 'replied').length;
+  const bounceCount = leads.filter((lead) => lead.status === 'bounced').length;
   const categories = JSON.parse(campaign.categories || '[]').join(', ');
 
   return (
@@ -83,7 +88,7 @@ export default async function CampaignDetailPage({
         </div>
       </div>
 
-      <div className="grid grid-cols-5 gap-3 mb-6">
+      <div className="grid grid-cols-7 gap-3 mb-6">
         <div className="bg-white border border-gray-200 rounded-lg p-3">
           <span className="block text-xs text-gray-400">Leads</span>
           <span className="text-xl font-semibold">{leads.length}</span>
@@ -99,6 +104,14 @@ export default async function CampaignDetailPage({
         <div className="bg-white border border-gray-200 rounded-lg p-3">
           <span className="block text-xs text-gray-400">Failed</span>
           <span className="text-xl font-semibold">{failedCount}</span>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-lg p-3">
+          <span className="block text-xs text-gray-400">Replies</span>
+          <span className="text-xl font-semibold">{replyCount}</span>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-lg p-3">
+          <span className="block text-xs text-gray-400">Bounces</span>
+          <span className="text-xl font-semibold">{bounceCount}</span>
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-3">
           <span className="block text-xs text-gray-400">Daily Cap</span>
@@ -117,6 +130,9 @@ export default async function CampaignDetailPage({
                   <p className="text-xs text-gray-500">{lead.email} · {lead.address || 'No address'}</p>
                 </div>
                 <div className="text-right">
+                  <span className={`inline-block text-xs px-2 py-0.5 rounded mb-2 ${statusClasses(lead.status)}`}>
+                    {lead.status}
+                  </span>
                   <span className="block text-sm font-semibold text-blue-600">{lead.total_score}</span>
                   <span className="block text-xs text-gray-400">{lead.distance_km} km</span>
                 </div>

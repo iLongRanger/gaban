@@ -9,7 +9,9 @@ export default async function CampaignsPage() {
     `SELECT c.*, p.name AS preset_name,
             COUNT(DISTINCT cl.id) AS lead_count,
             SUM(CASE WHEN es.status = 'scheduled' THEN 1 ELSE 0 END) AS scheduled_count,
-            SUM(CASE WHEN es.status = 'sent' THEN 1 ELSE 0 END) AS sent_count
+            SUM(CASE WHEN es.status = 'sent' THEN 1 ELSE 0 END) AS sent_count,
+            COUNT(DISTINCT CASE WHEN cl.status = 'replied' THEN cl.id END) AS reply_count,
+            COUNT(DISTINCT CASE WHEN cl.status = 'bounced' THEN cl.id END) AS bounce_count
      FROM campaigns c
      JOIN presets p ON p.id = c.preset_id
      LEFT JOIN campaign_leads cl ON cl.campaign_id = c.id
@@ -56,12 +58,12 @@ export default async function CampaignsPage() {
               </div>
               <div className="grid grid-cols-4 gap-3 mt-4 text-sm">
                 <div>
-                  <span className="block text-xs text-gray-400">Daily cap</span>
-                  <span className="font-medium">{campaign.daily_cap}</span>
+                  <span className="block text-xs text-gray-400">Replies</span>
+                  <span className="font-medium">{campaign.reply_count || 0}</span>
                 </div>
                 <div>
-                  <span className="block text-xs text-gray-400">Start</span>
-                  <span className="font-medium">{campaign.start_date ? new Date(campaign.start_date).toLocaleString() : '-'}</span>
+                  <span className="block text-xs text-gray-400">Bounces</span>
+                  <span className="font-medium">{campaign.bounce_count || 0}</span>
                 </div>
                 <div>
                   <span className="block text-xs text-gray-400">Window</span>
