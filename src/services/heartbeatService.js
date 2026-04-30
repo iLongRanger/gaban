@@ -29,7 +29,13 @@ export class HeartbeatService {
     ).get();
     const settings = this.db.prepare(
       `SELECT key, value FROM system_settings
-       WHERE key IN ('outreach.last_startup_recovery', 'outreach.last_backup_path', 'outreach.last_backup_at')`
+       WHERE key IN (
+         'outreach.last_startup_recovery',
+         'outreach.last_backup_path',
+         'outreach.last_backup_at',
+         'outreach.last_healthcheck',
+         'outreach.last_send_worker_gap'
+       )`
     ).all().reduce((values, row) => {
       values[row.key] = row.value;
       return values;
@@ -63,6 +69,8 @@ export class HeartbeatService {
       last_startup_recovery: settings['outreach.last_startup_recovery'] || null,
       last_backup_path: settings['outreach.last_backup_path'] || null,
       last_backup_at: settings['outreach.last_backup_at'] || null,
+      last_healthcheck: settings['outreach.last_healthcheck'] || null,
+      last_send_worker_gap: settings['outreach.last_send_worker_gap'] || null,
     };
   }
 }

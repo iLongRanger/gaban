@@ -8,6 +8,9 @@ export async function register() {
     const { BackupService } = await import('../services/backupService.js');
     const Backup = BackupService as any;
     await new Backup({ db }).createDailyBackup();
+    const { HealthCheckService } = await import('../services/healthCheckService.js');
+    const HealthCheck = HealthCheckService as any;
+    await new HealthCheck({ db }).run();
     const { loadSchedulesOnStartup, loadOutreachWorkerOnStartup } = await import('./lib/scheduler');
     loadSchedulesOnStartup();
     loadOutreachWorkerOnStartup();

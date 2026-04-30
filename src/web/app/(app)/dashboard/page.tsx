@@ -9,6 +9,15 @@ function formatDate(value: string | null) {
   return new Date(value).toLocaleString();
 }
 
+function parseJson(value: string | null) {
+  if (!value) return null;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
 export default async function DashboardPage() {
   const db = getDb();
   const Heartbeat = HeartbeatService as any;
@@ -26,6 +35,8 @@ export default async function DashboardPage() {
   ).all() as any[];
 
   const healthOk = heartbeat.gmail_configured && heartbeat.sending_stale === 0;
+  const healthcheck = parseJson(heartbeat.last_healthcheck);
+  const workerGap = parseJson(heartbeat.last_send_worker_gap);
 
   return (
     <div>
@@ -79,6 +90,18 @@ export default async function DashboardPage() {
             <div className="flex justify-between gap-4">
               <span className="text-gray-500">Last backup</span>
               <span className="text-gray-700">{formatDate(heartbeat.last_backup_at)}</span>
+            </div>
+            <div className="flex justify-between gap-4">
+              <span className="text-gray-500">Health check</span>
+              <span className={healthcheck?.ok === false ? 'text-red-700' : 'text-green-700'}>
+                {healthcheck ? `${healthcheck.ok ? 'OK' : 'Fail'} · ${formatDate(healthcheck.checked_at)}` : '-'}
+              </span>
+            </div>
+            <div className="flex justify-between gap-4">
+              <span className="text-gray-500">Last worker gap</span>
+              <span className="text-gray-700">
+                {workerGap ? `${workerGap.gap_minutes} min · ${workerGap.rescheduled_sends} moved` : '-'}
+              </span>
             </div>
             <div className="flex justify-between gap-4">
               <span className="text-gray-500">Last checked</span>

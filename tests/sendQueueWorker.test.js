@@ -111,4 +111,30 @@ describe('SendQueueWorker', () => {
     assert.strictEqual(send.status, 'cancelled');
     assert.strictEqual(send.error_message, 'recipient suppressed');
   });
+
+  it('reschedules overdue sends after a long worker gap', async () => {
+    seedCampaign(db, { startAt: '2026-05-01T16:00:00.000Z' });
+    db.prepare(
+      `INSERT INTO system_settings (key, value, updated_at)
+       VALUES ('outreach.last_send_worker_tick', ?, ?)`
+    ).run('2026-05-01T16:00:00.000Z', '2026-05-01T16:00:00.000Z');
+    const worker = new SendQueueWorker({
+      db,
+      env: ENV,
+      mailer: {
+        send: async () => {
+          throw new Error('should not send overdue queue immediately');
+        },
+      },
+    });
+
+    const result = await worker.tick({ now: new Date('2026-05-05T01:30:00.000Z'), limit: 1 });
+
+    assert.deepStrictEqual(result, []);
+    const send = db.prepare('SELECT scheduled_for, error_message FROM email_sends WHERE id = 1').get();
+    assert.strictEqual(send.scheduled_for, '2026-05-05T16:00:00.000Z');
+    assert.match(send.error_message, /missed send window/);
+    const gap = db.prepare("SELECT value FROM system_settings WHERE key = 'outreach.last_send_worker_gap'").get();
+    assert.ok(gap.value.includes('rescheduled_sends'));
+  });
 });

@@ -4,6 +4,7 @@ import { getDb } from './db.js';
 import { startRun, getActiveRunId } from './pipelineRunner';
 import { SendQueueWorker } from '../../services/sendQueueWorker.js';
 import { EmailResponseMonitor } from '../../services/emailResponseMonitor.js';
+import { HealthCheckService } from '../../services/healthCheckService.js';
 import { createGmailClientFromEnv, GmailService } from '../../services/gmailService.js';
 
 const jobs = new Map<number, ScheduledTask>();
@@ -11,6 +12,8 @@ let outreachWorkerJob: ScheduledTask | null = null;
 let outreachWorkerRunning = false;
 let responseMonitorJob: ScheduledTask | null = null;
 let responseMonitorRunning = false;
+let healthCheckJob: ScheduledTask | null = null;
+let healthCheckRunning = false;
 
 export function registerSchedule(scheduleId: number, cronExpr: string, presetId: number) {
   unregisterSchedule(scheduleId);
@@ -92,6 +95,8 @@ export function loadOutreachWorkerOnStartup() {
     senderEmail: process.env.GMAIL_SENDER_EMAIL!,
     logger: console,
   });
+  const HealthCheck = HealthCheckService as any;
+  const healthCheck = new HealthCheck({ db, logger: console });
 
   outreachWorkerJob = cron.schedule('* * * * *', async () => {
     if (outreachWorkerRunning) return;
@@ -113,7 +118,17 @@ export function loadOutreachWorkerOnStartup() {
     }
   }, { timezone: 'America/Vancouver' });
 
-  console.log('Loaded outreach send worker and response monitor');
+  healthCheckJob = cron.schedule('*/10 * * * *', async () => {
+    if (healthCheckRunning) return;
+    healthCheckRunning = true;
+    try {
+      await healthCheck.run({ now: new Date() });
+    } finally {
+      healthCheckRunning = false;
+    }
+  }, { timezone: 'America/Vancouver' });
+
+  console.log('Loaded outreach send worker, response monitor, and health check');
 }
 
 export function stopAllSchedules() {
@@ -127,4 +142,7 @@ export function stopAllSchedules() {
   responseMonitorJob?.stop();
   responseMonitorJob = null;
   responseMonitorRunning = false;
+  healthCheckJob?.stop();
+  healthCheckJob = null;
+  healthCheckRunning = false;
 }

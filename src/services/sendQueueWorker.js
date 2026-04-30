@@ -1,6 +1,7 @@
 import { buildOutreachEmail } from './emailTemplateService.js';
 import { SuppressionService } from './suppressionService.js';
 import { nextSendTime } from './sequenceScheduler.js';
+import { StartupRecovery } from './startupRecovery.js';
 import { WarmupCapService } from './warmupCapService.js';
 
 function requireConfig(env) {
@@ -24,6 +25,19 @@ function campaignOptions(campaign) {
     sendWindowEnd: campaign.send_window_end,
     sendDays: campaign.send_days.split(',').map((day) => day.trim()),
   };
+}
+
+function readSetting(db, key) {
+  const row = db.prepare('SELECT value FROM system_settings WHERE key = ?').get(key);
+  return row?.value;
+}
+
+function writeSetting(db, key, value, at) {
+  db.prepare(
+    `INSERT INTO system_settings (key, value, updated_at)
+     VALUES (?, ?, ?)
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`
+  ).run(key, String(value), at.toISOString());
 }
 
 export class SendQueueWorker {
@@ -135,7 +149,33 @@ export class SendQueueWorker {
     }
   }
 
+  recoverAfterLongGap({ now, maxGapMinutes = 120 } = {}) {
+    const previous = readSetting(this.db, 'outreach.last_send_worker_tick');
+    writeSetting(this.db, 'outreach.last_send_worker_tick', now.toISOString(), now);
+    if (!previous) return null;
+
+    const gapMs = now.getTime() - new Date(previous).getTime();
+    if (!Number.isFinite(gapMs) || gapMs <= maxGapMinutes * 60 * 1000) return null;
+
+    const recovery = new StartupRecovery({ db: this.db, logger: this.logger }).rescheduleMissedSends({
+      now,
+      graceMinutes: maxGapMinutes,
+    });
+    this.db.prepare(
+      `INSERT INTO system_settings (key, value, updated_at)
+       VALUES (?, ?, ?)
+       ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`
+    ).run('outreach.last_send_worker_gap', JSON.stringify({
+      previous_tick_at: previous,
+      current_tick_at: now.toISOString(),
+      gap_minutes: Math.round(gapMs / 60000),
+      rescheduled_sends: recovery,
+    }), now.toISOString());
+    return recovery;
+  }
+
   async tick({ now = new Date(), limit = 1 } = {}) {
+    this.recoverAfterLongGap({ now });
     const sends = this.dueSends({ now, limit });
     const results = [];
     for (const send of sends) {

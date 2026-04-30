@@ -6,6 +6,7 @@ data/seen_leads.json
 data/gaban.sqlite
 data/gaban.sqlite-wal
 data/gaban.sqlite-shm
+data/backups/
 logs/
 src/web/.next/
 src/web/tsconfig.tsbuildinfo
