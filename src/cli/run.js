@@ -71,6 +71,12 @@ export function validateRequiredEnv(env = process.env) {
   }
 }
 
+export function didAllScoringFail(scoredLeads) {
+  return scoredLeads.length > 0 && scoredLeads.every((lead) =>
+    lead.total_score === 0 && String(lead.reasoning || '').startsWith('Scoring failed:')
+  );
+}
+
 async function run() {
   dotenv.config();
   let settings = await loadSettings();
@@ -139,6 +145,10 @@ async function run() {
     logger
   });
   const scoredLeads = await scoring.scoreLeads(passed, officeLocation);
+  if (didAllScoringFail(scoredLeads)) {
+    throw new Error('All scoring attempts failed. Check OPENAI_API_KEY billing/quota before rerunning.');
+  }
+
   const topLeads = scoring.selectTopN(scoredLeads, settings.scoring.top_n);
   logger.info(`Scored ${scoredLeads.length} leads. Selected top ${topLeads.length}.`);
 

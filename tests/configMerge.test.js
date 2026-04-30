@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { mergeConfig, validateRequiredEnv } from '../src/cli/run.js';
+import { didAllScoringFail, mergeConfig, validateRequiredEnv } from '../src/cli/run.js';
 
 describe('mergeConfig', () => {
   const base = {
@@ -52,5 +52,21 @@ describe('validateRequiredEnv', () => {
       OUTSCRAPER_API_KEY: 'outscraper-key',
       OPENAI_API_KEY: 'openai-key'
     }));
+  });
+});
+
+describe('didAllScoringFail', () => {
+  it('returns true when every scored lead is an AI failure fallback', () => {
+    assert.strictEqual(didAllScoringFail([
+      { total_score: 0, reasoning: 'Scoring failed: quota' },
+      { total_score: 0, reasoning: 'Scoring failed: auth' }
+    ]), true);
+  });
+
+  it('returns false when at least one scored lead succeeded', () => {
+    assert.strictEqual(didAllScoringFail([
+      { total_score: 0, reasoning: 'Scoring failed: quota' },
+      { total_score: 72, reasoning: 'Good fit' }
+    ]), false);
   });
 });
