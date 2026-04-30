@@ -44,7 +44,7 @@ const SAMPLE_LEAD = {
 
 test('draftOutreach returns 3 styles with email and DM for each', async () => {
   const client = createMockClient(DRAFT_RESPONSE);
-  const service = new DraftingService({ apiKey: 'test', model: 'claude-haiku-4-5-20251001', client });
+  const service = new DraftingService({ apiKey: 'test', model: 'gpt-5-mini', client });
 
   const drafts = await service.draftOutreach(SAMPLE_LEAD);
 
@@ -60,7 +60,7 @@ test('draftOutreach handles API error gracefully', async () => {
   const client = {
     messages: { create: async () => { throw new Error('API down'); } }
   };
-  const service = new DraftingService({ apiKey: 'test', model: 'claude-haiku-4-5-20251001', client });
+  const service = new DraftingService({ apiKey: 'test', model: 'gpt-5-mini', client });
 
   const drafts = await service.draftOutreach(SAMPLE_LEAD);
 
@@ -69,7 +69,7 @@ test('draftOutreach handles API error gracefully', async () => {
 
 test('draftAllLeads returns drafts for each lead', async () => {
   const client = createMockClient(DRAFT_RESPONSE);
-  const service = new DraftingService({ apiKey: 'test', model: 'claude-haiku-4-5-20251001', client });
+  const service = new DraftingService({ apiKey: 'test', model: 'gpt-5-mini', client });
 
   const results = await service.draftAllLeads([SAMPLE_LEAD, SAMPLE_LEAD]);
 

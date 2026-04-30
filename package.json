@@ -15,7 +15,6 @@
     "seed": "node src/web/lib/seed.js"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.78.0",
     "better-sqlite3": "^12.6.2",
     "dotenv": "^16.3.0",
     "googleapis": "^171.4.0",

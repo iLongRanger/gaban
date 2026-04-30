@@ -10,11 +10,11 @@
     "require_contact": true
   },
   "scoring": {
-    "model": "claude-haiku-4-5-20251001",
+    "model": "gpt-5-mini",
     "top_n": 4
   },
   "drafting": {
-    "model": "claude-haiku-4-5-20251001"
+    "model": "gpt-5-mini"
   },
   "office_location": {
     "lat": 49.2026,

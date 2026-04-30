@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import ScoringService from '../src/services/scoringService.js';
 
-function createMockAnthropicClient(responseText) {
+function createMockClient(responseText) {
   return {
     messages: {
       create: async () => ({
@@ -45,8 +45,8 @@ const SCORE_RESPONSE = JSON.stringify({
 });
 
 test('scoreLeads returns scored leads sorted by total_score descending', async () => {
-  const client = createMockAnthropicClient(SCORE_RESPONSE);
-  const service = new ScoringService({ apiKey: 'test', model: 'claude-haiku-4-5-20251001', client });
+  const client = createMockClient(SCORE_RESPONSE);
+  const service = new ScoringService({ apiKey: 'test', model: 'gpt-5-mini', client });
 
   const office = { lat: 49.2026, lng: -122.9106 };
   const results = await service.scoreLeads([SAMPLE_LEAD], office);
@@ -58,8 +58,8 @@ test('scoreLeads returns scored leads sorted by total_score descending', async (
 });
 
 test('scoreLeads handles JSON parse errors gracefully', async () => {
-  const client = createMockAnthropicClient('not valid json');
-  const service = new ScoringService({ apiKey: 'test', model: 'claude-haiku-4-5-20251001', client });
+  const client = createMockClient('not valid json');
+  const service = new ScoringService({ apiKey: 'test', model: 'gpt-5-mini', client });
 
   const results = await service.scoreLeads([SAMPLE_LEAD], { lat: 49.2, lng: -122.9 });
 
@@ -69,8 +69,8 @@ test('scoreLeads handles JSON parse errors gracefully', async () => {
 });
 
 test('selectTopN returns top N leads', async () => {
-  const client = createMockAnthropicClient(SCORE_RESPONSE);
-  const service = new ScoringService({ apiKey: 'test', model: 'claude-haiku-4-5-20251001', client });
+  const client = createMockClient(SCORE_RESPONSE);
+  const service = new ScoringService({ apiKey: 'test', model: 'gpt-5-mini', client });
 
   const leads = [
     { ...SAMPLE_LEAD, place_id: 'a', total_score: 90 },

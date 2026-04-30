@@ -63,7 +63,7 @@ async function createSheetsAuth() {
 }
 
 export function validateRequiredEnv(env = process.env) {
-  const missing = ['OUTSCRAPER_API_KEY', 'ANTHROPIC_API_KEY']
+  const missing = ['OUTSCRAPER_API_KEY', 'OPENAI_API_KEY']
     .filter((key) => !env[key] || env[key].includes('your_'));
 
   if (missing.length > 0) {
@@ -134,7 +134,7 @@ async function run() {
 
   // Phase 3: Scoring
   const scoring = new ScoringService({
-    apiKey: process.env.ANTHROPIC_API_KEY,
+    apiKey: process.env.OPENAI_API_KEY,
     model: settings.scoring.model,
     logger
   });
@@ -144,7 +144,7 @@ async function run() {
 
   // Phase 4: Drafting
   const drafting = new DraftingService({
-    apiKey: process.env.ANTHROPIC_API_KEY,
+    apiKey: process.env.OPENAI_API_KEY,
     model: settings.drafting.model,
     logger
   });

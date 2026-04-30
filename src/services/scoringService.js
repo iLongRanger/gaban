@@ -1,11 +1,11 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { calculateDistance } from '../utils/geo.js';
+import OpenAiJsonClient, { createJsonCompletion } from './openAiJsonClient.js';
 
 export default class ScoringService {
   constructor({ apiKey, model, logger, client } = {}) {
-    this.model = model || 'claude-haiku-4-5-20251001';
+    this.model = model || 'gpt-5-mini';
     this.logger = logger;
-    this.client = client || new Anthropic({ apiKey });
+    this.client = client || new OpenAiJsonClient({ apiKey });
   }
 
   async scoreLeads(leads, officeLocation) {
@@ -25,13 +25,11 @@ export default class ScoringService {
     const prompt = this.buildScoringPrompt(lead, distanceKm);
 
     try {
-      const response = await this.client.messages.create({
+      const text = await createJsonCompletion(this.client, {
         model: this.model,
-        max_tokens: 512,
-        messages: [{ role: 'user', content: prompt }]
+        maxTokens: 512,
+        prompt
       });
-
-      const text = response.content[0].text;
       const parsed = JSON.parse(text);
 
       return {

@@ -74,7 +74,7 @@ test('full pipeline: discover → filter → score → draft → export', async 
 
   // Step 3: Scoring (mocked)
   const scoringClient = { messages: { create: async () => ({ content: [{ type: 'text', text: MOCK_SCORE_RESPONSE }] }) } };
-  const scoring = new ScoringService({ apiKey: 'test', model: 'claude-haiku-4-5-20251001', client: scoringClient });
+  const scoring = new ScoringService({ apiKey: 'test', model: 'gpt-5-mini', client: scoringClient });
   const scored = await scoring.scoreLeads(passed, office);
   const topLeads = scoring.selectTopN(scored, 4);
 
@@ -83,7 +83,7 @@ test('full pipeline: discover → filter → score → draft → export', async 
 
   // Step 4: Drafting (mocked)
   const draftingClient = { messages: { create: async () => ({ content: [{ type: 'text', text: MOCK_DRAFT_RESPONSE }] }) } };
-  const drafting = new DraftingService({ apiKey: 'test', model: 'claude-haiku-4-5-20251001', client: draftingClient });
+  const drafting = new DraftingService({ apiKey: 'test', model: 'gpt-5-mini', client: draftingClient });
   const drafts = await drafting.draftAllLeads(topLeads);
 
   assert.equal(drafts.length, 1);

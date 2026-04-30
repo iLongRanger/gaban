@@ -1,10 +1,10 @@
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAiJsonClient, { createJsonCompletion } from './openAiJsonClient.js';
 
 export default class DraftingService {
   constructor({ apiKey, model, logger, client } = {}) {
-    this.model = model || 'claude-haiku-4-5-20251001';
+    this.model = model || 'gpt-5-mini';
     this.logger = logger;
-    this.client = client || new Anthropic({ apiKey });
+    this.client = client || new OpenAiJsonClient({ apiKey });
   }
 
   async draftAllLeads(leads) {
@@ -20,13 +20,11 @@ export default class DraftingService {
     const prompt = this.buildDraftingPrompt(lead);
 
     try {
-      const response = await this.client.messages.create({
+      const text = await createJsonCompletion(this.client, {
         model: this.model,
-        max_tokens: 1024,
-        messages: [{ role: 'user', content: prompt }]
+        maxTokens: 1024,
+        prompt
       });
-
-      const text = response.content[0].text;
       return JSON.parse(text);
     } catch (error) {
       this.logger?.warn(`Drafting failed for ${lead.business_name}: ${error.message}`);
