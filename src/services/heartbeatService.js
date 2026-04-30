@@ -27,6 +27,13 @@ export class HeartbeatService {
        ORDER BY scheduled_for ASC
        LIMIT 1`
     ).get();
+    const settings = this.db.prepare(
+      `SELECT key, value FROM system_settings
+       WHERE key IN ('outreach.last_startup_recovery', 'outreach.last_backup_path', 'outreach.last_backup_at')`
+    ).all().reduce((values, row) => {
+      values[row.key] = row.value;
+      return values;
+    }, {});
 
     return {
       checked_at: now.toISOString(),
@@ -53,6 +60,9 @@ export class HeartbeatService {
            AND detected_at >= ?`
       ).get(`${day}T00:00:00.000Z`).count,
       next_send_at: nextSend?.scheduled_for || null,
+      last_startup_recovery: settings['outreach.last_startup_recovery'] || null,
+      last_backup_path: settings['outreach.last_backup_path'] || null,
+      last_backup_at: settings['outreach.last_backup_at'] || null,
     };
   }
 }

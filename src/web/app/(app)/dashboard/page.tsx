@@ -77,6 +77,10 @@ export default async function DashboardPage() {
               <span className="text-gray-700">{formatDate(heartbeat.next_send_at)}</span>
             </div>
             <div className="flex justify-between gap-4">
+              <span className="text-gray-500">Last backup</span>
+              <span className="text-gray-700">{formatDate(heartbeat.last_backup_at)}</span>
+            </div>
+            <div className="flex justify-between gap-4">
               <span className="text-gray-500">Last checked</span>
               <span className="text-gray-700">{formatDate(heartbeat.checked_at)}</span>
             </div>
