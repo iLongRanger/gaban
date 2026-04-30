@@ -56,7 +56,26 @@ export class SuppressionService {
     const now = new Date().toISOString();
     this.db.prepare(
       `INSERT OR IGNORE INTO suppression_list (email_hash, domain, reason, source, added_at)
-       VALUES (NULL, ?, ?, ?, ?)`
+      VALUES (NULL, ?, ?, ?, ?)`
     ).run(domain.toLowerCase().trim(), reason, source, now);
+  }
+
+  list({ limit = 100 } = {}) {
+    return this.db.prepare(
+      `SELECT id,
+              CASE WHEN email_hash IS NULL THEN 'domain' ELSE 'email' END AS kind,
+              email_hash,
+              domain,
+              reason,
+              source,
+              added_at
+       FROM suppression_list
+       ORDER BY added_at DESC, id DESC
+       LIMIT ?`
+    ).all(limit);
+  }
+
+  remove(id) {
+    return this.db.prepare('DELETE FROM suppression_list WHERE id = ?').run(id).changes > 0;
   }
 }

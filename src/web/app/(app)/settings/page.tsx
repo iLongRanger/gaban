@@ -27,6 +27,16 @@ interface OutreachSettings {
   warmup_ladder: string;
 }
 
+interface Suppression {
+  id: number;
+  kind: string;
+  email_hash: string | null;
+  domain: string;
+  reason: string;
+  source: string;
+  added_at: string;
+}
+
 const ALL_CATEGORIES = [
   'restaurants', 'offices', 'clinics', 'gyms',
   'schools', 'retail stores', 'community centers', 'industrial facilities'
@@ -58,10 +68,14 @@ export default function SettingsPage() {
     warmup_start_date: '',
     warmup_ladder: '5,10,15,20',
   });
+  const [suppressions, setSuppressions] = useState<Suppression[]>([]);
+  const [suppressionForm, setSuppressionForm] = useState({ kind: 'email', value: '', reason: 'manual' });
   const [saving, setSaving] = useState(false);
   const [savingOutreach, setSavingOutreach] = useState(false);
+  const [savingSuppression, setSavingSuppression] = useState(false);
   const [error, setError] = useState('');
   const [outreachMessage, setOutreachMessage] = useState('');
+  const [suppressionMessage, setSuppressionMessage] = useState('');
 
   const fetchPresets = useCallback(async () => {
     const res = await fetch('/api/presets');
@@ -85,11 +99,17 @@ export default function SettingsPage() {
     }
   }, []);
 
+  const fetchSuppressions = useCallback(async () => {
+    const res = await fetch('/api/suppressions');
+    if (res.ok) setSuppressions(await res.json());
+  }, []);
+
   useEffect(() => {
     fetchPresets();
     fetchSchedules();
     fetchOutreachSettings();
-  }, [fetchPresets, fetchSchedules, fetchOutreachSettings]);
+    fetchSuppressions();
+  }, [fetchPresets, fetchSchedules, fetchOutreachSettings, fetchSuppressions]);
 
   function selectPreset(preset: Preset) {
     setSelectedId(preset.id);
@@ -203,6 +223,32 @@ export default function SettingsPage() {
     });
     setOutreachMessage('Outreach settings saved.');
     setSavingOutreach(false);
+  }
+
+  async function handleAddSuppression() {
+    setSavingSuppression(true);
+    setSuppressionMessage('');
+    const res = await fetch('/api/suppressions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(suppressionForm),
+    });
+    const data = await res.json();
+    setSavingSuppression(false);
+    if (!res.ok) {
+      setSuppressionMessage(data.error || 'Failed to add suppression');
+      return;
+    }
+    setSuppressions(data);
+    setSuppressionForm((form) => ({ ...form, value: '' }));
+    setSuppressionMessage('Suppression added.');
+  }
+
+  async function handleRemoveSuppression(id: number) {
+    const res = await fetch(`/api/suppressions/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      setSuppressions((rows) => rows.filter((row) => row.id !== id));
+    }
   }
 
   function toggleCategory(cat: string) {
@@ -394,6 +440,54 @@ export default function SettingsPage() {
             >
               {savingOutreach ? 'Saving...' : 'Save Outreach Settings'}
             </button>
+          </div>
+        </section>
+
+        <section className="border-t pt-6">
+          <h2 className="text-lg font-semibold mb-1">Suppression List</h2>
+          <p className="text-sm text-gray-500 mb-4">Block specific emails or whole domains from future campaign sends.</p>
+          {suppressionMessage && (
+            <p className={`text-sm mb-3 ${suppressionMessage.includes('Failed') || suppressionMessage.includes('invalid') ? 'text-red-600' : 'text-green-700'}`}>
+              {suppressionMessage}
+            </p>
+          )}
+          <div className="grid grid-cols-4 gap-2 mb-4">
+            <select
+              value={suppressionForm.kind}
+              onChange={e => setSuppressionForm(f => ({ ...f, kind: e.target.value }))}
+              className="px-3 py-2 border border-gray-300 rounded text-sm"
+            >
+              <option value="email">Email</option>
+              <option value="domain">Domain</option>
+            </select>
+            <input
+              type="text"
+              value={suppressionForm.value}
+              onChange={e => setSuppressionForm(f => ({ ...f, value: e.target.value }))}
+              className="col-span-2 px-3 py-2 border border-gray-300 rounded text-sm"
+              placeholder={suppressionForm.kind === 'domain' ? 'example.com' : 'name@example.com'}
+            />
+            <button
+              onClick={handleAddSuppression}
+              disabled={savingSuppression || !suppressionForm.value}
+              className="px-3 py-2 bg-gray-900 text-white rounded text-sm hover:bg-gray-800 disabled:opacity-50"
+            >
+              {savingSuppression ? 'Adding...' : 'Add'}
+            </button>
+          </div>
+          <div className="space-y-2">
+            {suppressions.map((row) => (
+              <div key={row.id} className="flex items-center justify-between gap-3 border border-gray-100 rounded p-3 text-sm bg-white">
+                <div>
+                  <span className="font-medium">{row.kind === 'domain' ? row.domain : `${row.domain} email`}</span>
+                  <span className="text-gray-400 ml-2">{row.reason} · {row.source}</span>
+                </div>
+                <button onClick={() => handleRemoveSuppression(row.id)} className="text-red-600 hover:text-red-700 text-xs">
+                  Remove
+                </button>
+              </div>
+            ))}
+            {suppressions.length === 0 ? <p className="text-sm text-gray-400">No suppressions yet.</p> : null}
           </div>
         </section>
       </div>

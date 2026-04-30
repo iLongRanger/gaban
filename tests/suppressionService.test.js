@@ -49,4 +49,16 @@ describe('SuppressionService', () => {
     assert.throws(() => svc.add({ email: 'a@b.com', source: 'x' }), /reason/i);
     assert.throws(() => svc.add({ email: 'a@b.com', reason: 'x' }), /source/i);
   });
+
+  it('lists and removes suppressions', () => {
+    svc.add({ email: 'a@b.com', reason: 'manual', source: 'operator' });
+    svc.addDomain({ domain: 'blocked.com', reason: 'manual', source: 'operator' });
+
+    const rows = svc.list();
+    assert.strictEqual(rows.length, 2);
+    assert.deepStrictEqual(rows.map((row) => row.kind).sort(), ['domain', 'email']);
+
+    assert.strictEqual(svc.remove(rows[0].id), true);
+    assert.strictEqual(svc.list().length, 1);
+  });
 });
