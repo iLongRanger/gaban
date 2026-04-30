@@ -21,6 +21,12 @@ interface Schedule {
   enabled: number;
 }
 
+interface OutreachSettings {
+  daily_cap: string;
+  warmup_start_date: string;
+  warmup_ladder: string;
+}
+
 const ALL_CATEGORIES = [
   'restaurants', 'offices', 'clinics', 'gyms',
   'schools', 'retail stores', 'community centers', 'industrial facilities'
@@ -47,8 +53,15 @@ export default function SettingsPage() {
     categories: [] as string[], top_n: 4, is_default: false,
   });
   const [scheduleForm, setScheduleForm] = useState({ day: 1, hour: 9, minute: 0, enabled: false });
+  const [outreachSettings, setOutreachSettings] = useState<OutreachSettings>({
+    daily_cap: '',
+    warmup_start_date: '',
+    warmup_ladder: '5,10,15,20',
+  });
   const [saving, setSaving] = useState(false);
+  const [savingOutreach, setSavingOutreach] = useState(false);
   const [error, setError] = useState('');
+  const [outreachMessage, setOutreachMessage] = useState('');
 
   const fetchPresets = useCallback(async () => {
     const res = await fetch('/api/presets');
@@ -60,7 +73,23 @@ export default function SettingsPage() {
     if (res.ok) setSchedules(await res.json());
   }, []);
 
-  useEffect(() => { fetchPresets(); fetchSchedules(); }, [fetchPresets, fetchSchedules]);
+  const fetchOutreachSettings = useCallback(async () => {
+    const res = await fetch('/api/settings/outreach');
+    if (res.ok) {
+      const data = await res.json();
+      setOutreachSettings({
+        daily_cap: data.daily_cap || '',
+        warmup_start_date: data.warmup_start_date || '',
+        warmup_ladder: data.warmup_ladder || '5,10,15,20',
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPresets();
+    fetchSchedules();
+    fetchOutreachSettings();
+  }, [fetchPresets, fetchSchedules, fetchOutreachSettings]);
 
   function selectPreset(preset: Preset) {
     setSelectedId(preset.id);
@@ -151,6 +180,31 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleSaveOutreachSettings() {
+    setSavingOutreach(true);
+    setOutreachMessage('');
+
+    const res = await fetch('/api/settings/outreach', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(outreachSettings),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setOutreachMessage(data.error || 'Failed to save outreach settings');
+      setSavingOutreach(false);
+      return;
+    }
+
+    setOutreachSettings({
+      daily_cap: data.daily_cap || '',
+      warmup_start_date: data.warmup_start_date || '',
+      warmup_ladder: data.warmup_ladder || '5,10,15,20',
+    });
+    setOutreachMessage('Outreach settings saved.');
+    setSavingOutreach(false);
+  }
+
   function toggleCategory(cat: string) {
     setForm(f => ({
       ...f,
@@ -194,10 +248,11 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <div className="flex-1 max-w-xl">
-        <h2 className="text-lg font-semibold mb-4">{selectedId ? 'Edit Preset' : 'New Preset'}</h2>
-        {error && <p className="text-red-600 text-sm mb-3">{error}</p>}
-        <div className="space-y-4">
+      <div className="flex-1 max-w-xl space-y-6">
+        <section>
+          <h2 className="text-lg font-semibold mb-4">{selectedId ? 'Edit Preset' : 'New Preset'}</h2>
+          {error && <p className="text-red-600 text-sm mb-3">{error}</p>}
+          <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
             <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
@@ -277,18 +332,70 @@ export default function SettingsPage() {
             )}
           </div>
 
-          <div className="flex gap-3 pt-2">
-            <button onClick={handleSave} disabled={saving || !form.name || form.categories.length === 0}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
-              {saving ? 'Saving...' : 'Save'}
-            </button>
-            {selectedId && (
-              <button onClick={handleDelete} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
-                Delete
+            <div className="flex gap-3 pt-2">
+              <button onClick={handleSave} disabled={saving || !form.name || form.categories.length === 0}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
+                {saving ? 'Saving...' : 'Save'}
               </button>
-            )}
+              {selectedId && (
+                <button onClick={handleDelete} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+                  Delete
+                </button>
+              )}
+            </div>
           </div>
-        </div>
+        </section>
+
+        <section className="border-t pt-6">
+          <h2 className="text-lg font-semibold mb-1">Outreach Safety</h2>
+          <p className="text-sm text-gray-500 mb-4">Controls the daily send limit used by active campaigns.</p>
+          {outreachMessage && (
+            <p className={`text-sm mb-3 ${outreachMessage.includes('Failed') || outreachMessage.includes('must') ? 'text-red-600' : 'text-green-700'}`}>
+              {outreachMessage}
+            </p>
+          )}
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Global Daily Cap</label>
+              <input
+                type="number"
+                min="1"
+                value={outreachSettings.daily_cap}
+                onChange={e => setOutreachSettings(s => ({ ...s, daily_cap: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:border-blue-500 focus:outline-none"
+                placeholder="Leave blank to use campaign caps"
+              />
+              <p className="text-xs text-gray-500 mt-1">When set, this overrides each campaign's daily cap.</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Warm-Up Start Date</label>
+              <input
+                type="date"
+                value={outreachSettings.warmup_start_date}
+                onChange={e => setOutreachSettings(s => ({ ...s, warmup_start_date: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:border-blue-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Warm-Up Ladder</label>
+              <input
+                type="text"
+                value={outreachSettings.warmup_ladder}
+                onChange={e => setOutreachSettings(s => ({ ...s, warmup_ladder: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:border-blue-500 focus:outline-none"
+                placeholder="5,10,15,20"
+              />
+              <p className="text-xs text-gray-500 mt-1">Comma-separated weekly caps. Used when no global daily cap is set.</p>
+            </div>
+            <button
+              onClick={handleSaveOutreachSettings}
+              disabled={savingOutreach}
+              className="px-4 py-2 bg-gray-900 text-white rounded hover:bg-gray-800 disabled:opacity-50"
+            >
+              {savingOutreach ? 'Saving...' : 'Save Outreach Settings'}
+            </button>
+          </div>
+        </section>
       </div>
     </div>
   );
