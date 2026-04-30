@@ -16,7 +16,7 @@ export default class DiscoveryService {
 
       try {
         const response = await this.client.googleMapsSearch(
-          [query], limit, language, region
+          [query], limit, language, region, 0, false, null, false
         );
 
         const places = response?.[0] || [];

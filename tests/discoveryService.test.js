@@ -59,8 +59,8 @@ test('discoverLeads returns normalized lead objects', async () => {
 test('discoverLeads queries each category separately', async () => {
   const calls = [];
   const client = {
-    googleMapsSearch: async (queries, limit, lang, region) => {
-      calls.push(queries);
+    googleMapsSearch: async (...args) => {
+      calls.push(args);
       return [[]];
     }
   };
@@ -75,8 +75,10 @@ test('discoverLeads queries each category separately', async () => {
   });
 
   assert.equal(calls.length, 2);
-  assert.ok(calls[0][0].includes('restaurants'));
-  assert.ok(calls[1][0].includes('offices'));
+  assert.ok(calls[0][0][0].includes('restaurants'));
+  assert.ok(calls[1][0][0].includes('offices'));
+  assert.equal(calls[0][7], false);
+  assert.equal(calls[1][7], false);
 });
 
 test('discoverLeads handles empty results', async () => {
