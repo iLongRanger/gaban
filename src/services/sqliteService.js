@@ -104,7 +104,13 @@ function valueOrNull(value) {
 }
 
 function normalizeBindValues(values) {
-  return values.map(value => value === undefined ? null : value);
+  return values.map(value => {
+    if (value === undefined) return null;
+    if (value !== null && typeof value === 'object' && !Buffer.isBuffer(value)) {
+      return JSON.stringify(value);
+    }
+    return value;
+  });
 }
 
 function runStatement(statement, label, values) {
