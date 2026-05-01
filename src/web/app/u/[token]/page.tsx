@@ -1,7 +1,6 @@
 import '@/lib/loadEnv.js';
 import { getDb } from '@/lib/db.js';
-import { verifyUnsubscribeToken } from '../../../../services/unsubscribeTokenService.js';
-import { SuppressionService } from '../../../../services/suppressionService.js';
+import { getUnsubscribePreview } from '../../../../services/unsubscribeService.js';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -20,33 +19,10 @@ export default async function UnsubscribePage({ params }: PageProps) {
   let errorMessage: string | null = null;
 
   try {
-    if (!secret) throw new Error('server misconfigured');
-    const payload = verifyUnsubscribeToken(token, secret) as { sendId: number };
-    sendId = payload.sendId;
-
     const db = getDb();
-    const row = db.prepare(
-      'SELECT recipient_email, campaign_lead_id FROM email_sends WHERE id = ?'
-    ).get(sendId) as { recipient_email: string; campaign_lead_id: number } | undefined;
-
-    if (!row) throw new Error('send not found');
-    email = row.recipient_email;
-
-    const suppression = new SuppressionService({ db });
-    suppression.add({ email, reason: 'unsubscribed', source: 'click' });
-
-    const now = new Date().toISOString();
-    db.prepare(
-      `UPDATE campaign_leads SET status = 'unsubscribed', completed_at = ? WHERE id = ?`
-    ).run(now, row.campaign_lead_id);
-
-    db.prepare(
-      `UPDATE email_sends SET status = 'cancelled' WHERE campaign_lead_id = ? AND status = 'scheduled'`
-    ).run(row.campaign_lead_id);
-
-    db.prepare(
-      `INSERT OR IGNORE INTO email_events (send_id, type, detected_at) VALUES (?, 'unsubscribed', ?)`
-    ).run(sendId, now);
+    const preview = getUnsubscribePreview({ db, token, secret });
+    sendId = preview.sendId;
+    email = preview.email;
   } catch (err) {
     errorMessage = err instanceof Error ? err.message : 'Unknown error';
   }
@@ -61,9 +37,26 @@ export default async function UnsubscribePage({ params }: PageProps) {
         </>
       ) : (
         <>
-          <h1>You&apos;ve been unsubscribed.</h1>
-          <p>{operatingName || legalName} will no longer contact <strong>{email}</strong>.</p>
-          <p>If this was a mistake, just reply to any of our earlier emails and we&apos;ll add you back.</p>
+          <h1>Confirm unsubscribe</h1>
+          <p>This will stop future outreach from {operatingName || legalName} to <strong>{email}</strong>.</p>
+          <form action={`/api/unsubscribe/${token}`} method="post">
+            <button
+              type="submit"
+              style={{
+                background: '#111827',
+                border: 0,
+                borderRadius: 6,
+                color: 'white',
+                cursor: 'pointer',
+                fontSize: 16,
+                padding: '10px 16px'
+              }}
+            >
+              Confirm unsubscribe
+            </button>
+          </form>
+          <p style={{ color: '#666', fontSize: 14 }}>If you opened this by mistake, you can close this page. Nothing has been changed yet.</p>
+          <p style={{ color: '#888', fontSize: 13 }}>Reference: {sendId}</p>
         </>
       )}
       <hr style={{ margin: '32px 0', border: 'none', borderTop: '1px solid #eee' }} />
