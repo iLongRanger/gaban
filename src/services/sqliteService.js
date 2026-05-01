@@ -34,10 +34,11 @@ export default class SqliteService {
       for (let i = 0; i < leads.length; i++) {
         const lead = leads[i];
         const draft = drafts[i];
+        const placeId = valueOrNull(lead.place_id) || buildFallbackPlaceId(lead);
 
         insertLead.run(
-          valueOrNull(lead.place_id),
-          valueOrNull(lead.business_name),
+          placeId,
+          valueOrNull(lead.business_name) || 'Unknown business',
           valueOrNull(lead.type),
           valueOrNull(lead.formatted_address),
           valueOrNull(lead.phone),
@@ -70,7 +71,7 @@ export default class SqliteService {
           continue;
         }
 
-        const row = this.db.prepare('SELECT id FROM leads WHERE place_id = ?').get(lead.place_id);
+        const row = this.db.prepare('SELECT id FROM leads WHERE place_id = ?').get(placeId);
         if (!row) continue;
 
         for (const style of ['curious_neighbor', 'value_lead', 'compliment_question']) {
@@ -96,4 +97,24 @@ export default class SqliteService {
 
 function valueOrNull(value) {
   return value === undefined ? null : value;
+}
+
+function buildFallbackPlaceId(lead) {
+  const key = [
+    lead.business_name,
+    lead.formatted_address,
+    lead.phone,
+    lead.website,
+    lead.location?.lat,
+    lead.location?.lng
+  ]
+    .filter(value => value !== undefined && value !== null && value !== '')
+    .map(String)
+    .join('|')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 160);
+
+  return `generated:${key || 'unknown'}`;
 }

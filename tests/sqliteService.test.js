@@ -134,4 +134,26 @@ describe('SqliteService', () => {
     assert.equal(drafts[0].email_subject, '');
     assert.equal(drafts[0].dm, '');
   });
+
+  it('generates a stable fallback id when the provider omits place_id', () => {
+    const missingPlaceIdLead = {
+      ...sampleLead,
+      place_id: undefined,
+      business_name: 'Missing Place Id Cafe',
+      formatted_address: '456 Columbia St, New Westminster, BC',
+      phone: undefined,
+      website: undefined
+    };
+
+    service.exportResults([missingPlaceIdLead], [sampleDrafts], '2026-W11');
+
+    const lead = db.prepare(
+      "SELECT * FROM leads WHERE business_name = 'Missing Place Id Cafe'"
+    ).get();
+    assert.ok(lead);
+    assert.match(lead.place_id, /^generated:/);
+
+    const drafts = db.prepare('SELECT * FROM outreach_drafts WHERE lead_id = ?').all(lead.id);
+    assert.equal(drafts.length, 3);
+  });
 });
