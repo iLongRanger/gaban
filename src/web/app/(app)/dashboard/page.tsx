@@ -58,9 +58,9 @@ export default async function DashboardPage() {
      LIMIT 5`
   ).all() as any[];
 
-  const healthOk = heartbeat.gmail_configured && heartbeat.sending_stale === 0;
   const healthcheck = parseJson(heartbeat.last_healthcheck);
   const workerGap = parseJson(heartbeat.last_send_worker_gap);
+  const healthOk = heartbeat.gmail_configured && heartbeat.sending_stale === 0 && healthcheck?.ok !== false;
 
   return (
     <div className="boot">
