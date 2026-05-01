@@ -344,3 +344,88 @@ h1, h2, h3, h4 {
   color: var(--ink);
 }
 h1 { font-weight: 700; }
+
+/* =========================================================================
+   TAILWIND BRIDGE — retarget legacy utility classes onto Halon tokens
+   so unconverted pages don't render as white cards in dark mode.
+   ========================================================================= */
+
+/* Surfaces */
+.bg-white,
+.bg-gray-50 { background-color: var(--surface) !important; }
+.bg-gray-100 { background-color: var(--elev) !important; }
+.bg-gray-200 { background-color: color-mix(in oklab, var(--elev) 70%, var(--bg)) !important; }
+.bg-gray-700,
+.bg-gray-800,
+.bg-gray-900 { background-color: var(--elev) !important; }
+
+/* Borders */
+.border,
+.border-gray-100,
+.border-gray-200,
+.border-gray-300,
+.border-gray-600,
+.border-gray-700 { border-color: var(--line-2) !important; }
+
+/* Text */
+.text-gray-900,
+.text-white { color: var(--ink) !important; }
+.text-gray-700,
+.text-gray-800 { color: var(--ink-2) !important; }
+.text-gray-500,
+.text-gray-600 { color: var(--mute) !important; }
+.text-gray-400,
+.text-gray-300 { color: var(--faint) !important; }
+
+/* Brand-blue links / accents → Halon accent */
+.text-blue-500,
+.text-blue-600,
+.text-blue-700 { color: var(--accent) !important; }
+.bg-blue-500,
+.bg-blue-600,
+.bg-blue-700 { background-color: var(--accent) !important; color: var(--bg) !important; }
+.border-blue-500,
+.border-blue-600 { border-color: var(--accent) !important; }
+.hover\:bg-blue-700:hover { filter: brightness(1.06); }
+
+/* Status-tinted backgrounds (StatusPill legacy, dashboard health pill) */
+.bg-green-100 { background-color: color-mix(in oklab, var(--accent) 18%, transparent) !important; }
+.text-green-700,
+.text-green-800 { color: var(--accent) !important; }
+.bg-yellow-100 { background-color: color-mix(in oklab, var(--warn) 22%, transparent) !important; }
+.text-yellow-700,
+.text-yellow-800 { color: var(--warn) !important; }
+.bg-red-100 { background-color: color-mix(in oklab, var(--danger) 18%, transparent) !important; }
+.text-red-400,
+.text-red-700,
+.text-red-800 { color: var(--danger) !important; }
+.bg-purple-100 { background-color: color-mix(in oklab, var(--accent) 14%, transparent) !important; }
+.text-purple-700,
+.text-purple-800 { color: var(--accent) !important; }
+
+/* Inputs styled with Tailwind get the field treatment */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+select,
+textarea {
+  background-color: var(--elev);
+  color: var(--ink);
+  border-color: var(--line-2);
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+/* Hover surfaces */
+.hover\:bg-gray-50:hover,
+.hover\:bg-gray-100:hover { background-color: color-mix(in oklab, var(--accent) 6%, var(--surface)) !important; }
+.hover\:bg-gray-800:hover { background-color: var(--elev) !important; }
+
+/* Card-like containers gain the frame look automatically */
+.rounded-lg.border,
+.rounded.border {
+  border-radius: 4px !important;
+  background-image: linear-gradient(color-mix(in oklab, var(--surface) 92%, transparent),
+                                    color-mix(in oklab, var(--surface) 92%, transparent));
+}
