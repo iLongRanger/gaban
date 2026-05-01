@@ -25,7 +25,7 @@ export default class DraftingService {
         maxTokens: 4096,
         prompt
       });
-      return JSON.parse(text);
+      return sanitizeDrafts(JSON.parse(text));
     } catch (error) {
       this.logger?.warn(`Drafting failed for ${lead.business_name}: ${error.message}`);
       return { error: `Drafting failed: ${error.message}` };
@@ -47,6 +47,13 @@ CRITICAL RULES:
 - Be genuine and specific to this business
 - Keep emails under 80 words
 - Keep DMs under 40 words
+- Write like a real local operator, not a marketing assistant
+- Use normal punctuation: commas, periods, question marks, apostrophes, and colons
+- Do NOT use em dashes, double hyphens, tildes, markdown, bullets, emojis, or decorative separators
+- Do NOT overpraise. One specific observation is enough
+- Avoid phrases that sound automated, including "impressive to see", "consistent turnout", "great operations", and "quick question"
+- Use contractions naturally where they fit
+- Make each message sound like one person wrote it directly to one business
 
 BUSINESS:
 - Name: ${lead.business_name}
@@ -68,4 +75,35 @@ STYLE 3 - Compliment + Question: Compliment something specific, then ask about t
 Respond with ONLY this JSON (no markdown):
 {"curious_neighbor": {"email_subject": "...", "email_body": "...", "dm": "..."}, "value_lead": {"email_subject": "...", "email_body": "...", "dm": "..."}, "compliment_question": {"email_subject": "...", "email_body": "...", "dm": "..."}}`;
   }
+}
+
+export function sanitizeDrafts(drafts) {
+  for (const style of ['curious_neighbor', 'value_lead', 'compliment_question']) {
+    if (!drafts?.[style]) continue;
+    drafts[style].email_subject = sanitizeMessageText(drafts[style].email_subject);
+    drafts[style].email_body = sanitizeMessageText(drafts[style].email_body);
+    drafts[style].dm = sanitizeMessageText(drafts[style].dm);
+  }
+  return drafts;
+}
+
+export function sanitizeMessageText(value) {
+  const cleaned = String(value || '')
+    .replace(/[~*_`#>]+/g, '')
+    .replace(/[\u2014\u2013]+/g, '. ')
+    .replace(/\s+-{2,}\s+/g, '. ')
+    .replace(/-{2,}/g, '. ')
+    .replace(/\s+([,.;:?!])/g, '$1')
+    .replace(/([,.;:?!])([A-Za-z])/g, '$1 $2')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s+$/g, '')
+    .trim();
+
+  return capitalizeSentenceStarts(cleaned);
+}
+
+function capitalizeSentenceStarts(value) {
+  return value.replace(/(^|[.!?]\s+)([a-z])/g, (_match, prefix, letter) =>
+    prefix + letter.toUpperCase()
+  );
 }
