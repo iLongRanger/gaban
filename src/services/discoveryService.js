@@ -1,10 +1,11 @@
 import Outscraper from 'outscraper';
 
 export default class DiscoveryService {
-  constructor({ apiKey, logger, client } = {}) {
+  constructor({ apiKey, logger, client, usageRecorder } = {}) {
     this.apiKey = apiKey;
     this.logger = logger;
     this.client = client || new Outscraper(apiKey);
+    this.usageRecorder = usageRecorder;
   }
 
   async discoverLeads({ categories, location, limit, language, region, enrichment = null }) {
@@ -22,6 +23,7 @@ export default class DiscoveryService {
         const places = response?.[0] || [];
         const normalized = places.map(place => this.normalize(place));
         allLeads.push(...normalized);
+        this.recordUsage({ category, query, count: normalized.length, enrichment });
 
         this.logger?.info(`Found ${normalized.length} results for "${category}".`);
       } catch (error) {
@@ -30,6 +32,24 @@ export default class DiscoveryService {
     }
 
     return allLeads;
+  }
+
+  recordUsage({ category, query, count, enrichment }) {
+    const record = this.usageRecorder?.safeRecord?.bind(this.usageRecorder) ||
+      this.usageRecorder?.record?.bind(this.usageRecorder);
+    if (!record) return;
+    record({
+      provider: 'outscraper',
+      service: 'google_maps_scraper',
+      operation: 'google_maps_search',
+      units: count,
+      unitName: 'place',
+      metadata: {
+        category,
+        query,
+        enrichment: enrichment || []
+      }
+    });
   }
 
   normalize(place) {

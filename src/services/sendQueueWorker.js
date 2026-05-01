@@ -2,6 +2,7 @@ import { buildOutreachEmail } from './emailTemplateService.js';
 import { SuppressionService } from './suppressionService.js';
 import { nextSendTime } from './sequenceScheduler.js';
 import { StartupRecovery } from './startupRecovery.js';
+import { UsageService } from './usageService.js';
 import { WarmupCapService } from './warmupCapService.js';
 
 function requireConfig(env) {
@@ -49,6 +50,7 @@ export class SendQueueWorker {
     this.env = env;
     this.capService = capService || new WarmupCapService({ db });
     this.suppressionService = suppressionService || new SuppressionService({ db });
+    this.usage = new UsageService({ db });
     this.logger = logger;
   }
 
@@ -138,6 +140,16 @@ export class SendQueueWorker {
          SET status = 'active', touch_count = MAX(touch_count, ?), last_touch_at = ?
          WHERE id = ?`
       ).run(send.touch_number, sentAt, send.campaign_lead_id);
+      this.usage.safeRecord({
+        provider: 'google',
+        service: 'gmail_api',
+        operation: 'send_email',
+        units: 1,
+        unitName: 'message',
+        estimatedCostUsd: 0,
+        occurredAt: sentAt,
+        metadata: { send_id: send.id }
+      });
       return { id: send.id, status: 'sent' };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

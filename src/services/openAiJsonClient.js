@@ -1,10 +1,11 @@
 export default class OpenAiJsonClient {
-  constructor({ apiKey, fetchImpl = fetch } = {}) {
+  constructor({ apiKey, fetchImpl = fetch, usageRecorder } = {}) {
     this.apiKey = apiKey;
     this.fetch = fetchImpl;
+    this.usageRecorder = usageRecorder;
   }
 
-  async createJson({ model, maxTokens, prompt }) {
+  async createJson({ model, maxTokens, prompt, operation = 'json_completion' }) {
     if (!this.apiKey) {
       throw new Error('OPENAI_API_KEY is required');
     }
@@ -30,6 +31,7 @@ export default class OpenAiJsonClient {
     }
 
     const data = await response.json();
+    recordOpenAiUsage(this.usageRecorder, { data, model, operation });
     const content = data?.choices?.[0]?.message?.content;
     if (!content) {
       const finishReason = data?.choices?.[0]?.finish_reason || 'unknown';
@@ -39,9 +41,9 @@ export default class OpenAiJsonClient {
   }
 }
 
-export async function createJsonCompletion(client, { model, maxTokens, prompt }) {
+export async function createJsonCompletion(client, { model, maxTokens, prompt, operation }) {
   if (client?.createJson) {
-    return client.createJson({ model, maxTokens, prompt });
+    return client.createJson({ model, maxTokens, prompt, operation });
   }
 
   if (client?.chat?.completions?.create) {
@@ -75,4 +77,25 @@ export async function createJsonCompletion(client, { model, maxTokens, prompt })
   }
 
   throw new Error('No supported AI client was provided');
+}
+
+function recordOpenAiUsage(usageRecorder, { data, model, operation }) {
+  if (!usageRecorder?.safeRecord && !usageRecorder?.record) return;
+  const usage = data?.usage || {};
+  const inputTokens = usage.prompt_tokens ?? usage.input_tokens ?? 0;
+  const outputTokens = usage.completion_tokens ?? usage.output_tokens ?? 0;
+  const record = usageRecorder.safeRecord?.bind(usageRecorder) || usageRecorder.record.bind(usageRecorder);
+  record({
+    provider: 'openai',
+    service: 'chat_completions',
+    operation,
+    model,
+    units: 1,
+    unitName: 'request',
+    inputTokens,
+    outputTokens,
+    metadata: {
+      finish_reason: data?.choices?.[0]?.finish_reason || null
+    }
+  });
 }

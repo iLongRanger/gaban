@@ -1,10 +1,10 @@
 import OpenAiJsonClient, { createJsonCompletion } from './openAiJsonClient.js';
 
 export default class DraftingService {
-  constructor({ apiKey, model, logger, client } = {}) {
+  constructor({ apiKey, model, logger, client, usageRecorder } = {}) {
     this.model = model || 'gpt-5-mini';
     this.logger = logger;
-    this.client = client || new OpenAiJsonClient({ apiKey });
+    this.client = client || new OpenAiJsonClient({ apiKey, usageRecorder });
   }
 
   async draftAllLeads(leads) {
@@ -23,7 +23,8 @@ export default class DraftingService {
       const text = await createJsonCompletion(this.client, {
         model: this.model,
         maxTokens: 4096,
-        prompt
+        prompt,
+        operation: 'outreach_drafting'
       });
       return sanitizeDrafts(JSON.parse(text));
     } catch (error) {

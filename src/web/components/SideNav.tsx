@@ -11,7 +11,8 @@ const ITEMS = [
   { href: '/responses',  label: 'RESPONSES', code: '05' },
   { href: '/outcomes',   label: 'OUTCOMES',  code: '06' },
   { href: '/runs',       label: 'RUNS',      code: '07' },
-  { href: '/settings',   label: 'SETTINGS',  code: '08' },
+  { href: '/usage',      label: 'USAGE',     code: '08' },
+  { href: '/settings',   label: 'SETTINGS',  code: '09' },
 ];
 
 export default function SideNav() {

@@ -2,10 +2,10 @@ import { calculateDistance } from '../utils/geo.js';
 import OpenAiJsonClient, { createJsonCompletion } from './openAiJsonClient.js';
 
 export default class ScoringService {
-  constructor({ apiKey, model, logger, client } = {}) {
+  constructor({ apiKey, model, logger, client, usageRecorder } = {}) {
     this.model = model || 'gpt-5-mini';
     this.logger = logger;
-    this.client = client || new OpenAiJsonClient({ apiKey });
+    this.client = client || new OpenAiJsonClient({ apiKey, usageRecorder });
   }
 
   async scoreLeads(leads, officeLocation) {
@@ -28,7 +28,8 @@ export default class ScoringService {
       const text = await createJsonCompletion(this.client, {
         model: this.model,
         maxTokens: 2048,
-        prompt
+        prompt,
+        operation: 'lead_scoring'
       });
       const parsed = JSON.parse(text);
 

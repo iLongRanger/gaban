@@ -14,6 +14,7 @@ import ScoringService from '../services/scoringService.js';
 import DraftingService from '../services/draftingService.js';
 import SheetsService from '../services/sheetsService.js';
 import SqliteService from '../services/sqliteService.js';
+import { UsageService } from '../services/usageService.js';
 import { initDb } from '../web/lib/db.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -109,6 +110,8 @@ async function run() {
   const dataDir = path.resolve(__dirname, '../../data');
   await fs.mkdir(dataDir, { recursive: true });
   const seenLeadsPath = path.resolve(dataDir, 'seen_leads.json');
+  const db = initDb();
+  const usageRecorder = new UsageService({ db });
 
   // Load seen leads
   const seenLeads = await loadSeenLeads(seenLeadsPath);
@@ -121,7 +124,8 @@ async function run() {
 
   const discovery = new DiscoveryService({
     apiKey: process.env.OUTSCRAPER_API_KEY,
-    logger
+    logger,
+    usageRecorder
   });
 
   const rawLeads = await discovery.discoverLeads({
@@ -158,7 +162,8 @@ async function run() {
   const scoring = new ScoringService({
     apiKey: process.env.OPENAI_API_KEY,
     model: settings.scoring.model,
-    logger
+    logger,
+    usageRecorder
   });
   const scoredLeads = await scoring.scoreLeads(passed, officeLocation);
   if (didAllScoringFail(scoredLeads)) {
@@ -173,7 +178,8 @@ async function run() {
   const drafting = new DraftingService({
     apiKey: process.env.OPENAI_API_KEY,
     model: settings.drafting.model,
-    logger
+    logger,
+    usageRecorder
   });
   const drafts = await drafting.draftAllLeads(topLeads);
   logger.info(`Drafted outreach for ${drafts.length} leads.`);
@@ -183,7 +189,6 @@ async function run() {
 
   // Primary: SQLite
   try {
-    const db = initDb();
     const sqliteService = new SqliteService({ db, logger });
     sqliteService.exportResults(topLeads, drafts, weekLabel);
     logger.info('Exported to SQLite.');

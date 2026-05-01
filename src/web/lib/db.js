@@ -179,6 +179,21 @@ CREATE TABLE IF NOT EXISTS system_settings (
   updated_at  TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS api_usage_events (
+  id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+  provider            TEXT NOT NULL,
+  service             TEXT NOT NULL,
+  operation           TEXT NOT NULL,
+  model               TEXT,
+  units               REAL NOT NULL DEFAULT 1,
+  unit_name           TEXT NOT NULL DEFAULT 'request',
+  input_tokens        INTEGER NOT NULL DEFAULT 0,
+  output_tokens       INTEGER NOT NULL DEFAULT 0,
+  estimated_cost_usd  REAL,
+  metadata            TEXT,
+  occurred_at         TEXT NOT NULL
+);
+
 CREATE UNIQUE INDEX IF NOT EXISTS uq_suppression_domain
   ON suppression_list(domain) WHERE email_hash IS NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS uq_email_events_unsub
@@ -187,6 +202,8 @@ CREATE INDEX IF NOT EXISTS idx_email_sends_status_scheduled_for
   ON email_sends(status, scheduled_for);
 CREATE INDEX IF NOT EXISTS idx_campaign_leads_campaign_status
   ON campaign_leads(campaign_id, status);
+CREATE INDEX IF NOT EXISTS idx_api_usage_events_occurred_provider
+  ON api_usage_events(occurred_at, provider);
 `;
 
 export function initDb(dbPath) {
