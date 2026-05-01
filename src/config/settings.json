@@ -18,7 +18,7 @@
   },
   "scoring": {
     "model": "gpt-5-mini",
-    "top_n": 4
+    "top_n": 10
   },
   "drafting": {
     "model": "gpt-5-mini"

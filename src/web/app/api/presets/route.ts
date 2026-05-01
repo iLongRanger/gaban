@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db.js';
 import { ALL_CATEGORIES } from '../../../../config/categories.js';
 
+function normalizeTopN(value: unknown) {
+  const parsed = Number.parseInt(String(value ?? ''), 10);
+  return Number.isFinite(parsed) ? Math.max(parsed, 10) : 10;
+}
+
 export function GET() {
   const db = getDb();
   const presets = db.prepare('SELECT * FROM presets ORDER BY created_at DESC').all();
@@ -36,7 +41,7 @@ export async function POST(request: NextRequest) {
         office_lat ?? 49.2026,
         office_lng ?? -122.9106,
         JSON.stringify(categories),
-        top_n ?? 4,
+        normalizeTopN(top_n),
         is_default ? 1 : 0,
         now, now
       );

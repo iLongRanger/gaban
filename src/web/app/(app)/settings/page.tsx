@@ -60,7 +60,7 @@ export default function SettingsPage() {
   const [form, setForm] = useState({
     name: '', location: 'New Westminster, BC', radius_km: 50,
     office_lat: 49.2026, office_lng: -122.9106,
-    categories: [] as string[], top_n: 4, is_default: false,
+    categories: [] as string[], top_n: 10, is_default: false,
   });
   const [scheduleForm, setScheduleForm] = useState({ day: 1, hour: 9, minute: 0, enabled: false });
   const [outreachSettings, setOutreachSettings] = useState<OutreachSettings>({
@@ -134,7 +134,7 @@ export default function SettingsPage() {
     setForm({
       name: '', location: 'New Westminster, BC', radius_km: 50,
       office_lat: 49.2026, office_lng: -122.9106,
-      categories: [], top_n: 4, is_default: false,
+      categories: [], top_n: 10, is_default: false,
     });
     setScheduleForm({ day: 1, hour: 9, minute: 0, enabled: false });
     setError('');
@@ -343,7 +343,7 @@ export default function SettingsPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Top N Leads: {form.top_n}</label>
-            <input type="number" min="1" max="20" value={form.top_n}
+            <input type="number" min="10" max="20" value={form.top_n}
               onChange={e => setForm(f => ({ ...f, top_n: parseInt(e.target.value) }))}
               className="w-full px-3 py-2 border border-gray-300 rounded focus:border-blue-500 focus:outline-none" />
           </div>

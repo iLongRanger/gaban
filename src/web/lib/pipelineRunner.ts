@@ -45,7 +45,7 @@ export function startRun(presetId: number): { runId: number } | { error: string;
     search: { location: preset.location, radius_km: preset.radius_km },
     office_location: { lat: preset.office_lat, lng: preset.office_lng },
     categories,
-    scoring: { top_n: preset.top_n },
+    scoring: { top_n: Math.max(Number.parseInt(preset.top_n, 10) || 10, 10) },
   };
   const tmpPath = path.join(os.tmpdir(), `gaban-preset-${presetId}.json`);
   fs.writeFileSync(tmpPath, JSON.stringify(config));

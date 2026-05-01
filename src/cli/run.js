@@ -78,6 +78,11 @@ export function didAllScoringFail(scoredLeads) {
   );
 }
 
+export function normalizeTopN(value) {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(parsed, 10) : 10;
+}
+
 async function run() {
   dotenv.config();
   let settings = await loadSettings();
@@ -160,7 +165,8 @@ async function run() {
     throw new Error('All scoring attempts failed. Check OPENAI_API_KEY billing/quota before rerunning.');
   }
 
-  const topLeads = scoring.selectTopN(scoredLeads, settings.scoring.top_n);
+  const topN = normalizeTopN(settings.scoring.top_n);
+  const topLeads = scoring.selectTopN(scoredLeads, topN);
   logger.info(`Scored ${scoredLeads.length} leads. Selected top ${topLeads.length}.`);
 
   // Phase 4: Drafting

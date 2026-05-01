@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS presets (
   office_lat REAL NOT NULL,
   office_lng REAL NOT NULL,
   categories TEXT NOT NULL,
-  top_n INTEGER NOT NULL DEFAULT 4,
+  top_n INTEGER NOT NULL DEFAULT 10,
   is_default INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL

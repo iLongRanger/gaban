@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { didAllScoringFail, mergeConfig, validateRequiredEnv } from '../src/cli/run.js';
+import { didAllScoringFail, mergeConfig, normalizeTopN, validateRequiredEnv } from '../src/cli/run.js';
 
 describe('mergeConfig', () => {
   const base = {
@@ -68,5 +68,14 @@ describe('didAllScoringFail', () => {
       { total_score: 0, reasoning: 'Scoring failed: quota' },
       { total_score: 72, reasoning: 'Good fit' }
     ]), false);
+  });
+});
+
+describe('normalizeTopN', () => {
+  it('enforces a minimum of 10 leads', () => {
+    assert.strictEqual(normalizeTopN(5), 10);
+    assert.strictEqual(normalizeTopN(10), 10);
+    assert.strictEqual(normalizeTopN(12), 12);
+    assert.strictEqual(normalizeTopN(undefined), 10);
   });
 });

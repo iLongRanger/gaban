@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db.js';
 import { ALL_CATEGORIES } from '../../../../../config/categories.js';
 
+function normalizeTopN(value: unknown, fallback: number) {
+  const parsed = Number.parseInt(String(value ?? ''), 10);
+  return Number.isFinite(parsed) ? Math.max(parsed, 10) : Math.max(fallback, 10);
+}
+
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const db = getDb();
@@ -49,7 +54,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       office_lat ?? existing.office_lat,
       office_lng ?? existing.office_lng,
       categories ? JSON.stringify(categories) : existing.categories,
-      top_n ?? existing.top_n,
+      normalizeTopN(top_n, existing.top_n),
       is_default !== undefined ? (is_default ? 1 : 0) : existing.is_default,
       now, id
     );
