@@ -1,3 +1,4 @@
+import '@/lib/loadEnv.js';
 import Link from 'next/link';
 import { getDb } from '@/lib/db.js';
 import { HeartbeatService } from '../../../../services/heartbeatService.js';
