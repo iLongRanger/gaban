@@ -35,7 +35,7 @@ export default async function CampaignDetailPage({
   if (!campaign) notFound();
 
   const leads = db.prepare(
-    `SELECT cl.*, l.business_name, l.email, l.address, l.total_score, l.distance_km
+    `SELECT cl.*, l.id AS lead_id, l.business_name, l.email, l.address, l.total_score, l.distance_km
      FROM campaign_leads cl
      JOIN leads l ON l.id = cl.lead_id
      WHERE cl.campaign_id = ?
@@ -121,7 +121,11 @@ export default async function CampaignDetailPage({
             <div key={lead.id} className="bg-white border border-gray-200 rounded-lg p-4">
               <div className="flex items-start justify-between gap-4 mb-3">
                 <div>
-                  <h2 className="font-semibold text-gray-900">{lead.business_name}</h2>
+                  <h2 className="font-semibold text-gray-900">
+                    <Link href={`/leads/${lead.lead_id}`} className="text-blue-700 hover:underline">
+                      {lead.business_name}
+                    </Link>
+                  </h2>
                   <p className="text-xs text-gray-500">{lead.email} · {lead.address || 'No address'}</p>
                 </div>
                 <div className="text-right">
