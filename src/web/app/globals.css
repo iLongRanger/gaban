@@ -388,20 +388,51 @@ h1 { font-weight: 700; }
 .border-blue-600 { border-color: var(--accent) !important; }
 .hover\:bg-blue-700:hover { filter: brightness(1.06); }
 
-/* Status-tinted backgrounds (StatusPill legacy, dashboard health pill) */
+/* Status-tinted backgrounds */
 .bg-green-100 { background-color: color-mix(in oklab, var(--accent) 18%, transparent) !important; }
 .text-green-700,
 .text-green-800 { color: var(--accent) !important; }
-.bg-yellow-100 { background-color: color-mix(in oklab, var(--warn) 22%, transparent) !important; }
+.bg-yellow-100,
+.bg-amber-100 { background-color: color-mix(in oklab, var(--warn) 22%, transparent) !important; }
 .text-yellow-700,
-.text-yellow-800 { color: var(--warn) !important; }
+.text-yellow-800,
+.text-amber-700,
+.text-amber-800 { color: var(--warn) !important; }
 .bg-red-100 { background-color: color-mix(in oklab, var(--danger) 18%, transparent) !important; }
 .text-red-400,
+.text-red-600,
 .text-red-700,
 .text-red-800 { color: var(--danger) !important; }
-.bg-purple-100 { background-color: color-mix(in oklab, var(--accent) 14%, transparent) !important; }
+.bg-purple-100,
+.bg-indigo-100 { background-color: color-mix(in oklab, var(--accent) 14%, transparent) !important; }
 .text-purple-700,
-.text-purple-800 { color: var(--accent) !important; }
+.text-purple-800,
+.text-indigo-700 { color: var(--accent) !important; }
+.bg-blue-100 { background-color: color-mix(in oklab, var(--accent) 16%, transparent) !important; }
+.text-blue-400 { color: var(--accent) !important; }
+
+/* Dark/primary buttons */
+.bg-black,
+.bg-gray-900.text-white,
+.bg-gray-800.text-white {
+  background-color: var(--accent) !important;
+  color: var(--bg) !important;
+}
+.hover\:bg-gray-800:hover.text-white,
+.hover\:bg-gray-700:hover.text-white { filter: brightness(1.06); }
+
+/* Universal badge polish — any small rounded inline pill picks up a hairline
+   border in its current text color so it reads as a Halon tag, not a flat blob. */
+.inline-block.rounded,
+.inline-block.rounded-full,
+.rounded.text-xs,
+.rounded-full.text-xs {
+  border: 1px solid color-mix(in oklab, currentColor 35%, var(--line));
+  font-family: var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
 
 /* Inputs styled with Tailwind get the field treatment */
 input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),

@@ -28,9 +28,10 @@ export default function CampaignActions({
     <button
       onClick={submit}
       disabled={busy}
-      className="border border-gray-300 bg-white rounded px-4 py-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
+      className="btn"
+      style={{ opacity: busy ? 0.5 : 1, cursor: busy ? 'not-allowed' : 'pointer' }}
     >
-      {busy ? 'Updating...' : canPause ? 'Pause Campaign' : 'Resume Campaign'}
+      {busy ? 'UPDATING…' : canPause ? 'PAUSE CAMPAIGN' : 'RESUME CAMPAIGN'}
     </button>
   );
 }

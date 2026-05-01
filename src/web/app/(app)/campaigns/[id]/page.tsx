@@ -11,16 +11,12 @@ function formatDate(value: string | null) {
   return new Date(value).toLocaleString();
 }
 
-function statusClasses(status: string) {
-  if (status === 'sent') return 'bg-green-100 text-green-700';
-  if (status === 'scheduled') return 'bg-blue-100 text-blue-700';
-  if (status === 'failed') return 'bg-red-100 text-red-700';
-  if (status === 'cancelled') return 'bg-gray-100 text-gray-600';
-  if (status === 'replied') return 'bg-green-100 text-green-700';
-  if (status === 'bounced') return 'bg-red-100 text-red-700';
-  if (status === 'unsubscribed') return 'bg-amber-100 text-amber-700';
-  if (status === 'sending') return 'bg-amber-100 text-amber-700';
-  return 'bg-gray-100 text-gray-700';
+function statusTagClass(status: string) {
+  if (['sent', 'replied'].includes(status)) return 'tag tag--accent';
+  if (['failed', 'bounced'].includes(status)) return 'tag tag--danger';
+  if (['unsubscribed', 'sending', 'scheduled'].includes(status)) return 'tag tag--warn';
+  if (status === 'cancelled') return 'tag tag--mute';
+  return 'tag';
 }
 
 export default async function CampaignDetailPage({
@@ -82,9 +78,7 @@ export default async function CampaignDetailPage({
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs uppercase tracking-wide bg-gray-100 text-gray-700 px-2 py-1 rounded">
-            {campaign.status}
-          </span>
+          <span className={statusTagClass(campaign.status)}>{campaign.status}</span>
           <CampaignActions campaignId={campaign.id} status={campaign.status} />
         </div>
       </div>
@@ -131,7 +125,7 @@ export default async function CampaignDetailPage({
                   <p className="text-xs text-gray-500">{lead.email} · {lead.address || 'No address'}</p>
                 </div>
                 <div className="text-right">
-                  <span className={`inline-block text-xs px-2 py-0.5 rounded mb-2 ${statusClasses(lead.status)}`}>
+                  <span className={statusTagClass(lead.status)} style={{ marginBottom: 8 }}>
                     {lead.status}
                   </span>
                   <span className="block text-sm font-semibold text-blue-600">{lead.total_score}</span>
@@ -144,9 +138,7 @@ export default async function CampaignDetailPage({
                   <div key={send.id} className="border border-gray-100 rounded p-3 bg-gray-50">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-medium">Touch {send.touch_number}</span>
-                      <span className={`text-xs px-2 py-0.5 rounded ${statusClasses(send.status)}`}>
-                        {send.status}
-                      </span>
+                      <span className={statusTagClass(send.status)}>{send.status}</span>
                     </div>
                     <p className="text-xs text-gray-500">{send.template_style}</p>
                     <p className="text-xs text-gray-400 mt-1">{formatDate(send.scheduled_for)}</p>
