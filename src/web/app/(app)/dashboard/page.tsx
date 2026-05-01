@@ -42,6 +42,47 @@ function Row({ k, v, tone }: { k: string; v: React.ReactNode; tone?: 'ok' | 'war
   );
 }
 
+function buildHealthActions(heartbeat: any, healthcheck: any) {
+  const actions = [];
+
+  if (!heartbeat.gmail_configured || healthcheck?.gmail_configured === false) {
+    actions.push({
+      title: 'Gmail OAuth is missing from the running web task',
+      detail: 'Confirm GMAIL_OAUTH_CLIENT_ID, GMAIL_OAUTH_CLIENT_SECRET, GMAIL_OAUTH_REFRESH_TOKEN, and GMAIL_SENDER_EMAIL are present in .env, then restart Gaban Bot Web.'
+    });
+  }
+
+  if (healthcheck?.public_url_ok === false) {
+    actions.push({
+      title: 'Public bot URL is not reachable',
+      detail: 'Restart Gaban Cloudflare Tunnel, then test PUBLIC_APP_URL in a browser or with curl.exe -I https://bot.gleamlift.ca.'
+    });
+  }
+
+  if (healthcheck && healthcheck.public_url_ok === null && !healthcheck.public_url) {
+    actions.push({
+      title: 'PUBLIC_APP_URL is not configured',
+      detail: 'Set PUBLIC_APP_URL to the public bot URL so unsubscribe links and health checks can verify the tunnel.'
+    });
+  }
+
+  if (healthcheck?.db_writable === false) {
+    actions.push({
+      title: 'SQLite database is not writable',
+      detail: 'Check that the app can write to the data folder and that the database is not locked by another process.'
+    });
+  }
+
+  if (heartbeat.sending_stale > 0) {
+    actions.push({
+      title: 'Some sends are stuck in sending state',
+      detail: 'Restart Gaban Bot Web so startup recovery can mark or reschedule stuck sends.'
+    });
+  }
+
+  return actions;
+}
+
 export default async function DashboardPage() {
   const db = getDb();
   const Heartbeat = HeartbeatService as any;
@@ -61,6 +102,7 @@ export default async function DashboardPage() {
   const healthcheck = parseJson(heartbeat.last_healthcheck);
   const workerGap = parseJson(heartbeat.last_send_worker_gap);
   const healthOk = heartbeat.gmail_configured && heartbeat.sending_stale === 0 && healthcheck?.ok !== false;
+  const healthActions = buildHealthActions(heartbeat, healthcheck);
 
   return (
     <div className="boot">
@@ -78,6 +120,34 @@ export default async function DashboardPage() {
       </div>
 
       <hr className="hr-fade" style={{ margin: '20px 0 22px' }} />
+
+      {!healthOk && (
+        <section className="frame frame--brackets" style={{ padding: '16px 18px', marginBottom: 22, borderColor: 'var(--danger)' }}>
+          <span className="br-tr" /><span className="br-bl" />
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-start' }}>
+            <div>
+              <div className="label" style={{ color: 'var(--danger)', marginBottom: 8 }}>HEALTH ACTIONS</div>
+              <h2 style={{ margin: 0, fontSize: 17 }}>System needs attention</h2>
+              <p style={{ fontSize: 13, color: 'var(--mute)', margin: '6px 0 0' }}>
+                Follow the checks below, then restart the affected scheduled task.
+              </p>
+            </div>
+            <span className="tag tag--danger">FAIL</span>
+          </div>
+
+          <div style={{ display: 'grid', gap: 10, marginTop: 14 }}>
+            {(healthActions.length > 0 ? healthActions : [{
+              title: 'Health check failed',
+              detail: 'Review System Telemetry below, restart Gaban Bot Web, and run the health check again.'
+            }]).map((action) => (
+              <div key={action.title} style={{ borderLeft: '2px solid var(--danger)', padding: '2px 0 2px 12px' }}>
+                <div style={{ fontWeight: 650, fontSize: 13 }}>{action.title}</div>
+                <div style={{ color: 'var(--ink-2)', fontSize: 13, marginTop: 3 }}>{action.detail}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
         <Stat
