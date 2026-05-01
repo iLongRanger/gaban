@@ -19,6 +19,7 @@ export default class OpenAiJsonClient {
         model,
         messages: [{ role: 'user', content: prompt }],
         response_format: { type: 'json_object' },
+        reasoning_effort: 'low',
         max_completion_tokens: maxTokens
       })
     });
@@ -31,7 +32,8 @@ export default class OpenAiJsonClient {
     const data = await response.json();
     const content = data?.choices?.[0]?.message?.content;
     if (!content) {
-      throw new Error('OpenAI response did not include message content');
+      const finishReason = data?.choices?.[0]?.finish_reason || 'unknown';
+      throw new Error(`OpenAI response did not include message content (finish_reason: ${finishReason})`);
     }
     return content;
   }
@@ -47,6 +49,7 @@ export async function createJsonCompletion(client, { model, maxTokens, prompt })
       model,
       messages: [{ role: 'user', content: prompt }],
       response_format: { type: 'json_object' },
+      reasoning_effort: 'low',
       max_completion_tokens: maxTokens
     });
     return response?.choices?.[0]?.message?.content;

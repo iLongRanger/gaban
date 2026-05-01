@@ -27,7 +27,7 @@ export default class ScoringService {
     try {
       const text = await createJsonCompletion(this.client, {
         model: this.model,
-        maxTokens: 512,
+        maxTokens: 2048,
         prompt
       });
       const parsed = JSON.parse(text);

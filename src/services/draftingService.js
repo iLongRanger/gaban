@@ -22,7 +22,7 @@ export default class DraftingService {
     try {
       const text = await createJsonCompletion(this.client, {
         model: this.model,
-        maxTokens: 1024,
+        maxTokens: 4096,
         prompt
       });
       return JSON.parse(text);
