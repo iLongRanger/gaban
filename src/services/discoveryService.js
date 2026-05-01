@@ -7,7 +7,7 @@ export default class DiscoveryService {
     this.client = client || new Outscraper(apiKey);
   }
 
-  async discoverLeads({ categories, location, limit, language, region }) {
+  async discoverLeads({ categories, location, limit, language, region, enrichment = null }) {
     const allLeads = [];
 
     for (const category of categories) {
@@ -16,7 +16,7 @@ export default class DiscoveryService {
 
       try {
         const response = await this.client.googleMapsSearch(
-          [query], limit, language, region, 0, false, null, false
+          [query], limit, language, region, 0, false, enrichment, false
         );
 
         const places = response?.[0] || [];
@@ -41,7 +41,7 @@ export default class DiscoveryService {
       formatted_address: place.full_address || null,
       phone: place.phone || null,
       website: place.site || null,
-      email: place.email_1 || null,
+      email: findFirstEmail(place),
       rating: place.rating ?? null,
       reviews_count: place.reviews ?? null,
       location: {
@@ -56,4 +56,24 @@ export default class DiscoveryService {
       reviews_data: place.reviews_data || []
     };
   }
+}
+
+function findFirstEmail(place) {
+  const candidates = [
+    place.email_1,
+    place.email,
+    ...(Array.isArray(place.emails) ? place.emails : []),
+    ...(Array.isArray(place.emails_data)
+      ? place.emails_data.flatMap(item => [item.email, item.value])
+      : []),
+    ...(Array.isArray(place.contacts)
+      ? place.contacts.flatMap(item => [item.email, ...(Array.isArray(item.emails) ? item.emails : [])])
+      : [])
+  ];
+
+  return candidates.find(isEmail) || null;
+}
+
+function isEmail(value) {
+  return typeof value === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }

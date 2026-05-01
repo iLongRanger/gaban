@@ -9,6 +9,7 @@ import { getCategoriesForWeek } from '../config/categories.js';
 import { loadSeenLeads, saveSeenLeads, markAsSeen } from '../utils/seenLeads.js';
 import DiscoveryService from '../services/discoveryService.js';
 import FilteringService from '../services/filteringService.js';
+import EmailEnrichmentService from '../services/emailEnrichmentService.js';
 import ScoringService from '../services/scoringService.js';
 import DraftingService from '../services/draftingService.js';
 import SheetsService from '../services/sheetsService.js';
@@ -123,19 +124,29 @@ async function run() {
     location: settings.search.location,
     limit: settings.search.limit_per_category,
     language: settings.search.language,
-    region: settings.search.region
+    region: settings.search.region,
+    enrichment: settings.enrichment?.enabled ? settings.enrichment.outscraper_services : null
   });
   logger.info(`Discovered ${rawLeads.length} raw leads.`);
 
   // Phase 2: Filtering
   const officeLocation = settings.office_location;
   const filtering = new FilteringService({ settings, logger });
-  const { passed, excluded } = filtering.filterLeads(rawLeads, officeLocation, seenLeads);
+  let { passed, excluded } = filtering.filterLeads(rawLeads, officeLocation, seenLeads);
   logger.info(`Filtered: ${passed.length} passed, ${excluded.length} excluded.`);
 
   if (passed.length === 0) {
     logger.warn('No leads passed filtering. Exiting.');
     return;
+  }
+
+  if (settings.enrichment?.enabled && settings.enrichment.website_email_lookup) {
+    const emailEnrichment = new EmailEnrichmentService({
+      logger,
+      timeoutMs: settings.enrichment.timeout_ms,
+      maxPagesPerSite: settings.enrichment.max_pages_per_site
+    });
+    passed = await emailEnrichment.enrichLeads(passed);
   }
 
   // Phase 3: Scoring

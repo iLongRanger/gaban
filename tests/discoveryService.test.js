@@ -95,3 +95,35 @@ test('discoverLeads handles empty results', async () => {
 
   assert.deepStrictEqual(leads, []);
 });
+
+test('discoverLeads passes Outscraper enrichment services', async () => {
+  let captured;
+  const client = {
+    googleMapsSearch: async (...args) => {
+      captured = args;
+      return [[]];
+    }
+  };
+  const service = new DiscoveryService({ apiKey: 'test', client });
+
+  await service.discoverLeads({
+    categories: ['restaurants'],
+    location: 'New Westminster, BC',
+    limit: 10,
+    language: 'en',
+    region: 'CA',
+    enrichment: ['domains_service', 'emails_validator_service']
+  });
+
+  assert.deepStrictEqual(captured[6], ['domains_service', 'emails_validator_service']);
+});
+
+test('normalize uses enriched email arrays when email_1 is missing', () => {
+  const service = new DiscoveryService({ apiKey: 'test', client: {} });
+  const lead = service.normalize({
+    name: 'Enriched Cafe',
+    emails: ['hello@enriched.ca']
+  });
+
+  assert.equal(lead.email, 'hello@enriched.ca');
+});
