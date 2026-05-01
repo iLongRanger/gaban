@@ -1,1 +1,346 @@
 @import "tailwindcss";
+
+/* =========================================================================
+   HALON — operator console aesthetic
+   ========================================================================= */
+
+:root,
+[data-theme="light"] {
+  /* Surfaces — warm paper tones */
+  --bg:       #ECE6D8;
+  --surface:  #F5F1E6;
+  --elev:     #FBF8EF;
+  --ink:      #0C0F14;
+  --ink-2:    #1A1F26;
+  --mute:     #5B636E;
+  --faint:    #8C95A0;
+
+  /* Lines — true hairline */
+  --line:     rgba(12, 15, 20, 0.10);
+  --line-2:   rgba(12, 15, 20, 0.18);
+
+  /* Signal */
+  --accent:        #0E7A68;   /* deep teal */
+  --accent-soft:   #0E7A6815;
+  --accent-glow:   #0E7A6840;
+  --warn:          #B85B12;
+  --danger:        #9F1C1C;
+  --success:       #0E7A68;
+
+  /* Telemetry grid */
+  --grid:     rgba(12, 15, 20, 0.05);
+  --spot-1:   rgba(14, 122, 104, 0.10);
+  --spot-2:   rgba(184, 91, 18, 0.05);
+}
+
+[data-theme="dark"] {
+  --bg:       #06090E;
+  --surface:  #0C1117;
+  --elev:     #11171F;
+  --ink:      #E8EEF4;
+  --ink-2:    #C4CCD6;
+  --mute:     #7A8694;
+  --faint:    #555E6B;
+
+  --line:     rgba(232, 238, 244, 0.08);
+  --line-2:   rgba(232, 238, 244, 0.16);
+
+  --accent:        #5EEAD4;   /* plasma mint */
+  --accent-soft:   #5EEAD418;
+  --accent-glow:   #5EEAD455;
+  --warn:          #FBBF24;
+  --danger:        #F87171;
+  --success:       #5EEAD4;
+
+  --grid:     rgba(232, 238, 244, 0.04);
+  --spot-1:   rgba(94, 234, 212, 0.08);
+  --spot-2:   rgba(251, 191, 36, 0.04);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-elev: var(--elev);
+  --color-ink: var(--ink);
+  --color-mute: var(--mute);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+
+  --font-sans: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Azeret Mono', ui-monospace, 'JetBrains Mono', monospace;
+}
+
+/* Fonts loaded via <link> in app/layout.tsx (Manrope + Azeret Mono) */
+
+* { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+html, body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv11", "tnum";
+  letter-spacing: -0.005em;
+  font-weight: 400;
+}
+
+/* Telemetry grid backdrop with radial spotlight */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 18% -10%, var(--spot-1), transparent 60%),
+    radial-gradient(ellipse 60% 50% at 110% 110%, var(--spot-2), transparent 60%),
+    linear-gradient(var(--grid) 1px, transparent 1px) 0 0 / 28px 28px,
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 28px 28px;
+}
+
+main, nav, header { position: relative; z-index: 1; }
+
+::selection { background: var(--accent); color: var(--bg); }
+
+/* =========================================================================
+   PRIMITIVES
+   ========================================================================= */
+
+/* Hairline frame with optional corner brackets */
+.frame {
+  background: color-mix(in oklab, var(--surface) 92%, transparent);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  position: relative;
+  backdrop-filter: blur(8px);
+}
+
+.frame--brackets::before,
+.frame--brackets::after,
+.frame--brackets > .br-tr,
+.frame--brackets > .br-bl {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-color: var(--accent);
+  border-style: solid;
+  border-width: 0;
+  pointer-events: none;
+}
+.frame--brackets::before  { top: -1px; left: -1px;  border-top-width: 1px; border-left-width: 1px; }
+.frame--brackets::after   { bottom: -1px; right: -1px; border-bottom-width: 1px; border-right-width: 1px; }
+.frame--brackets > .br-tr { top: -1px; right: -1px;  border-top-width: 1px; border-right-width: 1px; }
+.frame--brackets > .br-bl { bottom: -1px; left: -1px;  border-bottom-width: 1px; border-left-width: 1px; }
+
+/* Telemetry label — uppercase mono caption */
+.label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mute);
+  font-weight: 500;
+}
+
+.label-accent { color: var(--accent); }
+
+/* Numeric displays */
+.numeric {
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum", "zero";
+  letter-spacing: -0.01em;
+}
+
+/* Mono tag — replaces pill */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px 3px 7px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 500;
+  border: 1px solid var(--line-2);
+  border-radius: 2px;
+  background: color-mix(in oklab, var(--elev) 80%, transparent);
+  color: var(--ink-2);
+  line-height: 1;
+}
+
+.tag::before {
+  content: '';
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 6px currentColor;
+  flex: 0 0 auto;
+}
+
+.tag--accent  { color: var(--accent);  border-color: color-mix(in oklab, var(--accent) 35%, var(--line)); }
+.tag--warn    { color: var(--warn);    border-color: color-mix(in oklab, var(--warn) 35%, var(--line)); }
+.tag--danger  { color: var(--danger);  border-color: color-mix(in oklab, var(--danger) 35%, var(--line)); }
+.tag--mute    { color: var(--mute); }
+.tag--solid   {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+}
+.tag--solid::before { background: var(--bg); box-shadow: none; }
+
+/* Buttons */
+.btn {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 500;
+  padding: 8px 14px;
+  border-radius: 2px;
+  border: 1px solid var(--line-2);
+  background: var(--elev);
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 140ms ease;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent-soft), 0 0 24px var(--accent-glow);
+}
+.btn--primary {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+}
+.btn--primary:hover {
+  filter: brightness(1.06);
+  color: var(--bg);
+}
+
+/* Inputs */
+.field {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  background: var(--elev);
+  color: var(--ink);
+  border: 1px solid var(--line-2);
+  border-radius: 2px;
+  padding: 8px 10px;
+  transition: all 140ms ease;
+}
+.field:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+/* Hairline divider with gradient fade */
+.hr-fade {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--line-2), transparent);
+  border: 0;
+}
+
+/* Subtle scanline texture for highlighted panels */
+.scanlines {
+  background-image: repeating-linear-gradient(
+    0deg,
+    color-mix(in oklab, var(--ink) 3%, transparent) 0 1px,
+    transparent 1px 3px
+  );
+}
+
+/* Active link indicator */
+.nav-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mute);
+  border-left: 1px solid transparent;
+  transition: all 140ms ease;
+}
+.nav-link:hover { color: var(--ink); border-left-color: var(--line-2); }
+.nav-link[data-active="true"] {
+  color: var(--accent);
+  border-left-color: var(--accent);
+  background: linear-gradient(90deg, var(--accent-soft), transparent 70%);
+}
+.nav-link[data-active="true"]::before {
+  content: '';
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+.nav-link::before {
+  content: '';
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--faint);
+  flex: 0 0 auto;
+}
+
+/* Soft glow ring for the live indicator */
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 var(--accent-glow); }
+  70%  { box-shadow: 0 0 0 8px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+.pulse-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse-ring 2.4s ease-out infinite;
+}
+
+/* Score meter — segmented bar */
+.meter {
+  display: flex;
+  gap: 2px;
+  height: 6px;
+}
+.meter > span {
+  flex: 1;
+  background: var(--line-2);
+  border-radius: 1px;
+  transition: background 200ms ease;
+}
+.meter > span[data-on="true"] { background: var(--accent); box-shadow: 0 0 6px var(--accent-glow); }
+
+/* Boot reveal — staggered entrance */
+@keyframes boot-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.boot > * {
+  opacity: 0;
+  animation: boot-in 360ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+.boot > *:nth-child(1) { animation-delay: 30ms; }
+.boot > *:nth-child(2) { animation-delay: 80ms; }
+.boot > *:nth-child(3) { animation-delay: 130ms; }
+.boot > *:nth-child(4) { animation-delay: 180ms; }
+.boot > *:nth-child(5) { animation-delay: 230ms; }
+.boot > *:nth-child(6) { animation-delay: 280ms; }
+.boot > *:nth-child(7) { animation-delay: 330ms; }
+.boot > *:nth-child(8) { animation-delay: 380ms; }
+
+/* Headings */
+h1, h2, h3, h4 {
+  font-family: var(--font-sans);
+  letter-spacing: -0.02em;
+  font-weight: 600;
+  color: var(--ink);
+}
+h1 { font-weight: 700; }

@@ -1,36 +1,14 @@
-import Link from 'next/link';
+import SideNav from '@/components/SideNav';
+import TopBar from '@/components/TopBar';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <nav className="w-56 bg-gray-900 text-gray-100 p-4 flex flex-col gap-2">
-        <h1 className="text-lg font-bold mb-4 px-2">Gaban</h1>
-        <Link href="/dashboard" className="px-3 py-2 rounded hover:bg-gray-800 transition-colors">
-          Dashboard
-        </Link>
-        <Link href="/" className="px-3 py-2 rounded hover:bg-gray-800 transition-colors">
-          Weekly Leads
-        </Link>
-        <Link href="/history" className="px-3 py-2 rounded hover:bg-gray-800 transition-colors">
-          History
-        </Link>
-        <Link href="/campaigns" className="px-3 py-2 rounded hover:bg-gray-800 transition-colors">
-          Campaigns
-        </Link>
-        <Link href="/responses" className="px-3 py-2 rounded hover:bg-gray-800 transition-colors">
-          Responses
-        </Link>
-        <Link href="/outcomes" className="px-3 py-2 rounded hover:bg-gray-800 transition-colors">
-          Outcomes
-        </Link>
-        <Link href="/settings" className="px-3 py-2 rounded hover:bg-gray-800 transition-colors">
-          Settings
-        </Link>
-        <Link href="/runs" className="px-3 py-2 rounded hover:bg-gray-800 transition-colors">
-          Runs
-        </Link>
-      </nav>
-      <main className="flex-1 p-6">{children}</main>
+    <div style={{ display: 'flex', minHeight: '100vh' }}>
+      <SideNav />
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+        <TopBar />
+        <main style={{ flex: 1, padding: '28px 32px', maxWidth: 1400, width: '100%' }}>{children}</main>
+      </div>
     </div>
   );
 }

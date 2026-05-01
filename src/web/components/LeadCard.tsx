@@ -15,16 +15,25 @@ interface Lead {
 
 const STATUSES = ['new', 'contacted', 'interested', 'rejected', 'closed'];
 
+function scoreTone(score: number) {
+  if (score >= 80) return 'var(--accent)';
+  if (score >= 60) return 'var(--ink)';
+  if (score >= 40) return 'var(--warn)';
+  return 'var(--danger)';
+}
+
 export default function LeadCard({ lead }: { lead: Lead }) {
   const [status, setStatus] = useState(lead.status);
+  const segments = 10;
+  const onCount = Math.round((lead.total_score / 100) * segments);
+  const tone = scoreTone(lead.total_score);
 
-  async function onStatusChange(e: React.MouseEvent<HTMLSelectElement>) {
+  function stop(e: React.SyntheticEvent) {
     e.preventDefault();
     e.stopPropagation();
   }
 
   async function handleStatusChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    e.preventDefault();
     e.stopPropagation();
     const newStatus = e.target.value;
     setStatus(newStatus);
@@ -36,28 +45,74 @@ export default function LeadCard({ lead }: { lead: Lead }) {
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between">
-        <Link href={'/leads/' + lead.id} className="flex-1">
-          <h3 className="font-semibold text-gray-900">{lead.business_name}</h3>
-          <p className="text-sm text-gray-500">{lead.type}</p>
-          <p className="text-xs text-gray-400 mt-1">{lead.address}</p>
-        </Link>
-        <div className="flex flex-col items-end gap-1">
-          <span className="text-lg font-bold text-blue-600">{lead.total_score}</span>
-          <select
-            value={status}
-            onClick={onStatusChange}
-            onChange={handleStatusChange}
-            className="text-xs border border-gray-200 rounded px-1 py-0.5 bg-white"
-          >
-            {STATUSES.map(s => (
-              <option key={s} value={s}>{s}</option>
+    <Link
+      href={'/leads/' + lead.id}
+      className="frame frame--brackets"
+      style={{
+        display: 'block',
+        padding: '16px 18px',
+        textDecoration: 'none',
+        color: 'inherit',
+        transition: 'all 160ms ease',
+      }}
+    >
+      <span className="br-tr" /><span className="br-bl" />
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 24, alignItems: 'start' }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+            <span className="label" style={{ color: 'var(--mute)' }}>
+              ID/{String(lead.id).padStart(4, '0')}
+            </span>
+            <span style={{ color: 'var(--line-2)' }}>·</span>
+            <span className="label">{lead.type || 'UNCLASSIFIED'}</span>
+          </div>
+          <h3 style={{ fontSize: 17, fontWeight: 600, margin: 0, lineHeight: 1.2 }}>
+            {lead.business_name}
+          </h3>
+          <p style={{ fontSize: 12, color: 'var(--mute)', marginTop: 4, marginBottom: 0 }}>
+            {lead.address || '—'}
+          </p>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 12 }}>
+            <span className="label numeric" style={{ color: 'var(--ink-2)' }}>
+              ↗ {Number(lead.distance_km || 0).toFixed(1)} KM
+            </span>
+            <div onClick={stop} style={{ display: 'inline-flex' }}>
+              <select
+                value={status}
+                onChange={handleStatusChange}
+                className="field"
+                style={{
+                  padding: '4px 8px',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 10,
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                {STATUSES.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10, minWidth: 130 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+            <span className="numeric" style={{ fontSize: 32, fontWeight: 600, color: tone, lineHeight: 1 }}>
+              {lead.total_score}
+            </span>
+            <span className="label numeric" style={{ color: 'var(--faint)' }}>/100</span>
+          </div>
+          <div className="meter" style={{ width: 120 }}>
+            {Array.from({ length: segments }).map((_, i) => (
+              <span key={i} data-on={i < onCount ? 'true' : 'false'} />
             ))}
-          </select>
-          <span className="text-xs text-gray-400">{lead.distance_km} km</span>
+          </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }

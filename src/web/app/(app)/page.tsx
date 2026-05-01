@@ -34,21 +34,40 @@ export default async function Home({
         : 'total_score DESC';
   query += ' ORDER BY ' + sortCol;
 
-  const leads = currentWeek ? db.prepare(query).all(...params) : [];
+  const leads = currentWeek ? (db.prepare(query).all(...params) as any[]) : [];
+  const top = leads[0]?.total_score ?? 0;
+  const avg = leads.length ? Math.round(leads.reduce((a: number, l: any) => a + (l.total_score || 0), 0) / leads.length) : 0;
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Weekly Leads</h1>
-        <div className="flex items-center gap-3">
-          {weeks.length > 0 && <WeekSelector weeks={weeks} current={currentWeek} />}
+    <div className="boot">
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 4 }}>
+        <div>
+          <div className="label" style={{ marginBottom: 6 }}>FEED · 02</div>
+          <h1 style={{ fontSize: 28, margin: 0 }}>Weekly leads</h1>
         </div>
+        {weeks.length > 0 && <WeekSelector weeks={weeks} current={currentWeek} />}
       </div>
 
+      <div style={{ display: 'flex', gap: 18, alignItems: 'center', marginTop: 14, marginBottom: 24 }}>
+        <span className="label numeric">N={leads.length}</span>
+        <span style={{ color: 'var(--line-2)' }}>│</span>
+        <span className="label numeric">TOP {top}</span>
+        <span style={{ color: 'var(--line-2)' }}>│</span>
+        <span className="label numeric">AVG {avg}</span>
+        <span style={{ color: 'var(--line-2)' }}>│</span>
+        <span className="label">SORT · {(sort || 'score').toUpperCase()}</span>
+      </div>
+
+      <hr className="hr-fade" style={{ marginBottom: 24 }} />
+
       {leads.length === 0 ? (
-        <p className="text-gray-500">No leads for this week.</p>
+        <div className="frame frame--brackets" style={{ padding: 40, textAlign: 'center' }}>
+          <span className="br-tr" /><span className="br-bl" />
+          <div className="label" style={{ color: 'var(--mute)' }}>NO SIGNAL</div>
+          <p style={{ marginTop: 8, color: 'var(--mute)' }}>No leads for this cycle.</p>
+        </div>
       ) : (
-        <div className="space-y-3">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {leads.map((lead: any) => (
             <LeadCard key={lead.id} lead={lead} />
           ))}

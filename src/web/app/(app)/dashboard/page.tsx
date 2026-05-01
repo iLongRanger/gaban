@@ -5,7 +5,7 @@ import { HeartbeatService } from '../../../../services/heartbeatService.js';
 export const dynamic = 'force-dynamic';
 
 function formatDate(value: string | null) {
-  if (!value) return '-';
+  if (!value) return '—';
   return new Date(value).toLocaleString();
 }
 
@@ -16,6 +16,30 @@ function parseJson(value: string | null) {
   } catch {
     return null;
   }
+}
+
+function Stat({ label, value, sub, accent }: { label: string; value: React.ReactNode; sub?: string; accent?: boolean }) {
+  return (
+    <div className="frame frame--brackets" style={{ padding: '14px 16px', minHeight: 92 }}>
+      <span className="br-tr" /><span className="br-bl" />
+      <div className="label" style={{ marginBottom: 10 }}>{label}</div>
+      <div className="numeric" style={{ fontSize: 26, fontWeight: 600, color: accent ? 'var(--accent)' : 'var(--ink)', lineHeight: 1 }}>
+        {value}
+      </div>
+      {sub && <div className="label numeric" style={{ marginTop: 6, color: 'var(--faint)' }}>{sub}</div>}
+    </div>
+  );
+}
+
+function Row({ k, v, tone }: { k: string; v: React.ReactNode; tone?: 'ok' | 'warn' | 'err' }) {
+  const color =
+    tone === 'ok' ? 'var(--accent)' : tone === 'warn' ? 'var(--warn)' : tone === 'err' ? 'var(--danger)' : 'var(--ink-2)';
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '8px 0', borderBottom: '1px dashed var(--line)' }}>
+      <span className="label" style={{ color: 'var(--mute)' }}>{k}</span>
+      <span className="numeric" style={{ fontSize: 12, color }}>{v}</span>
+    </div>
+  );
 }
 
 export default async function DashboardPage() {
@@ -39,97 +63,96 @@ export default async function DashboardPage() {
   const workerGap = parseJson(heartbeat.last_send_worker_gap);
 
   return (
-    <div>
-      <div className="flex items-start justify-between mb-6">
+    <div className="boot">
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 6 }}>
         <div>
-          <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="text-sm text-gray-500">Outreach health, queue status, and recent response activity.</p>
+          <div className="label" style={{ marginBottom: 6 }}>OVERVIEW · 01</div>
+          <h1 style={{ fontSize: 28, margin: 0 }}>Operator dashboard</h1>
+          <p style={{ fontSize: 13, color: 'var(--mute)', marginTop: 6, marginBottom: 0 }}>
+            Outreach health, queue status, and recent response telemetry.
+          </p>
         </div>
-        <span className={`text-xs uppercase tracking-wide px-2 py-1 rounded ${healthOk ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-          {healthOk ? 'Healthy' : 'Needs attention'}
+        <span className={'tag ' + (healthOk ? 'tag--accent' : 'tag--danger')}>
+          {healthOk ? 'NOMINAL' : 'NEEDS ATTENTION'}
         </span>
       </div>
 
-      <div className="grid grid-cols-4 gap-3 mb-6">
-        <div className="bg-white border border-gray-200 rounded-lg p-3">
-          <span className="block text-xs text-gray-400">Sent Today</span>
-          <span className="text-xl font-semibold">{heartbeat.sent_today}/{heartbeat.daily_cap}</span>
-        </div>
-        <div className="bg-white border border-gray-200 rounded-lg p-3">
-          <span className="block text-xs text-gray-400">Scheduled</span>
-          <span className="text-xl font-semibold">{heartbeat.scheduled_sends}</span>
-        </div>
-        <div className="bg-white border border-gray-200 rounded-lg p-3">
-          <span className="block text-xs text-gray-400">Active Campaigns</span>
-          <span className="text-xl font-semibold">{heartbeat.active_campaigns}</span>
-        </div>
-        <div className="bg-white border border-gray-200 rounded-lg p-3">
-          <span className="block text-xs text-gray-400">Replies Today</span>
-          <span className="text-xl font-semibold">{heartbeat.replies_waiting}</span>
-        </div>
+      <hr className="hr-fade" style={{ margin: '20px 0 22px' }} />
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
+        <Stat
+          label="SENT TODAY"
+          value={<><span>{heartbeat.sent_today}</span><span style={{ color: 'var(--faint)', fontSize: 16 }}> / {heartbeat.daily_cap}</span></>}
+          accent
+        />
+        <Stat label="SCHEDULED" value={heartbeat.scheduled_sends} />
+        <Stat label="ACTIVE CAMPAIGNS" value={heartbeat.active_campaigns} />
+        <Stat label="REPLIES TODAY" value={heartbeat.replies_waiting} accent />
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
-        <section className="bg-white border border-gray-200 rounded-lg p-4">
-          <h2 className="font-semibold text-gray-900 mb-3">System</h2>
-          <div className="space-y-3 text-sm">
-            <div className="flex justify-between gap-4">
-              <span className="text-gray-500">Gmail OAuth</span>
-              <span className={heartbeat.gmail_configured ? 'text-green-700' : 'text-red-700'}>
-                {heartbeat.gmail_configured ? 'Configured' : 'Missing env'}
-              </span>
-            </div>
-            <div className="flex justify-between gap-4">
-              <span className="text-gray-500">Stale sending rows</span>
-              <span className={heartbeat.sending_stale === 0 ? 'text-green-700' : 'text-red-700'}>{heartbeat.sending_stale}</span>
-            </div>
-            <div className="flex justify-between gap-4">
-              <span className="text-gray-500">Next send</span>
-              <span className="text-gray-700">{formatDate(heartbeat.next_send_at)}</span>
-            </div>
-            <div className="flex justify-between gap-4">
-              <span className="text-gray-500">Last backup</span>
-              <span className="text-gray-700">{formatDate(heartbeat.last_backup_at)}</span>
-            </div>
-            <div className="flex justify-between gap-4">
-              <span className="text-gray-500">Health check</span>
-              <span className={healthcheck?.ok === false ? 'text-red-700' : 'text-green-700'}>
-                {healthcheck ? `${healthcheck.ok ? 'OK' : 'Fail'} · ${formatDate(healthcheck.checked_at)}` : '-'}
-              </span>
-            </div>
-            <div className="flex justify-between gap-4">
-              <span className="text-gray-500">Last worker gap</span>
-              <span className="text-gray-700">
-                {workerGap ? `${workerGap.gap_minutes} min · ${workerGap.rescheduled_sends} moved` : '-'}
-              </span>
-            </div>
-            <div className="flex justify-between gap-4">
-              <span className="text-gray-500">Last checked</span>
-              <span className="text-gray-700">{formatDate(heartbeat.checked_at)}</span>
-            </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
+        <section className="frame frame--brackets" style={{ padding: '18px 20px' }}>
+          <span className="br-tr" /><span className="br-bl" />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <div className="label">SYSTEM TELEMETRY</div>
+            <span className="pulse-dot" />
           </div>
+
+          <Row k="GMAIL OAUTH" v={heartbeat.gmail_configured ? 'CONFIGURED' : 'MISSING ENV'} tone={heartbeat.gmail_configured ? 'ok' : 'err'} />
+          <Row k="STALE SENDS" v={heartbeat.sending_stale} tone={heartbeat.sending_stale === 0 ? 'ok' : 'err'} />
+          <Row k="NEXT SEND" v={formatDate(heartbeat.next_send_at)} />
+          <Row k="LAST BACKUP" v={formatDate(heartbeat.last_backup_at)} />
+          <Row
+            k="HEALTH CHECK"
+            v={healthcheck ? `${healthcheck.ok ? 'OK' : 'FAIL'} · ${formatDate(healthcheck.checked_at)}` : '—'}
+            tone={healthcheck?.ok === false ? 'err' : 'ok'}
+          />
+          <Row
+            k="WORKER GAP"
+            v={workerGap ? `${workerGap.gap_minutes}m · ${workerGap.rescheduled_sends} moved` : '—'}
+          />
+          <Row k="LAST CHECKED" v={formatDate(heartbeat.checked_at)} />
         </section>
 
-        <section className="bg-white border border-gray-200 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold text-gray-900">Recent Responses</h2>
-            <Link href="/responses" className="text-sm text-blue-600 hover:underline">View all</Link>
+        <section className="frame frame--brackets" style={{ padding: '18px 20px' }}>
+          <span className="br-tr" /><span className="br-bl" />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <div className="label">RECENT RESPONSES</div>
+            <Link href="/responses" className="label" style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+              VIEW ALL →
+            </Link>
           </div>
+
           {recentResponses.length === 0 ? (
-            <p className="text-sm text-gray-500">No responses detected yet.</p>
+            <p style={{ fontSize: 13, color: 'var(--mute)' }}>No responses detected.</p>
           ) : (
-            <div className="space-y-3">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               {recentResponses.map((event) => (
                 <Link
                   key={`${event.detected_at}-${event.recipient_email}`}
                   href={`/campaigns/${event.campaign_id}`}
-                  className="block border border-gray-100 rounded p-3 hover:bg-gray-50"
+                  style={{
+                    display: 'block',
+                    padding: '10px 12px',
+                    borderLeft: '1px solid var(--line-2)',
+                    textDecoration: 'none',
+                    color: 'inherit',
+                    transition: 'all 140ms ease',
+                  }}
+                  className="hover:border-accent"
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="font-medium text-sm text-gray-900">{event.business_name}</span>
-                    <span className="text-xs text-gray-500">{event.type}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                    <span style={{ fontWeight: 600, fontSize: 13 }}>{event.business_name}</span>
+                    <span className={
+                      'tag ' +
+                      (event.type === 'replied' ? 'tag--accent' : event.type === 'bounced' ? 'tag--danger' : 'tag--warn')
+                    }>
+                      {event.type}
+                    </span>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">{event.campaign_name} · {formatDate(event.detected_at)}</p>
+                  <div className="label numeric" style={{ marginTop: 6, color: 'var(--faint)' }}>
+                    {event.campaign_name} · {formatDate(event.detected_at)}
+                  </div>
                 </Link>
               ))}
             </div>

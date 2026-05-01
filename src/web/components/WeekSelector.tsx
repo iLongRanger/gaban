@@ -13,14 +13,23 @@ export default function WeekSelector({ weeks, current }: { weeks: string[]; curr
   }
 
   return (
-    <select
-      value={current}
-      onChange={onChange}
-      className="border border-gray-300 rounded px-3 py-1.5 text-sm bg-white"
-    >
-      {weeks.map(w => (
-        <option key={w} value={w}>{w}</option>
-      ))}
-    </select>
+    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+      <span className="label">CYCLE</span>
+      <select
+        value={current}
+        onChange={onChange}
+        className="field"
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: 12,
+          letterSpacing: '0.1em',
+          padding: '6px 10px',
+        }}
+      >
+        {weeks.map((w) => (
+          <option key={w} value={w}>{w}</option>
+        ))}
+      </select>
+    </div>
   );
 }

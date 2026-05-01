@@ -13,42 +13,101 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
     setLoading(true);
-
     const res = await fetch('/api/auth', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ pin }),
     });
-
     if (res.ok) {
       router.push('/');
     } else {
-      setError('Invalid PIN');
+      setError('AUTH REJECTED · check operator key');
       setPin('');
     }
     setLoading(false);
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900">
-      <form onSubmit={handleSubmit} className="bg-gray-800 p-8 rounded-lg shadow-lg w-80">
-        <h1 className="text-xl font-bold text-white mb-6 text-center">Gaban</h1>
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'grid',
+        placeItems: 'center',
+        padding: 24,
+        position: 'relative',
+      }}
+    >
+      <form
+        onSubmit={handleSubmit}
+        className="frame frame--brackets boot"
+        style={{ width: 340, padding: '28px 24px 22px', position: 'relative', zIndex: 1 }}
+      >
+        <span className="br-tr" /><span className="br-bl" />
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 22 }}>
+          <span
+            style={{
+              width: 28, height: 28,
+              border: '1px solid var(--accent)',
+              background: 'var(--accent-soft)',
+              color: 'var(--accent)',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 600,
+              borderRadius: 2,
+            }}
+          >
+            ⌬
+          </span>
+          <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, letterSpacing: '0.18em', fontWeight: 600 }}>
+              GABAN
+            </span>
+            <span className="label" style={{ fontSize: 8 }}>OPERATOR · v1</span>
+          </div>
+          <span style={{ flex: 1 }} />
+          <span className="pulse-dot" />
+        </div>
+
+        <div className="label" style={{ marginBottom: 8 }}>OPERATOR KEY</div>
         <input
           type="password"
           value={pin}
           onChange={(e) => setPin(e.target.value)}
-          placeholder="Enter PIN"
-          className="w-full px-4 py-3 rounded bg-gray-700 text-white placeholder-gray-400 border border-gray-600 focus:border-blue-500 focus:outline-none text-center text-lg tracking-widest"
+          placeholder="••••"
+          className="field numeric"
+          style={{
+            width: '100%',
+            fontSize: 22,
+            letterSpacing: '0.4em',
+            textAlign: 'center',
+            padding: '14px 12px',
+          }}
           autoFocus
         />
-        {error && <p className="text-red-400 text-sm mt-2 text-center">{error}</p>}
+        {error && (
+          <div className="label" style={{ color: 'var(--danger)', marginTop: 10 }}>
+            {error}
+          </div>
+        )}
+
         <button
           type="submit"
           disabled={loading || !pin}
-          className="w-full mt-4 py-3 bg-blue-600 text-white rounded font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn btn--primary"
+          style={{
+            width: '100%', marginTop: 16, justifyContent: 'center',
+            opacity: loading || !pin ? 0.5 : 1,
+            cursor: loading || !pin ? 'not-allowed' : 'pointer',
+          }}
         >
-          {loading ? 'Checking...' : 'Unlock'}
+          {loading ? 'AUTHENTICATING…' : 'UNLOCK CONSOLE →'}
         </button>
+
+        <hr className="hr-fade" style={{ margin: '20px 0 14px' }} />
+        <div className="label numeric" style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--faint)' }}>
+          <span>SECTOR / VAN</span>
+          <span>0xGABAN</span>
+        </div>
       </form>
     </div>
   );
