@@ -36,7 +36,7 @@ export default class SqliteService {
         const draft = drafts[i];
         const placeId = valueOrNull(lead.place_id) || buildFallbackPlaceId(lead);
 
-        insertLead.run(
+        runStatement(insertLead, 'insert lead', [
           placeId,
           valueOrNull(lead.business_name) || 'Unknown business',
           valueOrNull(lead.type),
@@ -62,7 +62,7 @@ export default class SqliteService {
           weekLabel,
           now,
           now
-        );
+        ]);
 
         if (draft?.error) {
           this.logger?.warn(
@@ -71,13 +71,17 @@ export default class SqliteService {
           continue;
         }
 
-        const row = this.db.prepare('SELECT id FROM leads WHERE place_id = ?').get(placeId);
+        const row = getStatement(
+          this.db.prepare('SELECT id FROM leads WHERE place_id = ?'),
+          'select lead by place_id',
+          [placeId]
+        );
         if (!row) continue;
 
         for (const style of ['curious_neighbor', 'value_lead', 'compliment_question']) {
           const d = draft[style];
           if (!d) continue;
-          insertDraft.run(
+          runStatement(insertDraft, 'insert outreach draft', [
             row.id,
             style,
             valueOrNull(d.email_subject) || '',
@@ -85,7 +89,7 @@ export default class SqliteService {
             valueOrNull(d.dm) || '',
             now,
             now
-          );
+          ]);
         }
       }
     });
@@ -97,6 +101,26 @@ export default class SqliteService {
 
 function valueOrNull(value) {
   return value === undefined ? null : value;
+}
+
+function normalizeBindValues(values) {
+  return values.map(value => value === undefined ? null : value);
+}
+
+function runStatement(statement, label, values) {
+  try {
+    return statement.run(...normalizeBindValues(values));
+  } catch (error) {
+    throw new Error(`${label} failed: ${error.message}`);
+  }
+}
+
+function getStatement(statement, label, values) {
+  try {
+    return statement.get(...normalizeBindValues(values));
+  } catch (error) {
+    throw new Error(`${label} failed: ${error.message}`);
+  }
 }
 
 function buildFallbackPlaceId(lead) {
