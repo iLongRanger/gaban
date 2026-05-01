@@ -99,4 +99,39 @@ describe('SqliteService', () => {
     const drafts = db.prepare('SELECT * FROM outreach_drafts WHERE lead_id = ?').all(lead.id);
     assert.equal(drafts.length, 0);
   });
+
+  it('converts undefined lead and draft fields to nullable values', () => {
+    const partialLead = {
+      ...sampleLead,
+      place_id: 'ChIJ_partial_789',
+      business_name: 'Partial Biz',
+      type: undefined,
+      formatted_address: undefined,
+      phone: undefined,
+      website: undefined,
+      email: undefined,
+      subtypes: undefined,
+      working_hours: undefined,
+      business_status: undefined,
+      instagram: undefined,
+      facebook: undefined
+    };
+    const partialDrafts = {
+      curious_neighbor: {
+        email_subject: undefined,
+        email_body: 'Body',
+        dm: undefined
+      }
+    };
+
+    service.exportResults([partialLead], [partialDrafts], '2026-W11');
+
+    const lead = db.prepare('SELECT * FROM leads WHERE place_id = ?').get('ChIJ_partial_789');
+    assert.equal(lead.type, null);
+    assert.equal(lead.address, null);
+    const drafts = db.prepare('SELECT * FROM outreach_drafts WHERE lead_id = ?').all(lead.id);
+    assert.equal(drafts.length, 1);
+    assert.equal(drafts[0].email_subject, '');
+    assert.equal(drafts[0].dm, '');
+  });
 });

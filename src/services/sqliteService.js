@@ -36,28 +36,28 @@ export default class SqliteService {
         const draft = drafts[i];
 
         insertLead.run(
-          lead.place_id,
-          lead.business_name,
-          lead.type || null,
-          lead.formatted_address || null,
-          lead.phone || null,
-          lead.website || null,
-          lead.email || null,
+          valueOrNull(lead.place_id),
+          valueOrNull(lead.business_name),
+          valueOrNull(lead.type),
+          valueOrNull(lead.formatted_address),
+          valueOrNull(lead.phone),
+          valueOrNull(lead.website),
+          valueOrNull(lead.email),
           lead.rating ?? null,
           lead.reviews_count ?? null,
           lead.photo_count ?? null,
           lead.location?.lat ?? null,
           lead.location?.lng ?? null,
           lead.distance_km ?? null,
-          lead.subtypes ? JSON.stringify(lead.subtypes) : null,
-          lead.working_hours || null,
-          lead.business_status || null,
+          lead.subtypes == null ? null : JSON.stringify(lead.subtypes),
+          valueOrNull(lead.working_hours),
+          valueOrNull(lead.business_status),
           lead.reviews_data ? JSON.stringify(lead.reviews_data) : '[]',
-          lead.instagram || null,
-          lead.facebook || null,
+          valueOrNull(lead.instagram),
+          valueOrNull(lead.facebook),
           lead.total_score ?? 0,
           JSON.stringify(lead.factor_scores || {}),
-          lead.reasoning || '',
+          valueOrNull(lead.reasoning) || '',
           weekLabel,
           now,
           now
@@ -76,7 +76,15 @@ export default class SqliteService {
         for (const style of ['curious_neighbor', 'value_lead', 'compliment_question']) {
           const d = draft[style];
           if (!d) continue;
-          insertDraft.run(row.id, style, d.email_subject, d.email_body, d.dm, now, now);
+          insertDraft.run(
+            row.id,
+            style,
+            valueOrNull(d.email_subject) || '',
+            valueOrNull(d.email_body) || '',
+            valueOrNull(d.dm) || '',
+            now,
+            now
+          );
         }
       }
     });
@@ -84,4 +92,8 @@ export default class SqliteService {
     transaction();
     this.logger?.info('Exported ' + leads.length + ' leads to SQLite.');
   }
+}
+
+function valueOrNull(value) {
+  return value === undefined ? null : value;
 }
