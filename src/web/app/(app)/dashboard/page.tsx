@@ -43,10 +43,10 @@ function Row({ k, v, tone }: { k: string; v: React.ReactNode; tone?: 'ok' | 'war
   );
 }
 
-function buildHealthActions(heartbeat: any, healthcheck: any) {
+function buildHealthActions(heartbeat: any, healthcheck: any, publicAppUrl: string | undefined) {
   const actions = [];
 
-  if (!heartbeat.gmail_configured || healthcheck?.gmail_configured === false) {
+  if (!heartbeat.gmail_configured) {
     actions.push({
       title: 'Gmail OAuth is missing from the running web task',
       detail: 'Confirm GMAIL_OAUTH_CLIENT_ID, GMAIL_OAUTH_CLIENT_SECRET, GMAIL_OAUTH_REFRESH_TOKEN, and GMAIL_SENDER_EMAIL are present in .env, then restart Gaban Bot Web.'
@@ -60,7 +60,7 @@ function buildHealthActions(heartbeat: any, healthcheck: any) {
     });
   }
 
-  if (healthcheck && healthcheck.public_url_ok === null && !healthcheck.public_url) {
+  if (!publicAppUrl) {
     actions.push({
       title: 'PUBLIC_APP_URL is not configured',
       detail: 'Set PUBLIC_APP_URL to the public bot URL so unsubscribe links and health checks can verify the tunnel.'
@@ -78,6 +78,13 @@ function buildHealthActions(heartbeat: any, healthcheck: any) {
     actions.push({
       title: 'Some sends are stuck in sending state',
       detail: 'Restart Gaban Bot Web so startup recovery can mark or reschedule stuck sends.'
+    });
+  }
+
+  if (actions.length === 0 && healthcheck?.ok === false) {
+    actions.push({
+      title: 'Saved health check has not refreshed yet',
+      detail: 'The running web task has the required env vars now. Wait up to 10 minutes for the scheduled health check, or restart Gaban Bot Web and refresh the dashboard.'
     });
   }
 
@@ -103,7 +110,7 @@ export default async function DashboardPage() {
   const healthcheck = parseJson(heartbeat.last_healthcheck);
   const workerGap = parseJson(heartbeat.last_send_worker_gap);
   const healthOk = heartbeat.gmail_configured && heartbeat.sending_stale === 0 && healthcheck?.ok !== false;
-  const healthActions = buildHealthActions(heartbeat, healthcheck);
+  const healthActions = buildHealthActions(heartbeat, healthcheck, process.env.PUBLIC_APP_URL);
 
   return (
     <div className="boot">
