@@ -45,6 +45,7 @@ function Row({ k, v, tone }: { k: string; v: React.ReactNode; tone?: 'ok' | 'war
 
 function buildHealthActions(heartbeat: any, healthcheck: any, publicAppUrl: string | undefined) {
   const actions = [];
+  const responseMonitor = parseJson(heartbeat.last_response_monitor);
 
   if (!heartbeat.gmail_configured) {
     actions.push({
@@ -71,6 +72,16 @@ function buildHealthActions(heartbeat: any, healthcheck: any, publicAppUrl: stri
     actions.push({
       title: 'SQLite database is not writable',
       detail: 'Check that the app can write to the data folder and that the database is not locked by another process.'
+    });
+  }
+
+  if (responseMonitor?.ok === false) {
+    const missingScope = String(responseMonitor.message || '').toLowerCase().includes('insufficient authentication scopes');
+    actions.push({
+      title: missingScope ? 'Gmail OAuth is missing inbox read permission' : 'Gmail response monitor is failing',
+      detail: missingScope
+        ? 'Create a new Google OAuth refresh token with both gmail.send and gmail.readonly scopes, update GMAIL_OAUTH_REFRESH_TOKEN in .env, then restart Gaban Bot Web.'
+        : `Check the response monitor error, then restart Gaban Bot Web. Last error: ${responseMonitor.message || 'unknown error'}`
     });
   }
 
@@ -109,7 +120,8 @@ export default async function DashboardPage() {
 
   const healthcheck = parseJson(heartbeat.last_healthcheck);
   const workerGap = parseJson(heartbeat.last_send_worker_gap);
-  const healthOk = heartbeat.gmail_configured && heartbeat.sending_stale === 0 && healthcheck?.ok !== false;
+  const responseMonitor = parseJson(heartbeat.last_response_monitor);
+  const healthOk = heartbeat.gmail_configured && heartbeat.sending_stale === 0 && healthcheck?.ok !== false && responseMonitor?.ok !== false;
   const healthActions = buildHealthActions(heartbeat, healthcheck, process.env.PUBLIC_APP_URL);
 
   return (
@@ -188,6 +200,11 @@ export default async function DashboardPage() {
           <Row
             k="WORKER GAP"
             v={workerGap ? `${workerGap.gap_minutes}m · ${workerGap.rescheduled_sends} moved` : '—'}
+          />
+          <Row
+            k="RESPONSE MONITOR"
+            v={responseMonitor ? `${responseMonitor.ok ? 'OK' : 'FAIL'} · ${formatDate(responseMonitor.checked_at)}` : '—'}
+            tone={responseMonitor?.ok === false ? 'err' : responseMonitor?.ok ? 'ok' : undefined}
           />
           <Row k="LAST CHECKED" v={formatDate(heartbeat.checked_at)} />
         </section>

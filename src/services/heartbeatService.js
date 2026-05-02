@@ -34,7 +34,8 @@ export class HeartbeatService {
          'outreach.last_backup_path',
          'outreach.last_backup_at',
          'outreach.last_healthcheck',
-         'outreach.last_send_worker_gap'
+         'outreach.last_send_worker_gap',
+         'outreach.last_response_monitor'
        )`
     ).all().reduce((values, row) => {
       values[row.key] = row.value;
@@ -71,6 +72,7 @@ export class HeartbeatService {
       last_backup_at: settings['outreach.last_backup_at'] || null,
       last_healthcheck: settings['outreach.last_healthcheck'] || null,
       last_send_worker_gap: settings['outreach.last_send_worker_gap'] || null,
+      last_response_monitor: settings['outreach.last_response_monitor'] || null,
     };
   }
 }

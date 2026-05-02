@@ -64,6 +64,14 @@ function hasGmailEnv() {
   );
 }
 
+function recordResponseMonitorStatus(db: any, result: Record<string, unknown>) {
+  db.prepare(
+    `INSERT INTO system_settings (key, value, updated_at)
+     VALUES (?, ?, ?)
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`
+  ).run('outreach.last_response_monitor', JSON.stringify(result), new Date().toISOString());
+}
+
 export function loadOutreachWorkerOnStartup() {
   if (outreachWorkerJob) return;
   if (!hasGmailEnv()) {
@@ -113,6 +121,20 @@ export function loadOutreachWorkerOnStartup() {
     responseMonitorRunning = true;
     try {
       await monitor.poll({ now: new Date(), maxResults: 25 });
+      recordResponseMonitorStatus(db, {
+        ok: true,
+        checked_at: new Date().toISOString(),
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      recordResponseMonitorStatus(db, {
+        ok: false,
+        checked_at: new Date().toISOString(),
+        message,
+        code: (err as any)?.code || null,
+        status: (err as any)?.status || null,
+      });
+      console.error(message);
     } finally {
       responseMonitorRunning = false;
     }
