@@ -1,5 +1,6 @@
 export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
+    await import('./lib/loadEnv.js');
     const { initDb } = await import('./lib/db.js');
     const db = initDb();
     const { StartupRecovery } = await import('../services/startupRecovery.js');
