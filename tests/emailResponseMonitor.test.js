@@ -82,7 +82,7 @@ describe('EmailResponseMonitor', () => {
     assert.strictEqual(event.type, 'replied');
   });
 
-  it('matches replies by RFC Message-ID when Gmail assigns a different thread id', () => {
+  it('logs auto-replies by RFC Message-ID and keeps follow-ups scheduled by default', () => {
     seedSentCampaign(db);
     const monitor = new EmailResponseMonitor({
       db,
@@ -98,9 +98,40 @@ describe('EmailResponseMonitor', () => {
       references: '<sent-msg-1@mail.gmail.com>',
     }), new Date('2026-05-05T16:00:00.000Z'));
 
-    assert.strictEqual(result.status, 'replied');
+    assert.strictEqual(result.status, 'auto_replied');
     const campaignLead = db.prepare('SELECT status FROM campaign_leads WHERE id = 1').get();
-    assert.strictEqual(campaignLead.status, 'replied');
+    assert.strictEqual(campaignLead.status, 'queued');
+    const scheduled = db.prepare(`SELECT COUNT(*) AS count FROM email_sends WHERE status = 'scheduled'`).get();
+    assert.strictEqual(scheduled.count, 2);
+    const event = db.prepare(`SELECT type FROM email_events WHERE send_id = 1`).get();
+    assert.strictEqual(event.type, 'auto_replied');
+  });
+
+  it('can cancel follow-ups for auto-replies when configured', () => {
+    seedSentCampaign(db);
+    const now = '2026-05-05T15:55:00.000Z';
+    db.prepare(
+      `INSERT INTO system_settings (key, value, updated_at)
+       VALUES ('outreach.auto_reply_action', 'cancel', ?)`
+    ).run(now);
+    const monitor = new EmailResponseMonitor({
+      db,
+      gmail: {},
+      senderEmail: 'outreach@gleampro.ca',
+    });
+
+    const result = monitor.processMessage(gmailMessage({
+      id: 'auto-reply-msg-1',
+      threadId: 'different-thread',
+      subject: 'Automatic reply: Subject curious_neighbor',
+      inReplyTo: '<sent-msg-1@mail.gmail.com>',
+    }), new Date('2026-05-05T16:00:00.000Z'));
+
+    assert.strictEqual(result.status, 'auto_replied');
+    const campaignLead = db.prepare('SELECT status FROM campaign_leads WHERE id = 1').get();
+    assert.strictEqual(campaignLead.status, 'auto_replied');
+    const cancelled = db.prepare(`SELECT COUNT(*) AS count FROM email_sends WHERE status = 'cancelled'`).get();
+    assert.strictEqual(cancelled.count, 2);
   });
 
   it('marks bounces separately', () => {

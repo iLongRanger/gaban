@@ -16,15 +16,31 @@ function normalizeEmail(value) {
 function isBounce(message) {
   const from = headerValue(message, 'From').toLowerCase();
   const subject = headerValue(message, 'Subject').toLowerCase();
-  const autoSubmitted = headerValue(message, 'Auto-Submitted').toLowerCase();
   return (
     from.includes('mailer-daemon') ||
     from.includes('postmaster') ||
     subject.includes('undeliverable') ||
     subject.includes('delivery has failed') ||
-    subject.includes('delivery status notification') ||
+    subject.includes('delivery status notification')
+  );
+}
+
+function isAutoReply(message) {
+  const subject = headerValue(message, 'Subject').toLowerCase();
+  const autoSubmitted = headerValue(message, 'Auto-Submitted').toLowerCase();
+  return (
+    subject.includes('automatic reply') ||
+    subject.includes('auto reply') ||
+    subject.includes('auto-reply') ||
+    subject.includes('out of office') ||
+    subject.includes('out-of-office') ||
     autoSubmitted.includes('auto-replied')
   );
+}
+
+function readSetting(db, key) {
+  const row = db.prepare('SELECT value FROM system_settings WHERE key = ?').get(key);
+  return row?.value;
 }
 
 function messageEventExists(db, gmailMessageId) {
@@ -112,8 +128,10 @@ export class EmailResponseMonitor {
     const send = findMatchingSend(this.db, message);
     if (!send) return { id: message.id, status: 'skipped', reason: 'no matching send' };
 
-    const type = isBounce(message) ? 'bounced' : 'replied';
-    const completedStatus = type === 'bounced' ? 'bounced' : 'replied';
+    const type = isBounce(message) ? 'bounced' : isAutoReply(message) ? 'auto_replied' : 'replied';
+    const autoReplyAction = readSetting(this.db, 'outreach.auto_reply_action') || 'continue';
+    const shouldCompleteLead = type !== 'auto_replied' || autoReplyAction === 'cancel';
+    const completedStatus = type === 'bounced' ? 'bounced' : type === 'auto_replied' ? 'auto_replied' : 'replied';
     const detectedAt = now.toISOString();
     const rawPayload = JSON.stringify({
       gmail_message_id: message.id,
@@ -127,12 +145,14 @@ export class EmailResponseMonitor {
         `INSERT INTO email_events (send_id, type, detected_at, raw_payload)
          VALUES (?, ?, ?, ?)`
       ).run(send.id, type, detectedAt, rawPayload);
-      this.db.prepare(
-        `UPDATE campaign_leads
-         SET status = ?, completed_at = ?
-         WHERE id = ?`
-      ).run(completedStatus, detectedAt, send.campaign_lead_id);
-      this.campaigns.cancelFutureSends(send.campaign_lead_id, { reason: type });
+      if (shouldCompleteLead) {
+        this.db.prepare(
+          `UPDATE campaign_leads
+           SET status = ?, completed_at = ?
+           WHERE id = ?`
+        ).run(completedStatus, detectedAt, send.campaign_lead_id);
+        this.campaigns.cancelFutureSends(send.campaign_lead_id, { reason: type });
+      }
     });
     apply();
 

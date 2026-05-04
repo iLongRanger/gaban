@@ -10,6 +10,7 @@ function formatDate(value: string | null) {
 
 function eventClasses(type: string) {
   if (type === 'replied') return 'bg-green-100 text-green-700';
+  if (type === 'auto_replied') return 'bg-blue-100 text-blue-700';
   if (type === 'bounced') return 'bg-red-100 text-red-700';
   if (type === 'unsubscribed') return 'bg-amber-100 text-amber-700';
   return 'bg-gray-100 text-gray-700';
@@ -35,12 +36,13 @@ export default async function ResponsesPage() {
      JOIN campaign_leads cl ON cl.id = es.campaign_lead_id
      JOIN leads l ON l.id = cl.lead_id
      JOIN campaigns c ON c.id = cl.campaign_id
-     WHERE ee.type IN ('replied', 'bounced', 'unsubscribed')
+     WHERE ee.type IN ('replied', 'auto_replied', 'bounced', 'unsubscribed')
      ORDER BY ee.detected_at DESC, ee.id DESC
      LIMIT 100`
   ).all() as any[];
 
   const replyCount = events.filter((event) => event.type === 'replied').length;
+  const autoReplyCount = events.filter((event) => event.type === 'auto_replied').length;
   const bounceCount = events.filter((event) => event.type === 'bounced').length;
   const unsubscribeCount = events.filter((event) => event.type === 'unsubscribed').length;
 
@@ -53,10 +55,14 @@ export default async function ResponsesPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-3 mb-6">
+      <div className="grid grid-cols-4 gap-3 mb-6">
         <div className="bg-white border border-gray-200 rounded-lg p-3">
           <span className="block text-xs text-gray-400">Replies</span>
           <span className="text-xl font-semibold">{replyCount}</span>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-lg p-3">
+          <span className="block text-xs text-gray-400">Auto-Replies</span>
+          <span className="text-xl font-semibold">{autoReplyCount}</span>
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-3">
           <span className="block text-xs text-gray-400">Bounces</span>

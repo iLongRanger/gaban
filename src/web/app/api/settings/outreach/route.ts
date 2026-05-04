@@ -5,7 +5,8 @@ import { SystemSettingsService } from '../../../../../services/systemSettingsSer
 const DAILY_CAP_KEY = 'outreach.daily_cap';
 const WARMUP_START_KEY = 'outreach.warmup_start_date';
 const WARMUP_LADDER_KEY = 'outreach.warmup_ladder';
-const KEYS = [DAILY_CAP_KEY, WARMUP_START_KEY, WARMUP_LADDER_KEY];
+const AUTO_REPLY_ACTION_KEY = 'outreach.auto_reply_action';
+const KEYS = [DAILY_CAP_KEY, WARMUP_START_KEY, WARMUP_LADDER_KEY, AUTO_REPLY_ACTION_KEY];
 
 function toResponse(settings: Record<string, string>) {
   return {
@@ -14,6 +15,7 @@ function toResponse(settings: Record<string, string>) {
     warmup_ladder: settings[WARMUP_LADDER_KEY]
       ? JSON.parse(settings[WARMUP_LADDER_KEY]).join(',')
       : '',
+    auto_reply_action: settings[AUTO_REPLY_ACTION_KEY] ?? 'continue',
   };
 }
 
@@ -44,6 +46,15 @@ function parseLadder(value: unknown) {
   return JSON.stringify(caps);
 }
 
+function parseAutoReplyAction(value: unknown) {
+  if (value === undefined || value === null || value === '') return 'continue';
+  const action = String(value);
+  if (!['continue', 'cancel'].includes(action)) {
+    throw new Error('auto_reply_action must be continue or cancel');
+  }
+  return action;
+}
+
 export function GET() {
   const db = getDb();
   const settings = new SystemSettingsService({ db }).getSettings(KEYS);
@@ -59,6 +70,7 @@ export async function PATCH(request: NextRequest) {
       [DAILY_CAP_KEY]: parsePositiveInteger(body.daily_cap, 'daily_cap'),
       [WARMUP_START_KEY]: parseDate(body.warmup_start_date),
       [WARMUP_LADDER_KEY]: parseLadder(body.warmup_ladder),
+      [AUTO_REPLY_ACTION_KEY]: parseAutoReplyAction(body.auto_reply_action),
     };
     const service = new SystemSettingsService({ db });
     service.updateSettings(values);

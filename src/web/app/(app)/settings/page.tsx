@@ -25,6 +25,7 @@ interface OutreachSettings {
   daily_cap: string;
   warmup_start_date: string;
   warmup_ladder: string;
+  auto_reply_action: string;
 }
 
 interface Suppression {
@@ -67,6 +68,7 @@ export default function SettingsPage() {
     daily_cap: '',
     warmup_start_date: '',
     warmup_ladder: '5,10,15,20',
+    auto_reply_action: 'continue',
   });
   const [suppressions, setSuppressions] = useState<Suppression[]>([]);
   const [suppressionForm, setSuppressionForm] = useState({ kind: 'email', value: '', reason: 'manual' });
@@ -95,6 +97,7 @@ export default function SettingsPage() {
         daily_cap: data.daily_cap || '',
         warmup_start_date: data.warmup_start_date || '',
         warmup_ladder: data.warmup_ladder || '5,10,15,20',
+        auto_reply_action: data.auto_reply_action || 'continue',
       });
     }
   }, []);
@@ -220,6 +223,7 @@ export default function SettingsPage() {
       daily_cap: data.daily_cap || '',
       warmup_start_date: data.warmup_start_date || '',
       warmup_ladder: data.warmup_ladder || '5,10,15,20',
+      auto_reply_action: data.auto_reply_action || 'continue',
     });
     setOutreachMessage('Outreach settings saved.');
     setSavingOutreach(false);
@@ -432,6 +436,18 @@ export default function SettingsPage() {
                 placeholder="5,10,15,20"
               />
               <p className="text-xs text-gray-500 mt-1">Comma-separated weekly caps. Used when no global daily cap is set.</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Auto-Reply Follow-Ups</label>
+              <select
+                value={outreachSettings.auto_reply_action}
+                onChange={e => setOutreachSettings(s => ({ ...s, auto_reply_action: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:border-blue-500 focus:outline-none"
+              >
+                <option value="continue">Continue scheduled follow-ups</option>
+                <option value="cancel">Cancel future follow-ups</option>
+              </select>
+              <p className="text-xs text-gray-500 mt-1">Auto-replies are still logged, but they do not stop the sequence unless you choose cancel.</p>
             </div>
             <button
               onClick={handleSaveOutreachSettings}
