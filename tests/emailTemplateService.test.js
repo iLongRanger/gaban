@@ -49,6 +49,19 @@ describe('buildOutreachEmail', () => {
     assert.strictEqual(payload.sendId, 42);
   });
 
+  it('renders the legal footer smaller in the HTML version', () => {
+    const { html } = buildOutreachEmail({
+      sendId: 7,
+      subject: 'Hello',
+      body: 'Hi there.',
+      config: CONFIG,
+    });
+    assert.ok(html.includes('font-size:11px'), 'footer should use small text');
+    assert.ok(html.includes('color:#6b7280'), 'footer should use muted text');
+    assert.ok(html.includes('https://outreach.gleampro.ca/u/'), 'missing unsubscribe link');
+    assert.ok(html.includes('Hi there.'), 'missing message body');
+  });
+
   it('throws if sendId missing', () => {
     assert.throws(() => buildOutreachEmail({
       subject: 'x',

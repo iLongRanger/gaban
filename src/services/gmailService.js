@@ -6,21 +6,45 @@ function sanitizeHeader(value, field) {
   return value;
 }
 
-function buildRawMessage({ to, from, subject, body, inReplyTo }) {
+function buildRawMessage({ to, from, subject, body, html, inReplyTo }) {
+  const boundary = `gaban_${Date.now()}_${Math.random().toString(16).slice(2)}`;
   const headers = [
     `From: ${sanitizeHeader(from, 'from')}`,
     `To: ${sanitizeHeader(to, 'to')}`,
     `Subject: ${sanitizeHeader(subject, 'subject')}`,
     'MIME-Version: 1.0',
-    'Content-Type: text/plain; charset="UTF-8"',
-    'Content-Transfer-Encoding: 8bit',
   ];
   if (inReplyTo) {
     const safe = sanitizeHeader(inReplyTo, 'inReplyTo');
     headers.push(`In-Reply-To: ${safe}`);
     headers.push(`References: ${safe}`);
   }
-  const raw = headers.join('\r\n') + '\r\n\r\n' + body;
+
+  let raw;
+  if (html) {
+    headers.push(`Content-Type: multipart/alternative; boundary="${boundary}"`);
+    raw = [
+      headers.join('\r\n'),
+      '',
+      `--${boundary}`,
+      'Content-Type: text/plain; charset="UTF-8"',
+      'Content-Transfer-Encoding: 8bit',
+      '',
+      body,
+      `--${boundary}`,
+      'Content-Type: text/html; charset="UTF-8"',
+      'Content-Transfer-Encoding: 8bit',
+      '',
+      html,
+      `--${boundary}--`,
+      '',
+    ].join('\r\n');
+  } else {
+    headers.push('Content-Type: text/plain; charset="UTF-8"');
+    headers.push('Content-Transfer-Encoding: 8bit');
+    raw = headers.join('\r\n') + '\r\n\r\n' + body;
+  }
+
   return Buffer.from(raw, 'utf8').toString('base64url');
 }
 
@@ -45,7 +69,7 @@ export class GmailService {
     this.logger = logger;
   }
 
-  async send({ to, subject, body, threadId, inReplyTo }) {
+  async send({ to, subject, body, html, threadId, inReplyTo }) {
     if (!to) throw new Error('to required');
     if (!subject) throw new Error('subject required');
     if (!body) throw new Error('body required');
@@ -54,7 +78,7 @@ export class GmailService {
       ? `${this.sender.name} <${this.sender.email}>`
       : this.sender.email;
 
-    const raw = buildRawMessage({ to, from, subject, body, inReplyTo });
+    const raw = buildRawMessage({ to, from, subject, body, html, inReplyTo });
 
     const requestBody = { raw };
     if (threadId) requestBody.threadId = threadId;

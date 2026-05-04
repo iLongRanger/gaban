@@ -128,6 +128,7 @@ export class SendQueueWorker {
         to: send.recipient_email,
         subject: composed.subject,
         body: composed.body,
+        html: composed.html,
       });
       const sentAt = new Date().toISOString();
       this.db.prepare(

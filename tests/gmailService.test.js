@@ -82,6 +82,25 @@ describe('GmailService', () => {
     assert.ok(raw.includes('café'));
   });
 
+  it('sends multipart alternative when html is provided', async () => {
+    const { fake, calls } = makeFakeClient({
+      sendResult: { id: 'm', threadId: 't' },
+    });
+    const svc = new GmailService({ client: fake, sender });
+    await svc.send({
+      to: 'x@y.com',
+      subject: 's',
+      body: 'Plain body',
+      html: '<div>HTML body</div>',
+    });
+    const raw = Buffer.from(calls[0].requestBody.raw, 'base64url').toString('utf8');
+    assert.ok(raw.includes('Content-Type: multipart/alternative; boundary='));
+    assert.ok(raw.includes('Content-Type: text/plain; charset="UTF-8"'));
+    assert.ok(raw.includes('Content-Type: text/html; charset="UTF-8"'));
+    assert.ok(raw.includes('Plain body'));
+    assert.ok(raw.includes('<div>HTML body</div>'));
+  });
+
   it('surfaces send errors', async () => {
     const err = new Error('quota exceeded');
     const { fake } = makeFakeClient({ sendError: err });
