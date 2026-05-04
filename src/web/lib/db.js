@@ -130,6 +130,7 @@ CREATE TABLE IF NOT EXISTS email_sends (
   recipient_email    TEXT NOT NULL,
   gmail_message_id   TEXT,
   gmail_thread_id    TEXT,
+  gmail_rfc_message_id TEXT,
   scheduled_for      TEXT NOT NULL,
   sent_at            TEXT,
   status             TEXT NOT NULL DEFAULT 'scheduled',
@@ -206,12 +207,20 @@ CREATE INDEX IF NOT EXISTS idx_api_usage_events_occurred_provider
   ON api_usage_events(occurred_at, provider);
 `;
 
+function ensureColumn(db, table, column, definition) {
+  const columns = db.pragma(`table_info(${table})`).map((row) => row.name);
+  if (!columns.includes(column)) {
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+  }
+}
+
 export function initDb(dbPath) {
   const resolvedPath = dbPath || path.resolve(process.cwd(), 'data/gaban.sqlite');
   const db = new Database(resolvedPath);
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
   db.exec(SCHEMA);
+  ensureColumn(db, 'email_sends', 'gmail_rfc_message_id', 'TEXT');
   _db = db;
   return db;
 }

@@ -48,6 +48,12 @@ function buildRawMessage({ to, from, subject, body, html, inReplyTo }) {
   return Buffer.from(raw, 'utf8').toString('base64url');
 }
 
+function headerValue(message, name) {
+  const headers = message?.payload?.headers || [];
+  const found = headers.find((header) => header.name?.toLowerCase() === name.toLowerCase());
+  return found?.value || null;
+}
+
 export function createGmailClientFromEnv(env = process.env) {
   const clientId = env.GMAIL_OAUTH_CLIENT_ID;
   const clientSecret = env.GMAIL_OAUTH_CLIENT_SECRET;
@@ -87,10 +93,25 @@ export class GmailService {
       userId: 'me',
       requestBody,
     });
+    let rfcMessageId = null;
+    if (response.data.id) {
+      try {
+        const sent = await this.client.users.messages.get({
+          userId: 'me',
+          id: response.data.id,
+          format: 'metadata',
+          metadataHeaders: ['Message-ID'],
+        });
+        rfcMessageId = headerValue(sent.data, 'Message-ID');
+      } catch (err) {
+        this.logger?.warn?.(err instanceof Error ? err.message : String(err));
+      }
+    }
 
     return {
       gmail_message_id: response.data.id,
       gmail_thread_id: response.data.threadId,
+      gmail_rfc_message_id: rfcMessageId,
     };
   }
 

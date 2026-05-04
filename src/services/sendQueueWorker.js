@@ -133,9 +133,15 @@ export class SendQueueWorker {
       const sentAt = new Date().toISOString();
       this.db.prepare(
         `UPDATE email_sends
-         SET status = 'sent', sent_at = ?, gmail_message_id = ?, gmail_thread_id = ?, error_message = NULL
+         SET status = 'sent', sent_at = ?, gmail_message_id = ?, gmail_thread_id = ?, gmail_rfc_message_id = ?, error_message = NULL
          WHERE id = ?`
-      ).run(sentAt, result.gmail_message_id || result.provider || null, result.gmail_thread_id || null, send.id);
+      ).run(
+        sentAt,
+        result.gmail_message_id || result.provider || null,
+        result.gmail_thread_id || null,
+        result.gmail_rfc_message_id || null,
+        send.id,
+      );
       this.db.prepare(
         `UPDATE campaign_leads
          SET status = 'active', touch_count = MAX(touch_count, ?), last_touch_at = ?

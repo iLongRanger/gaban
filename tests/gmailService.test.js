@@ -18,7 +18,13 @@ function makeFakeClient({ sendResult, sendError }) {
         },
         get: async (args) => {
           calls.push(args);
-          return { data: { id: args.id, threadId: 'thread-1', payload: { headers: [] } } };
+          return {
+            data: {
+              id: args.id,
+              threadId: 'thread-1',
+              payload: { headers: [{ name: 'Message-ID', value: '<msg123@mail.gmail.com>' }] },
+            },
+          };
         },
       },
     },
@@ -43,12 +49,15 @@ describe('GmailService', () => {
 
     assert.strictEqual(result.gmail_message_id, 'msg123');
     assert.strictEqual(result.gmail_thread_id, 'thr123');
-    assert.strictEqual(calls.length, 1);
+    assert.strictEqual(result.gmail_rfc_message_id, '<msg123@mail.gmail.com>');
+    assert.strictEqual(calls.length, 2);
     const raw = Buffer.from(calls[0].requestBody.raw, 'base64url').toString('utf8');
     assert.ok(raw.includes('To: dest@example.com'));
     assert.ok(raw.includes('From: GleamPro <outreach@outreach.gleampro.ca>'));
     assert.ok(raw.includes('Subject: Hi'));
     assert.ok(raw.includes('Hello world.'));
+    assert.strictEqual(calls[1].id, 'msg123');
+    assert.deepStrictEqual(calls[1].metadataHeaders, ['Message-ID']);
   });
 
   it('threads follow-ups via In-Reply-To and References', async () => {

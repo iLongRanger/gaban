@@ -29,12 +29,19 @@ function seedSentCampaign(db) {
   });
   db.prepare(
     `UPDATE email_sends
-     SET status = 'sent', sent_at = ?, gmail_message_id = ?, gmail_thread_id = ?
+     SET status = 'sent', sent_at = ?, gmail_message_id = ?, gmail_thread_id = ?, gmail_rfc_message_id = ?
      WHERE id = 1`
-  ).run('2026-05-04T16:00:00.000Z', 'sent-msg-1', 'thread-1');
+  ).run('2026-05-04T16:00:00.000Z', 'sent-msg-1', 'thread-1', '<sent-msg-1@mail.gmail.com>');
 }
 
-function gmailMessage({ id = 'reply-msg-1', threadId = 'thread-1', from = 'Lead <lead@example.com>', subject = 'Re: Hello' } = {}) {
+function gmailMessage({
+  id = 'reply-msg-1',
+  threadId = 'thread-1',
+  from = 'Lead <lead@example.com>',
+  subject = 'Re: Hello',
+  inReplyTo,
+  references,
+} = {}) {
   return {
     id,
     threadId,
@@ -42,6 +49,8 @@ function gmailMessage({ id = 'reply-msg-1', threadId = 'thread-1', from = 'Lead 
       headers: [
         { name: 'From', value: from },
         { name: 'Subject', value: subject },
+        ...(inReplyTo ? [{ name: 'In-Reply-To', value: inReplyTo }] : []),
+        ...(references ? [{ name: 'References', value: references }] : []),
       ],
     },
   };
@@ -71,6 +80,27 @@ describe('EmailResponseMonitor', () => {
     assert.strictEqual(cancelled.count, 2);
     const event = db.prepare(`SELECT type FROM email_events WHERE send_id = 1`).get();
     assert.strictEqual(event.type, 'replied');
+  });
+
+  it('matches replies by RFC Message-ID when Gmail assigns a different thread id', () => {
+    seedSentCampaign(db);
+    const monitor = new EmailResponseMonitor({
+      db,
+      gmail: {},
+      senderEmail: 'outreach@gleampro.ca',
+    });
+
+    const result = monitor.processMessage(gmailMessage({
+      id: 'auto-reply-msg-1',
+      threadId: 'different-thread',
+      subject: 'Automatic reply: Subject curious_neighbor',
+      inReplyTo: '<sent-msg-1@mail.gmail.com>',
+      references: '<sent-msg-1@mail.gmail.com>',
+    }), new Date('2026-05-05T16:00:00.000Z'));
+
+    assert.strictEqual(result.status, 'replied');
+    const campaignLead = db.prepare('SELECT status FROM campaign_leads WHERE id = 1').get();
+    assert.strictEqual(campaignLead.status, 'replied');
   });
 
   it('marks bounces separately', () => {

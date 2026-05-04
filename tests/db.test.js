@@ -83,7 +83,7 @@ describe('Outreach tables', () => {
   it('creates email_sends table', () => {
     const columns = db.pragma('table_info(email_sends)').map(c => c.name);
     for (const col of ['id', 'campaign_lead_id', 'touch_number', 'template_style',
-      'subject', 'body', 'recipient_email', 'gmail_message_id', 'gmail_thread_id',
+      'subject', 'body', 'recipient_email', 'gmail_message_id', 'gmail_thread_id', 'gmail_rfc_message_id',
       'scheduled_for', 'sent_at', 'status', 'error_message', 'created_at']) {
       assert.ok(columns.includes(col), `missing column ${col}`);
     }

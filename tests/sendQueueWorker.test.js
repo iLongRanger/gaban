@@ -55,7 +55,7 @@ describe('SendQueueWorker', () => {
       mailer: {
         send: async (message) => {
           sent.push(message);
-          return { gmail_message_id: 'msg-1', gmail_thread_id: 'thr-1' };
+          return { gmail_message_id: 'msg-1', gmail_thread_id: 'thr-1', gmail_rfc_message_id: '<msg-1@mail.gmail.com>' };
         },
       },
     });
@@ -68,6 +68,7 @@ describe('SendQueueWorker', () => {
     const send = db.prepare('SELECT * FROM email_sends WHERE id = 1').get();
     assert.strictEqual(send.status, 'sent');
     assert.strictEqual(send.gmail_message_id, 'msg-1');
+    assert.strictEqual(send.gmail_rfc_message_id, '<msg-1@mail.gmail.com>');
   });
 
   it('defers instead of sending when the warm-up cap is reached', async () => {

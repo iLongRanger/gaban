@@ -1,6 +1,6 @@
 import { CampaignService } from './campaignService.js';
 
-const DEFAULT_HEADERS = ['From', 'To', 'Subject', 'Message-ID', 'Auto-Submitted'];
+const DEFAULT_HEADERS = ['From', 'To', 'Subject', 'Message-ID', 'In-Reply-To', 'References', 'Auto-Submitted'];
 
 function headerValue(message, name) {
   const headers = message?.payload?.headers || [];
@@ -36,6 +36,37 @@ function messageEventExists(db, gmailMessageId) {
      LIMIT 1`
   ).get(`%"gmail_message_id":"${escaped}"%`);
   return Boolean(row);
+}
+
+function findMatchingSend(db, message) {
+  const threadId = message.threadId;
+  const inReplyTo = headerValue(message, 'In-Reply-To');
+  const references = headerValue(message, 'References');
+
+  const byThread = db.prepare(
+    `SELECT es.*, cl.id AS campaign_lead_id, cl.status AS campaign_lead_status
+     FROM email_sends es
+     JOIN campaign_leads cl ON cl.id = es.campaign_lead_id
+     WHERE es.gmail_thread_id = ?
+       AND es.status = 'sent'
+     ORDER BY es.touch_number DESC, es.sent_at DESC
+     LIMIT 1`
+  ).get(threadId);
+  if (byThread) return byThread;
+
+  const replyRefs = [inReplyTo, references].filter(Boolean).join(' ');
+  if (!replyRefs) return null;
+
+  return db.prepare(
+    `SELECT es.*, cl.id AS campaign_lead_id, cl.status AS campaign_lead_status
+     FROM email_sends es
+     JOIN campaign_leads cl ON cl.id = es.campaign_lead_id
+     WHERE es.status = 'sent'
+       AND es.gmail_rfc_message_id IS NOT NULL
+       AND instr(?, es.gmail_rfc_message_id) > 0
+     ORDER BY es.touch_number DESC, es.sent_at DESC
+     LIMIT 1`
+  ).get(replyRefs);
 }
 
 export class EmailResponseMonitor {
@@ -78,15 +109,7 @@ export class EmailResponseMonitor {
       return { id: message.id, status: 'skipped', reason: 'sender message' };
     }
 
-    const send = this.db.prepare(
-      `SELECT es.*, cl.id AS campaign_lead_id, cl.status AS campaign_lead_status
-       FROM email_sends es
-       JOIN campaign_leads cl ON cl.id = es.campaign_lead_id
-       WHERE es.gmail_thread_id = ?
-         AND es.status = 'sent'
-       ORDER BY es.touch_number DESC, es.sent_at DESC
-       LIMIT 1`
-    ).get(message.threadId);
+    const send = findMatchingSend(this.db, message);
     if (!send) return { id: message.id, status: 'skipped', reason: 'no matching send' };
 
     const type = isBounce(message) ? 'bounced' : 'replied';
