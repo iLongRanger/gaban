@@ -181,6 +181,7 @@ main, nav, header { position: relative; z-index: 1; }
 }
 
 .tag--accent  { color: var(--accent);  border-color: color-mix(in oklab, var(--accent) 35%, var(--line)); }
+.tag--info    { color: var(--ink-2);   border-color: color-mix(in oklab, var(--ink-2) 35%, var(--line)); }
 .tag--warn    { color: var(--warn);    border-color: color-mix(in oklab, var(--warn) 35%, var(--line)); }
 .tag--danger  { color: var(--danger);  border-color: color-mix(in oklab, var(--danger) 35%, var(--line)); }
 .tag--mute    { color: var(--mute); }

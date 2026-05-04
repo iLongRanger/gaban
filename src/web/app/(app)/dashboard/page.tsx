@@ -113,7 +113,7 @@ export default async function DashboardPage() {
      JOIN campaign_leads cl ON cl.id = es.campaign_lead_id
      JOIN leads l ON l.id = cl.lead_id
      JOIN campaigns c ON c.id = cl.campaign_id
-     WHERE ee.type IN ('replied', 'bounced', 'unsubscribed')
+     WHERE ee.type IN ('replied', 'auto_replied', 'bounced', 'unsubscribed')
      ORDER BY ee.detected_at DESC, ee.id DESC
      LIMIT 5`
   ).all() as any[];
@@ -240,7 +240,7 @@ export default async function DashboardPage() {
                     <span style={{ fontWeight: 600, fontSize: 13 }}>{event.business_name}</span>
                     <span className={
                       'tag ' +
-                      (event.type === 'replied' ? 'tag--accent' : event.type === 'bounced' ? 'tag--danger' : 'tag--warn')
+                      (event.type === 'replied' ? 'tag--accent' : event.type === 'auto_replied' ? 'tag--info' : event.type === 'bounced' ? 'tag--danger' : 'tag--warn')
                     }>
                       {event.type}
                     </span>
