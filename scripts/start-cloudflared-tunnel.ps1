@@ -51,7 +51,6 @@ if (-not (Test-Path $ConfigPath)) {
 Write-CloudflaredLog "[$timestamp] Using $Cloudflared"
 Write-CloudflaredLog "[$timestamp] Using config $ConfigPath"
 
-& $Cloudflared tunnel --config $ConfigPath run 2>&1 | ForEach-Object {
-  Write-CloudflaredLog $_.ToString()
-}
+$Command = "`"$Cloudflared`" --config `"$ConfigPath`" tunnel run >> `"$LogFile`" 2>&1"
+& cmd.exe /c $Command
 exit $LASTEXITCODE
