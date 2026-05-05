@@ -7,6 +7,7 @@ interface Preset {
   name: string;
   location: string;
   radius_km: number;
+  distance_center_address: string | null;
   office_lat: number;
   office_lng: number;
   categories: string;
@@ -60,6 +61,7 @@ export default function SettingsPage() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [form, setForm] = useState({
     name: '', location: 'New Westminster, BC', radius_km: 50,
+    distance_center_address: 'Suite 6 - 1209 Fourth Avenue, New Westminster, BC V3M 1T8',
     office_lat: 49.2026, office_lng: -122.9106,
     categories: [] as string[], top_n: 10, is_default: false,
   });
@@ -75,7 +77,9 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [savingOutreach, setSavingOutreach] = useState(false);
   const [savingSuppression, setSavingSuppression] = useState(false);
+  const [geocoding, setGeocoding] = useState(false);
   const [error, setError] = useState('');
+  const [geocodeMessage, setGeocodeMessage] = useState('');
   const [outreachMessage, setOutreachMessage] = useState('');
   const [suppressionMessage, setSuppressionMessage] = useState('');
 
@@ -119,6 +123,7 @@ export default function SettingsPage() {
     const cats = JSON.parse(preset.categories);
     setForm({
       name: preset.name, location: preset.location, radius_km: preset.radius_km,
+      distance_center_address: preset.distance_center_address || '',
       office_lat: preset.office_lat, office_lng: preset.office_lng,
       categories: cats, top_n: preset.top_n, is_default: !!preset.is_default,
     });
@@ -130,17 +135,46 @@ export default function SettingsPage() {
       setScheduleForm({ day: 1, hour: 9, minute: 0, enabled: false });
     }
     setError('');
+    setGeocodeMessage('');
   }
 
   function resetForm() {
     setSelectedId(null);
     setForm({
       name: '', location: 'New Westminster, BC', radius_km: 50,
+      distance_center_address: 'Suite 6 - 1209 Fourth Avenue, New Westminster, BC V3M 1T8',
       office_lat: 49.2026, office_lng: -122.9106,
       categories: [], top_n: 10, is_default: false,
     });
     setScheduleForm({ day: 1, hour: 9, minute: 0, enabled: false });
     setError('');
+    setGeocodeMessage('');
+  }
+
+  async function handleFindCoordinates() {
+    const address = form.distance_center_address.trim();
+    if (!address) {
+      setGeocodeMessage('Enter a distance center address first.');
+      return;
+    }
+
+    setGeocoding(true);
+    setGeocodeMessage('');
+    const res = await fetch('/api/geocode', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address }),
+    });
+    const data = await res.json();
+    setGeocoding(false);
+
+    if (!res.ok) {
+      setGeocodeMessage(data.error || 'Could not find coordinates for that address.');
+      return;
+    }
+
+    setForm(f => ({ ...f, office_lat: data.lat, office_lng: data.lng }));
+    setGeocodeMessage(`Coordinates found from ${data.source}.`);
   }
 
   async function handleSave() {
@@ -178,6 +212,12 @@ export default function SettingsPage() {
     await fetchPresets();
     await fetchSchedules();
     setSelectedId(saved.id);
+    setForm(f => ({
+      ...f,
+      distance_center_address: saved.distance_center_address || '',
+      office_lat: saved.office_lat,
+      office_lng: saved.office_lng,
+    }));
     setSaving(false);
   }
 
@@ -312,6 +352,34 @@ export default function SettingsPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">Search Location</label>
             <input type="text" value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded focus:border-blue-500 focus:outline-none" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Distance Center Address</label>
+            <div className="flex gap-2">
+              <input type="text" value={form.distance_center_address}
+                onChange={e => {
+                  setForm(f => ({ ...f, distance_center_address: e.target.value }));
+                  setGeocodeMessage('');
+                }}
+                className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded focus:border-blue-500 focus:outline-none"
+                placeholder="Suite 6 - 1209 Fourth Avenue, New Westminster, BC" />
+              <button
+                type="button"
+                onClick={handleFindCoordinates}
+                disabled={geocoding || !form.distance_center_address.trim()}
+                className="px-3 py-2 bg-gray-900 text-white rounded text-sm hover:bg-gray-800 disabled:opacity-50"
+              >
+                {geocoding ? 'Finding...' : 'Find'}
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Used as km 0 for distance scoring. Coordinates are filled automatically when you save.
+            </p>
+            {geocodeMessage && (
+              <p className={`text-xs mt-1 ${geocodeMessage.startsWith('Coordinates found') ? 'text-green-700' : 'text-red-600'}`}>
+                {geocodeMessage}
+              </p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Radius: {form.radius_km}km</label>

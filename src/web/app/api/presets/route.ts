@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db.js';
+import { geocodeAddress, normalizeDistanceCenterAddress } from '@/lib/geocoding.js';
 import { ALL_CATEGORIES } from '../../../../config/categories.js';
 
 function normalizeTopN(value: unknown) {
@@ -17,6 +18,7 @@ export async function POST(request: NextRequest) {
   const db = getDb();
   const body = await request.json();
   const { name, location, radius_km, office_lat, office_lng, categories, top_n, is_default } = body;
+  const distanceCenterAddress = normalizeDistanceCenterAddress(body.distance_center_address);
 
   if (!name || !location || !categories || !Array.isArray(categories) || categories.length === 0) {
     return NextResponse.json({ error: 'name, location, and categories are required' }, { status: 400 });
@@ -28,18 +30,32 @@ export async function POST(request: NextRequest) {
   }
 
   const now = new Date().toISOString();
+  let distanceCenter = {
+    lat: Number.isFinite(Number.parseFloat(String(office_lat))) ? Number.parseFloat(String(office_lat)) : 49.2026,
+    lng: Number.isFinite(Number.parseFloat(String(office_lng))) ? Number.parseFloat(String(office_lng)) : -122.9106,
+  };
+
+  if (distanceCenterAddress) {
+    try {
+      const geocoded = await geocodeAddress(distanceCenterAddress);
+      distanceCenter = { lat: geocoded.lat, lng: geocoded.lng };
+    } catch (err: any) {
+      return NextResponse.json({ error: err.message || 'Failed to find coordinates for distance center address' }, { status: 400 });
+    }
+  }
 
   try {
     const insert = db.transaction(() => {
       if (is_default) {
         db.prepare('UPDATE presets SET is_default = 0 WHERE is_default = 1').run();
       }
-      return db.prepare(`INSERT INTO presets (name, location, radius_km, office_lat, office_lng, categories, top_n, is_default, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+      return db.prepare(`INSERT INTO presets (name, location, radius_km, distance_center_address, office_lat, office_lng, categories, top_n, is_default, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
         name, location,
         radius_km ?? 50,
-        office_lat ?? 49.2026,
-        office_lng ?? -122.9106,
+        distanceCenterAddress || null,
+        distanceCenter.lat,
+        distanceCenter.lng,
         JSON.stringify(categories),
         normalizeTopN(top_n),
         is_default ? 1 : 0,

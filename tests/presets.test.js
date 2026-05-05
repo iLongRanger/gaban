@@ -21,6 +21,11 @@ describe('presets table', () => {
     assert.strictEqual(preset.radius_km, 30);
   });
 
+  it('adds distance center address column for existing databases', () => {
+    const columns = db.pragma('table_info(presets)').map((row) => row.name);
+    assert.ok(columns.includes('distance_center_address'));
+  });
+
   it('enforces unique preset names', () => {
     const now = new Date().toISOString();
     const stmt = db.prepare(`INSERT INTO presets (name, location, radius_km, office_lat, office_lng, categories, top_n, created_at, updated_at)

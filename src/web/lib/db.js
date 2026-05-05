@@ -61,6 +61,7 @@ CREATE TABLE IF NOT EXISTS presets (
   name TEXT UNIQUE NOT NULL,
   location TEXT NOT NULL,
   radius_km INTEGER NOT NULL DEFAULT 50,
+  distance_center_address TEXT,
   office_lat REAL NOT NULL,
   office_lng REAL NOT NULL,
   categories TEXT NOT NULL,
@@ -236,6 +237,7 @@ export function initDb(dbPath) {
   db.pragma('foreign_keys = ON');
   db.exec(SCHEMA);
   ensureColumn(db, 'email_sends', 'gmail_rfc_message_id', 'TEXT');
+  ensureColumn(db, 'presets', 'distance_center_address', 'TEXT');
   _db = db;
   return db;
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db.js';
+import { geocodeAddress, normalizeDistanceCenterAddress } from '@/lib/geocoding.js';
 import { ALL_CATEGORIES } from '../../../../../config/categories.js';
 
 function normalizeTopN(value: unknown, fallback: number) {
@@ -27,6 +28,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   const body = await request.json();
   const { name, location, radius_km, office_lat, office_lng, categories, top_n, is_default } = body;
+  const hasDistanceCenterAddress = Object.prototype.hasOwnProperty.call(body, 'distance_center_address');
+  const distanceCenterAddress = hasDistanceCenterAddress
+    ? normalizeDistanceCenterAddress(body.distance_center_address)
+    : existing.distance_center_address;
 
   if (categories) {
     if (!Array.isArray(categories) || categories.length === 0) {
@@ -39,20 +44,33 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   }
 
   const now = new Date().toISOString();
+  let nextOfficeLat = office_lat ?? existing.office_lat;
+  let nextOfficeLng = office_lng ?? existing.office_lng;
+
+  if (hasDistanceCenterAddress && distanceCenterAddress && distanceCenterAddress !== existing.distance_center_address) {
+    try {
+      const geocoded = await geocodeAddress(distanceCenterAddress);
+      nextOfficeLat = geocoded.lat;
+      nextOfficeLng = geocoded.lng;
+    } catch (err: any) {
+      return NextResponse.json({ error: err.message || 'Failed to find coordinates for distance center address' }, { status: 400 });
+    }
+  }
 
   const update = db.transaction(() => {
     if (is_default) {
       db.prepare('UPDATE presets SET is_default = 0 WHERE is_default = 1').run();
     }
     db.prepare(`UPDATE presets SET
-      name = ?, location = ?, radius_km = ?, office_lat = ?, office_lng = ?,
+      name = ?, location = ?, radius_km = ?, distance_center_address = ?, office_lat = ?, office_lng = ?,
       categories = ?, top_n = ?, is_default = ?, updated_at = ?
       WHERE id = ?`).run(
       name ?? existing.name,
       location ?? existing.location,
       radius_km ?? existing.radius_km,
-      office_lat ?? existing.office_lat,
-      office_lng ?? existing.office_lng,
+      distanceCenterAddress || null,
+      nextOfficeLat,
+      nextOfficeLng,
       categories ? JSON.stringify(categories) : existing.categories,
       normalizeTopN(top_n, existing.top_n),
       is_default !== undefined ? (is_default ? 1 : 0) : existing.is_default,
