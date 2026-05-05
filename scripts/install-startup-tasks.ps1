@@ -10,7 +10,11 @@ Write-Host "Installing Gaban startup tasks..."
 
 schtasks /Create /TN "Gaban Bot Web" /SC ONLOGON /RL LIMITED /F /TR "`"$PowerShell`" -NoProfile -ExecutionPolicy Bypass -File `"$WebScript`""
 schtasks /Create /TN "Gaban Cloudflare Tunnel" /SC ONLOGON /RL LIMITED /F /TR "`"$PowerShell`" -NoProfile -ExecutionPolicy Bypass -File `"$TunnelScript`""
-schtasks /Create /TN "Gaban Cloudflare Tunnel Watchdog" /SC MINUTE /MO 5 /RL LIMITED /F /TR "`"$PowerShell`" -NoProfile -ExecutionPolicy Bypass -File `"$TunnelWatchdogScript`""
+schtasks /Create /TN "Gaban Cloudflare Tunnel Watchdog" /SC MINUTE /MO 5 /RL LIMITED /F /TR "`"$PowerShell`" -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File `"$TunnelWatchdogScript`""
+
+$WatchdogTask = Get-ScheduledTask -TaskName "Gaban Cloudflare Tunnel Watchdog"
+$WatchdogTask.Settings.Hidden = $true
+Set-ScheduledTask -InputObject $WatchdogTask | Out-Null
 
 Write-Host "Installed:"
 Write-Host "  Gaban Bot Web"
