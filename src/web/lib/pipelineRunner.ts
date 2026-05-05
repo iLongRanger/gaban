@@ -62,7 +62,7 @@ export function startRun(presetId: number): { runId: number } | { error: string;
   const args = [runJsPath, '--config', tmpPath];
   const child = spawn(process.execPath, args, {
     cwd: process.cwd(),
-    env: { ...process.env },
+    env: { ...process.env, GABAN_PIPELINE_RUN_ID: String(runId) },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   activeProcess = child;

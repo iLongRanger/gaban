@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface Preset {
@@ -9,8 +9,19 @@ interface Preset {
   categories: string;
 }
 
+interface Run {
+  id: number;
+  preset_id: number;
+  preset_name: string;
+  started_at: string;
+  lead_count: number;
+}
+
 interface Lead {
   id: number;
+  run_id: number;
+  preset_id: number;
+  rank: number;
   business_name: string;
   type: string | null;
   email: string | null;
@@ -27,18 +38,23 @@ function localDateTimeValue(date = new Date()) {
   return d.toISOString().slice(0, 16);
 }
 
+function runLabel(run: Run) {
+  return `${run.preset_name} - ${new Date(run.started_at).toLocaleString()} - ${run.lead_count} leads`;
+}
+
 export default function CampaignCreateForm({
   presets,
+  runs,
   leads,
-  weeks,
 }: {
   presets: Preset[];
+  runs: Run[];
   leads: Lead[];
-  weeks: string[];
 }) {
   const router = useRouter();
   const [presetId, setPresetId] = useState(presets[0]?.id || 0);
-  const [week, setWeek] = useState(weeks[0] || '');
+  const initialRun = runs.find((run) => run.preset_id === presetId) || runs[0];
+  const [runId, setRunId] = useState(initialRun?.id || 0);
   const [selected, setSelected] = useState<number[]>([]);
   const [name, setName] = useState('');
   const [dailyCap, setDailyCap] = useState(5);
@@ -48,13 +64,27 @@ export default function CampaignCreateForm({
 
   const preset = presets.find((item) => item.id === presetId);
   const categories = preset ? JSON.parse(preset.categories).join(', ') : '';
+  const presetRuns = useMemo(
+    () => runs.filter((run) => run.preset_id === presetId),
+    [runs, presetId]
+  );
   const visibleLeads = useMemo(
-    () => leads.filter((lead) => !week || lead.week === week),
-    [leads, week]
+    () => leads.filter((lead) => lead.run_id === runId && lead.preset_id === presetId),
+    [leads, presetId, runId]
   );
   const eligibleLeadIds = visibleLeads
     .filter((lead) => lead.email && lead.draft_count >= 3)
     .map((lead) => lead.id);
+
+  useEffect(() => {
+    const nextRun = runs.find((run) => run.preset_id === presetId);
+    setRunId(nextRun?.id || 0);
+    setSelected([]);
+  }, [presetId, runs]);
+
+  useEffect(() => {
+    setSelected([]);
+  }, [runId]);
 
   function toggleLead(id: number) {
     setSelected((current) =>
@@ -69,12 +99,13 @@ export default function CampaignCreateForm({
   async function submit() {
     setSubmitting(true);
     setError('');
+    const selectedRun = runs.find((run) => run.id === runId);
     const res = await fetch('/api/campaigns', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         preset_id: presetId,
-        name: name || `${preset?.name || 'Campaign'} - ${new Date().toLocaleDateString()}`,
+        name: name || `${preset?.name || 'Campaign'} - ${selectedRun ? new Date(selectedRun.started_at).toLocaleDateString() : new Date().toLocaleDateString()}`,
         lead_ids: selected,
         daily_cap: dailyCap,
         start_at: new Date(startAt).toISOString(),
@@ -112,11 +143,28 @@ export default function CampaignCreateForm({
           </label>
 
           <label className="block">
+            <span className="text-xs font-medium text-gray-500">Result Run</span>
+            <select
+              value={runId}
+              onChange={(e) => setRunId(Number(e.target.value))}
+              className="mt-1 w-full border border-gray-300 rounded px-3 py-2 text-sm bg-white"
+              disabled={presetRuns.length === 0}
+            >
+              {presetRuns.map((run) => (
+                <option key={run.id} value={run.id}>{runLabel(run)}</option>
+              ))}
+            </select>
+            {presetRuns.length === 0 ? (
+              <span className="block text-xs text-red-500 mt-1">Run this preset before creating a campaign.</span>
+            ) : null}
+          </label>
+
+          <label className="block">
             <span className="text-xs font-medium text-gray-500">Campaign Name</span>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Restaurants - Week 1"
+              placeholder="Offices - Week 1"
               className="mt-1 w-full border border-gray-300 rounded px-3 py-2 text-sm"
             />
           </label>
@@ -144,14 +192,14 @@ export default function CampaignCreateForm({
           </label>
 
           <div className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded p-3">
-            {selected.length} leads selected. The bot will create Touch 1, Touch 2, and Touch 3 schedules after you create the campaign.
+            {selected.length} leads selected from this run. The bot will create Touch 1, Touch 2, and Touch 3 schedules after you create the campaign.
           </div>
 
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
           <button
             onClick={submit}
-            disabled={submitting || !presetId || selected.length === 0}
+            disabled={submitting || !presetId || !runId || selected.length === 0}
             className="w-full bg-gray-900 text-white rounded px-4 py-2 text-sm font-medium disabled:opacity-50"
           >
             {submitting ? 'Creating...' : 'Create Campaign'}
@@ -162,23 +210,12 @@ export default function CampaignCreateForm({
       <section>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-sm font-semibold text-gray-900">Approved Leads</h2>
-            <p className="text-xs text-gray-500">Only leads with email and all 3 draft styles can be selected.</p>
+            <h2 className="text-sm font-semibold text-gray-900">Run Leads</h2>
+            <p className="text-xs text-gray-500">Only leads from the selected preset run are shown.</p>
           </div>
-          <div className="flex items-center gap-2">
-            <select
-              value={week}
-              onChange={(e) => setWeek(e.target.value)}
-              className="border border-gray-300 rounded px-3 py-2 text-sm bg-white"
-            >
-              {weeks.map((item) => (
-                <option key={item} value={item}>{item}</option>
-              ))}
-            </select>
-            <button onClick={selectAllEligible} className="border border-gray-300 rounded px-3 py-2 text-sm bg-white">
-              Select Eligible
-            </button>
-          </div>
+          <button onClick={selectAllEligible} className="border border-gray-300 rounded px-3 py-2 text-sm bg-white">
+            Select Eligible
+          </button>
         </div>
 
         <div className="space-y-2">
@@ -186,7 +223,7 @@ export default function CampaignCreateForm({
             const eligible = Boolean(lead.email && lead.draft_count >= 3);
             return (
               <label
-                key={lead.id}
+                key={`${lead.run_id}-${lead.id}`}
                 className={`flex items-start gap-3 border rounded-lg p-3 bg-white ${
                   eligible ? 'border-gray-200' : 'border-gray-100 opacity-55'
                 }`}
@@ -204,17 +241,17 @@ export default function CampaignCreateForm({
                     <span className="text-sm font-semibold text-blue-600">{lead.total_score}</span>
                   </div>
                   <p className="text-xs text-gray-500 truncate">
-                    {lead.type || 'Lead'} · {lead.address || 'No address'} · {lead.distance_km} km
+                    #{lead.rank} - {lead.type || 'Lead'} - {lead.address || 'No address'} - {lead.distance_km} km
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
-                    {lead.email || 'Missing email'} · {lead.draft_count}/3 drafts · {lead.status}
+                    {lead.email || 'Missing email'} - {lead.draft_count}/3 drafts - {lead.status}
                   </p>
                 </div>
               </label>
             );
           })}
           {visibleLeads.length === 0 ? (
-            <p className="text-sm text-gray-500">No leads found for this week.</p>
+            <p className="text-sm text-gray-500">No leads found for this preset run.</p>
           ) : null}
         </div>
       </section>

@@ -89,6 +89,30 @@ describe('SqliteService', () => {
     assert.equal(count, 1);
   });
 
+  it('records leads in separate pipeline run result sets', () => {
+    const now = new Date().toISOString();
+    const run1 = db.prepare(
+      "INSERT INTO pipeline_runs (status, started_at) VALUES ('running', ?)"
+    ).run(now).lastInsertRowid;
+    const run2 = db.prepare(
+      "INSERT INTO pipeline_runs (status, started_at) VALUES ('running', ?)"
+    ).run(now).lastInsertRowid;
+
+    service.exportResults([sampleLead], [sampleDrafts], '2026-W11', { runId: run1 });
+    service.exportResults([sampleLead], [sampleDrafts], '2026-W11', { runId: run2 });
+
+    const rows = db.prepare(
+      'SELECT run_id, rank FROM lead_run_results ORDER BY run_id'
+    ).all();
+    assert.deepEqual(rows.map(row => row.run_id), [run1, run2]);
+    assert.deepEqual(rows.map(row => row.rank), [1, 1]);
+
+    const runCounts = db.prepare(
+      'SELECT id, leads_found FROM pipeline_runs WHERE id IN (?, ?) ORDER BY id'
+    ).all(run1, run2);
+    assert.deepEqual(runCounts.map(row => row.leads_found), [1, 1]);
+  });
+
   it('handles drafting errors gracefully', () => {
     const errorLead = { ...sampleLead, place_id: 'ChIJ_error_456', business_name: 'Error Biz' };
     const errorDrafts = { error: 'Drafting failed: timeout' };

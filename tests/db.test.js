@@ -39,6 +39,13 @@ describe('Database', () => {
     assert.ok(columns.includes('created_at'));
   });
 
+  it('creates lead_run_results table for per-run result sets', () => {
+    const columns = db.pragma('table_info(lead_run_results)').map(c => c.name);
+    for (const col of ['run_id', 'lead_id', 'rank', 'week', 'total_score', 'created_at']) {
+      assert.ok(columns.includes(col), `missing column ${col}`);
+    }
+  });
+
   it('enforces unique place_id on leads', () => {
     const now = new Date().toISOString();
     const sql = 'INSERT INTO leads (place_id, business_name, type, address, latitude, longitude, distance_km, total_score, factor_scores, reasoning, status, week, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';

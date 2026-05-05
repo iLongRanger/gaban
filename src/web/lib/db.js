@@ -81,6 +81,17 @@ CREATE TABLE IF NOT EXISTS pipeline_runs (
   completed_at TEXT
 );
 
+CREATE TABLE IF NOT EXISTS lead_run_results (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  run_id INTEGER NOT NULL REFERENCES pipeline_runs(id) ON DELETE CASCADE,
+  lead_id INTEGER NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
+  rank INTEGER NOT NULL,
+  week TEXT NOT NULL,
+  total_score INTEGER NOT NULL,
+  created_at TEXT NOT NULL,
+  UNIQUE(run_id, lead_id)
+);
+
 CREATE TABLE IF NOT EXISTS schedules (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   preset_id INTEGER NOT NULL REFERENCES presets(id) ON DELETE CASCADE,
@@ -205,6 +216,10 @@ CREATE INDEX IF NOT EXISTS idx_campaign_leads_campaign_status
   ON campaign_leads(campaign_id, status);
 CREATE INDEX IF NOT EXISTS idx_api_usage_events_occurred_provider
   ON api_usage_events(occurred_at, provider);
+CREATE INDEX IF NOT EXISTS idx_lead_run_results_run_rank
+  ON lead_run_results(run_id, rank);
+CREATE INDEX IF NOT EXISTS idx_lead_run_results_lead
+  ON lead_run_results(lead_id);
 `;
 
 function ensureColumn(db, table, column, definition) {

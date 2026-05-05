@@ -4,7 +4,7 @@ export default class SqliteService {
     this.logger = logger;
   }
 
-  exportResults(leads, drafts, weekLabel) {
+  exportResults(leads, drafts, weekLabel, { runId = null } = {}) {
     const now = new Date().toISOString();
 
     const insertLead = this.db.prepare(`
@@ -28,6 +28,12 @@ export default class SqliteService {
         lead_id, style, email_subject, email_body, dm,
         selected, created_at, updated_at
       ) VALUES (?, ?, ?, ?, ?, 0, ?, ?)
+    `);
+
+    const insertRunResult = this.db.prepare(`
+      INSERT OR REPLACE INTO lead_run_results (
+        run_id, lead_id, rank, week, total_score, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?)
     `);
 
     const transaction = this.db.transaction(() => {
@@ -78,6 +84,17 @@ export default class SqliteService {
         );
         if (!row) continue;
 
+        if (runId) {
+          runStatement(insertRunResult, 'insert run result', [
+            runId,
+            row.id,
+            i + 1,
+            weekLabel,
+            lead.total_score ?? 0,
+            now
+          ]);
+        }
+
         for (const style of ['curious_neighbor', 'value_lead', 'compliment_question']) {
           const d = draft[style];
           if (!d) continue;
@@ -91,6 +108,14 @@ export default class SqliteService {
             now
           ]);
         }
+      }
+
+      if (runId) {
+        runStatement(
+          this.db.prepare('UPDATE pipeline_runs SET leads_found = ? WHERE id = ?'),
+          'update pipeline run lead count',
+          [leads.length, runId]
+        );
       }
     });
 

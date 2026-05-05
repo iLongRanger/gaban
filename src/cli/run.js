@@ -186,11 +186,16 @@ async function run() {
 
   // Phase 5: Export
   const weekLabel = getWeekLabel();
+  const pipelineRunId = process.env.GABAN_PIPELINE_RUN_ID
+    ? Number.parseInt(process.env.GABAN_PIPELINE_RUN_ID, 10)
+    : null;
 
   // Primary: SQLite
   try {
     const sqliteService = new SqliteService({ db, logger });
-    sqliteService.exportResults(topLeads, drafts, weekLabel);
+    sqliteService.exportResults(topLeads, drafts, weekLabel, {
+      runId: Number.isFinite(pipelineRunId) ? pipelineRunId : null
+    });
     logger.info('Exported to SQLite.');
   } catch (error) {
     logger.warn('SQLite export failed: ' + error.message + '. Falling back to CSV.');
