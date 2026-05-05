@@ -321,17 +321,20 @@ export default function SettingsPage() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Office Latitude</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Distance Center Latitude</label>
               <input type="number" step="0.0001" value={form.office_lat}
                 onChange={e => setForm(f => ({ ...f, office_lat: parseFloat(e.target.value) }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:border-blue-500 focus:outline-none" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Office Longitude</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Distance Center Longitude</label>
               <input type="number" step="0.0001" value={form.office_lng}
                 onChange={e => setForm(f => ({ ...f, office_lng: parseFloat(e.target.value) }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:border-blue-500 focus:outline-none" />
             </div>
+            <p className="col-span-2 text-xs text-gray-500">
+              This is the km 0 point used for distance scoring. Use the service area or client-site center for this preset.
+            </p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Categories</label>
