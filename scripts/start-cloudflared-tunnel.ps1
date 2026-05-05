@@ -51,6 +51,14 @@ if (-not (Test-Path $ConfigPath)) {
 Write-CloudflaredLog "[$timestamp] Using $Cloudflared"
 Write-CloudflaredLog "[$timestamp] Using config $ConfigPath"
 
-$Command = "`"$Cloudflared`" --config `"$ConfigPath`" tunnel run >> `"$LogFile`" 2>&1"
-& cmd.exe /c $Command
-exit $LASTEXITCODE
+$ErrorLogFile = Join-Path $LogDir "cloudflared.err.log"
+$CloudflaredProcess = Start-Process `
+  -FilePath $Cloudflared `
+  -ArgumentList @("--config", $ConfigPath, "tunnel", "run") `
+  -WindowStyle Hidden `
+  -RedirectStandardOutput $LogFile `
+  -RedirectStandardError $ErrorLogFile `
+  -PassThru
+
+Write-CloudflaredLog "[$timestamp] Started cloudflared as PID $($CloudflaredProcess.Id)"
+exit 0

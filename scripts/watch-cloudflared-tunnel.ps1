@@ -17,8 +17,9 @@ if ($ExistingCloudflared) {
   exit 0
 }
 
-Write-WatchdogLog "cloudflared is not running; starting scheduled tunnel task"
-$RunResult = schtasks /Run /TN "Gaban Cloudflare Tunnel" 2>&1
+Write-WatchdogLog "cloudflared is not running; starting tunnel launcher"
+$TunnelScript = Join-Path $RepoRoot "scripts\start-cloudflared-tunnel.ps1"
+& $TunnelScript
 $RunExitCode = $LASTEXITCODE
-Write-WatchdogLog "schtasks /Run exited ${RunExitCode}: $RunResult"
+Write-WatchdogLog "tunnel launcher exited ${RunExitCode}"
 exit $RunExitCode
