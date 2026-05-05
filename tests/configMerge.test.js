@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { didAllScoringFail, mergeConfig, normalizeTopN, validateRequiredEnv } from '../src/cli/run.js';
+import { didAllScoringFail, mergeConfig, normalizeTopN, summarizeExclusions, validateRequiredEnv } from '../src/cli/run.js';
 
 describe('mergeConfig', () => {
   const base = {
@@ -77,5 +77,22 @@ describe('normalizeTopN', () => {
     assert.strictEqual(normalizeTopN(10), 10);
     assert.strictEqual(normalizeTopN(12), 12);
     assert.strictEqual(normalizeTopN(undefined), 10);
+  });
+});
+
+describe('summarizeExclusions', () => {
+  it('counts exclusion reasons in descending count order', () => {
+    const summary = summarizeExclusions([
+      { exclusion_reason: 'already_seen' },
+      { exclusion_reason: 'outside_radius' },
+      { exclusion_reason: 'already_seen' },
+      { exclusion_reason: 'no_contact_info' },
+    ]);
+
+    assert.strictEqual(summary, '2 already_seen, 1 no_contact_info, 1 outside_radius');
+  });
+
+  it('uses unknown for missing exclusion reasons', () => {
+    assert.strictEqual(summarizeExclusions([{}]), '1 unknown');
   });
 });

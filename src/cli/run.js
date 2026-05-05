@@ -84,6 +84,19 @@ export function normalizeTopN(value) {
   return Number.isFinite(parsed) ? Math.max(parsed, 10) : 10;
 }
 
+export function summarizeExclusions(excludedLeads) {
+  const counts = new Map();
+  for (const lead of excludedLeads) {
+    const reason = lead.exclusion_reason || 'unknown';
+    counts.set(reason, (counts.get(reason) || 0) + 1);
+  }
+
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([reason, count]) => `${count} ${reason}`)
+    .join(', ');
+}
+
 async function run() {
   dotenv.config();
   let settings = await loadSettings();
@@ -143,6 +156,9 @@ async function run() {
   const filtering = new FilteringService({ settings, logger });
   let { passed, excluded } = filtering.filterLeads(rawLeads, officeLocation, seenLeads);
   logger.info(`Filtered: ${passed.length} passed, ${excluded.length} excluded.`);
+  if (excluded.length > 0) {
+    logger.info(`Excluded by reason: ${summarizeExclusions(excluded)}.`);
+  }
 
   if (passed.length === 0) {
     logger.warn('No leads passed filtering. Exiting.');
