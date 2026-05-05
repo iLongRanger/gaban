@@ -137,6 +137,7 @@ export default async function History({
           <thead className="bg-gray-50 border-b">
             <tr>
               <th className="text-left px-4 py-2 font-medium">Business</th>
+              <th className="text-left px-4 py-2 font-medium">Address</th>
               <th className="text-left px-4 py-2 font-medium">Type</th>
               <th className="text-left px-4 py-2 font-medium">Week</th>
               <th className="text-right px-4 py-2 font-medium">Score</th>
@@ -151,6 +152,9 @@ export default async function History({
                     {lead.business_name}
                   </Link>
                 </td>
+                <td className="px-4 py-2 text-gray-500 max-w-xs whitespace-normal">
+                  <span>{lead.address || 'No address captured'}</span>
+                </td>
                 <td className="px-4 py-2 text-gray-500">{lead.type}</td>
                 <td className="px-4 py-2 text-gray-500">{lead.week}</td>
                 <td className="px-4 py-2 text-right font-medium">{lead.total_score}</td>
@@ -161,7 +165,7 @@ export default async function History({
             ))}
             {leads.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
+                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
                   No leads found.
                 </td>
               </tr>

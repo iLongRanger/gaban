@@ -70,9 +70,12 @@ export default function LeadCard({ lead }: { lead: Lead }) {
           <h3 style={{ fontSize: 17, fontWeight: 600, margin: 0, lineHeight: 1.2 }}>
             {lead.business_name}
           </h3>
-          <p style={{ fontSize: 12, color: 'var(--mute)', marginTop: 4, marginBottom: 0 }}>
-            {lead.address || '—'}
-          </p>
+          <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <span className="label" style={{ color: 'var(--faint)' }}>ADDRESS</span>
+            <p style={{ fontSize: 12, color: lead.address ? 'var(--mute)' : 'var(--danger)', margin: 0, lineHeight: 1.35 }}>
+              {lead.address || 'No address captured'}
+            </p>
+          </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 12 }}>
             <span className="label numeric" style={{ color: 'var(--ink-2)' }}>
