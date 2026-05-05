@@ -58,7 +58,7 @@ export default class DiscoveryService {
       business_name: place.name || null,
       type: place.type || null,
       subtypes: place.subtypes || null,
-      formatted_address: place.full_address || null,
+      formatted_address: findAddress(place),
       phone: place.phone || null,
       website: place.site || null,
       email: findFirstEmail(place),
@@ -94,6 +94,36 @@ function findFirstEmail(place) {
   return candidates.find(isEmail) || null;
 }
 
+function findAddress(place) {
+  const candidates = [
+    place.full_address,
+    place.formatted_address,
+    place.address,
+    place.street_address,
+    place.location_address,
+    place.google_address,
+    place.address_line,
+    place.address_line_1
+  ];
+
+  const direct = candidates.find(isNonEmptyString);
+  if (direct) return direct.trim();
+
+  const parts = [
+    place.street,
+    place.city,
+    place.state,
+    place.postal_code || place.zip,
+    place.country
+  ].filter(isNonEmptyString);
+
+  return parts.length > 0 ? parts.map(part => part.trim()).join(', ') : null;
+}
+
 function isEmail(value) {
   return typeof value === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
+function isNonEmptyString(value) {
+  return typeof value === 'string' && value.trim().length > 0;
 }

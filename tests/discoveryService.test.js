@@ -50,6 +50,7 @@ test('discoverLeads returns normalized lead objects', async () => {
   assert.equal(leads.length, 1);
   assert.equal(leads[0].place_id, 'ChIJ_test123');
   assert.equal(leads[0].business_name, 'Joe\'s Bistro');
+  assert.equal(leads[0].formatted_address, '123 Main St, Burnaby, BC V5H 1A1');
   assert.equal(leads[0].email, 'info@joesbistro.ca');
   assert.equal(leads[0].instagram, 'https://instagram.com/joesbistro');
   assert.ok(leads[0].location.lat);
@@ -126,4 +127,25 @@ test('normalize uses enriched email arrays when email_1 is missing', () => {
   });
 
   assert.equal(lead.email, 'hello@enriched.ca');
+});
+
+test('normalize accepts alternate address fields', () => {
+  const service = new DiscoveryService({ apiKey: 'test', client: {} });
+
+  assert.equal(
+    service.normalize({ name: 'Alt Address Cafe', address: '456 Newport Dr, Port Moody, BC' }).formatted_address,
+    '456 Newport Dr, Port Moody, BC'
+  );
+
+  assert.equal(
+    service.normalize({
+      name: 'Parts Address Cafe',
+      street: '789 Clarke St',
+      city: 'Port Moody',
+      state: 'BC',
+      postal_code: 'V3H 1Z1',
+      country: 'Canada'
+    }).formatted_address,
+    '789 Clarke St, Port Moody, BC, V3H 1Z1, Canada'
+  );
 });
