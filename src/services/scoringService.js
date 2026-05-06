@@ -75,7 +75,7 @@ RECENT REVIEWS:
 ${reviewTexts || 'No reviews available'}
 
 SCORING FACTORS (weights):
-1. Size signals (20%): More reviews, photos, longer hours = larger facility
+1. Size signals (20%): More reviews, photos, longer hours = larger service location
 2. Cleanliness pain (20%): Reviews mentioning dirty, messy, sticky, smell, washroom issues
 3. Location (15%): Closer to New Westminster = higher score (max 50km)
 4. Online presence (15%): Has website, email, social = more reachable and established

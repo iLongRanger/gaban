@@ -39,7 +39,7 @@ export default class DraftingService {
       .map(r => `- "${r.review_text}"`)
       .join('\n');
 
-    return `You are writing cold outreach messages for someone who works with commercial facilities on cleaning services in Metro Vancouver.
+    return `You are writing cold outreach messages for someone who works with commercial service locations on cleaning services in Metro Vancouver.
 
 CRITICAL RULES:
 - Do NOT mention any company name
@@ -58,7 +58,7 @@ CRITICAL RULES:
 
 BUSINESS:
 - Name: ${lead.business_name}
-- Type: ${lead.type || 'Commercial facility'}
+- Type: ${lead.type || 'Business service location'}
 - Address: ${lead.formatted_address || 'Metro Vancouver'}
 - Rating: ${lead.rating ?? 'N/A'}/5 (${lead.reviews_count ?? 0} reviews)
 

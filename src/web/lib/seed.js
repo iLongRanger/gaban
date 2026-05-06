@@ -23,7 +23,7 @@ const leads = [
       business_age: 13,
       no_current_cleaner: 13,
     },
-    reasoning: 'High cleanliness pain in reviews, very close to office, large facility.',
+    reasoning: 'High cleanliness pain in reviews, very close to office, large service location.',
   },
   {
     place_id: 'seed_2',
@@ -80,7 +80,7 @@ const leads = [
       business_age: 11,
       no_current_cleaner: 11,
     },
-    reasoning: 'Medical facility with moderate signals, decent proximity.',
+    reasoning: 'Medical service location with moderate signals, decent proximity.',
   },
 ];
 
