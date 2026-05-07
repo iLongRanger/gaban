@@ -45,8 +45,8 @@ cp .env.example .env   # fill OUTSCRAPER_API_KEY, OPENAI_API_KEY, GMAIL_* …
 npm start              # node src/cli/run.js
 
 # 4 · launch the operator console
-npm run dev            # next dev src/web -p 3010
-# → http://localhost:3010   (login PIN required)
+npm run dev            # next dev src/web -p 3003
+# → http://localhost:3003   (login PIN required)
 ```
 
 `npm test` runs the full suite (145 tests, ~2s).
@@ -109,9 +109,9 @@ Every page lives at `src/web/app/(app)/<section>/page.tsx`; the layout (`(app)/l
 | `npm start`           | Run the pipeline once.                            |
 | `npm test`            | Node test runner (145 tests).                     |
 | `npm run test:watch`  | Watch mode.                                       |
-| `npm run dev`         | Next dev server on `:3010`.                       |
+| `npm run dev`         | Next dev server on `:3003`.                       |
 | `npm run build:web`   | Production Next build.                            |
-| `npm run start:web`   | Production Next server on `:3010`.                |
+| `npm run start:web`   | Production Next server on `:3003`.                |
 | `npm run dev:pipeline`| `node --watch` of the pipeline (for local dev).   |
 | `npm run seed`        | Seed initial presets / system settings.           |
 
