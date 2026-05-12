@@ -12,6 +12,7 @@
     "dev:pipeline": "node --watch src/cli/run.js",
     "build:web": "next build src/web",
     "start:web": "next start src/web -p 3010",
+    "start:worker": "node src/worker/background.js",
     "seed": "node src/web/lib/seed.js"
   },
   "dependencies": {

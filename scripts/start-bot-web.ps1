@@ -21,8 +21,11 @@ Write-Host "Press Ctrl+C to stop. Window stays open on exit so you can read erro
 Write-Host ""
 
 # Stream npm output to BOTH the console and the log file.
-# 2>&1 merges stderr into the pipeline so errors show up too.
-& cmd /d /s /c "npm run start:web 2>&1" | Tee-Object -FilePath $LogFile -Append
+# PowerShell 5.1 Tee-Object writes UTF-16 by default, so write each line as UTF-8.
+& cmd /d /s /c "npm run start:web 2>&1" | ForEach-Object {
+  $_
+  Add-Content -Path $LogFile -Encoding utf8 -Value $_
+}
 
 $exit = $LASTEXITCODE
 Write-Host ""

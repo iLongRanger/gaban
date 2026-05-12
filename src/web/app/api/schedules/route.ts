@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db.js';
-import { registerSchedule } from '@/lib/scheduler';
 import cron from 'node-cron';
 
 export function GET() {
@@ -38,10 +37,6 @@ export async function POST(request: NextRequest) {
   ).run(preset_id, cronExpr, enabled !== false ? 1 : 0, now);
 
   const schedule = db.prepare('SELECT * FROM schedules WHERE id = ?').get(result.lastInsertRowid);
-
-  if (enabled !== false) {
-    registerSchedule(Number(result.lastInsertRowid), cronExpr, preset_id);
-  }
 
   return NextResponse.json(schedule, { status: 201 });
 }

@@ -3,6 +3,7 @@ $ErrorActionPreference = "Stop"
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 $PowerShell = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
 $WebScript = Join-Path $RepoRoot "scripts\start-bot-web.ps1"
+$WorkerScript = Join-Path $RepoRoot "scripts\start-bot-worker.ps1"
 $TunnelScript = Join-Path $RepoRoot "scripts\start-cloudflared-tunnel.ps1"
 $TunnelWatchdogHiddenScript = Join-Path $RepoRoot "scripts\watch-cloudflared-tunnel-hidden.vbs"
 $WScript = "$env:SystemRoot\System32\wscript.exe"
@@ -10,8 +11,17 @@ $WScript = "$env:SystemRoot\System32\wscript.exe"
 Write-Host "Installing Gaban startup tasks..."
 
 schtasks /Create /TN "Gaban Bot Web" /SC ONLOGON /RL LIMITED /F /TR "`"$PowerShell`" -NoProfile -ExecutionPolicy Bypass -File `"$WebScript`""
+schtasks /Create /TN "Gaban Bot Worker" /SC ONLOGON /RL LIMITED /F /TR "`"$PowerShell`" -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File `"$WorkerScript`""
 schtasks /Create /TN "Gaban Cloudflare Tunnel" /SC ONLOGON /RL LIMITED /F /TR "`"$PowerShell`" -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File `"$TunnelScript`""
 schtasks /Create /TN "Gaban Cloudflare Tunnel Watchdog" /SC MINUTE /MO 5 /RL LIMITED /F /TR "`"$WScript`" //B //Nologo `"$TunnelWatchdogHiddenScript`""
+
+try {
+  $WorkerTask = Get-ScheduledTask -TaskName "Gaban Bot Worker"
+  $WorkerTask.Settings.Hidden = $true
+  Set-ScheduledTask -InputObject $WorkerTask | Out-Null
+} catch {
+  Write-Warning "Could not set the worker task Hidden flag. The task still uses -WindowStyle Hidden."
+}
 
 try {
   $TunnelTask = Get-ScheduledTask -TaskName "Gaban Cloudflare Tunnel"
@@ -31,10 +41,12 @@ try {
 
 Write-Host "Installed:"
 Write-Host "  Gaban Bot Web"
+Write-Host "  Gaban Bot Worker"
 Write-Host "  Gaban Cloudflare Tunnel"
 Write-Host "  Gaban Cloudflare Tunnel Watchdog"
 Write-Host ""
 Write-Host "Run these once to test without rebooting:"
 Write-Host "  schtasks /Run /TN `"Gaban Bot Web`""
+Write-Host "  schtasks /Run /TN `"Gaban Bot Worker`""
 Write-Host "  schtasks /Run /TN `"Gaban Cloudflare Tunnel`""
 Write-Host "  schtasks /Run /TN `"Gaban Cloudflare Tunnel Watchdog`""
