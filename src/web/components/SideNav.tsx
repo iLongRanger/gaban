@@ -8,11 +8,12 @@ const ITEMS = [
   { href: '/',           label: 'WEEKLY',    code: '02' },
   { href: '/history',    label: 'HISTORY',   code: '03' },
   { href: '/campaigns',  label: 'CAMPAIGNS', code: '04' },
-  { href: '/responses',  label: 'RESPONSES', code: '05' },
-  { href: '/outcomes',   label: 'OUTCOMES',  code: '06' },
-  { href: '/runs',       label: 'RUNS',      code: '07' },
-  { href: '/usage',      label: 'USAGE',     code: '08' },
-  { href: '/settings',   label: 'SETTINGS',  code: '09' },
+  { href: '/today',      label: 'TODAY',     code: '05' },
+  { href: '/responses',  label: 'RESPONSES', code: '06' },
+  { href: '/outcomes',   label: 'OUTCOMES',  code: '07' },
+  { href: '/runs',       label: 'RUNS',      code: '08' },
+  { href: '/usage',      label: 'USAGE',     code: '09' },
+  { href: '/settings',   label: 'SETTINGS',  code: '10' },
 ];
 
 export default function SideNav() {
