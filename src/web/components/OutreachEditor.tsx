@@ -14,9 +14,9 @@ interface Draft {
 }
 
 const STYLE_LABELS: Record<string, string> = {
-  touch_1: 'Touch 1',
-  touch_2: 'Touch 2',
-  touch_3: 'Touch 3',
+  touch_1: 'Touch 1 · Give',
+  touch_2: 'Touch 2 · Ask',
+  touch_3: 'Touch 3 · Breakup',
 };
 
 export default function OutreachEditor({
