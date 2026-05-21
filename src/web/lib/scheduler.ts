@@ -89,7 +89,8 @@ export function loadOutreachWorkerOnStartup() {
     },
     logger: console,
   });
-  const worker = new SendQueueWorker({
+  const Worker = SendQueueWorker as any;
+  const worker = new Worker({
     db,
     mailer,
     capService: undefined,

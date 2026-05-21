@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getDb } from '@/lib/db.js';
+import { MetricsService } from '../../../../services/metricsService.js';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,6 +42,10 @@ export default async function ResponsesPage() {
      LIMIT 100`
   ).all() as any[];
 
+  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const Metrics = MetricsService as any;
+  const funnel = new Metrics({ db }).outreachFunnel({ since });
+
   const replyCount = events.filter((event) => event.type === 'replied').length;
   const autoReplyCount = events.filter((event) => event.type === 'auto_replied').length;
   const bounceCount = events.filter((event) => event.type === 'bounced').length;
@@ -72,6 +77,41 @@ export default async function ResponsesPage() {
           <span className="block text-xs text-gray-400">Unsubscribes</span>
           <span className="text-xl font-semibold">{unsubscribeCount}</span>
         </div>
+      </div>
+
+      <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold text-gray-700">Funnel by touch · last 30 days</h2>
+          <span className="text-xs text-gray-400">replied / sent · bounced / sent</span>
+        </div>
+        {funnel.by_template.length === 0 ? (
+          <p className="text-sm text-gray-500">No sends in window.</p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
+                <th className="py-2">Template</th>
+                <th className="py-2">Sent</th>
+                <th className="py-2">Replied</th>
+                <th className="py-2">Reply %</th>
+                <th className="py-2">Bounced</th>
+                <th className="py-2">Bounce %</th>
+              </tr>
+            </thead>
+            <tbody>
+              {funnel.by_template.map((row: any) => (
+                <tr key={row.template_style} className="border-b border-gray-50 last:border-0">
+                  <td className="py-2 font-mono text-xs">{row.template_style}</td>
+                  <td className="py-2">{row.sent}</td>
+                  <td className="py-2">{row.replied}</td>
+                  <td className="py-2">{(row.reply_rate * 100).toFixed(1)}%</td>
+                  <td className="py-2">{row.bounced}</td>
+                  <td className="py-2">{(row.bounce_rate * 100).toFixed(1)}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {events.length === 0 ? (
