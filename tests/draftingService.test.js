@@ -68,3 +68,8 @@ test('sanitizeMessageText still strips em dashes and markdown', () => {
   const result = sanitizeMessageText('Hello — world *bold* and __under__');
   assert.doesNotMatch(result, /[—–*_]/);
 });
+
+test('sanitizeMessageText collapses repeated periods left by other replacements', () => {
+  assert.equal(sanitizeMessageText('signature.. Owner'), 'Signature. Owner');
+  assert.equal(sanitizeMessageText('time . . Thanks'), 'Time. Thanks');
+});

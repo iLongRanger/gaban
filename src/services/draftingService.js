@@ -123,6 +123,7 @@ export function sanitizeMessageText(value) {
     .replace(/-{2,}/g, '. ')
     .replace(/\s+([,.;:?!])/g, '$1')
     .replace(/([,.;:?!])([A-Za-z])/g, '$1 $2')
+    .replace(/\.(?:\s*\.)+/g, '.')
     .replace(/\s{2,}/g, ' ')
     .replace(/\s+$/g, '')
     .trim();
