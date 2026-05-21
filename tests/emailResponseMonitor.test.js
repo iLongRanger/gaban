@@ -14,7 +14,7 @@ function seedSentCampaign(db) {
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
     .run('pid-a', 'Lead A', 'lead@example.com', 49.2, -123.1, 2, 90, '{}', 'good', 'new', '2026-W18', now, now);
   const leadId = Number(leadResult.lastInsertRowid);
-  for (const style of ['curious_neighbor', 'value_lead', 'compliment_question']) {
+  for (const style of ['touch_1', 'touch_2', 'touch_3']) {
     db.prepare(`INSERT INTO outreach_drafts
       (lead_id, style, email_subject, email_body, dm, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)`)
@@ -93,7 +93,7 @@ describe('EmailResponseMonitor', () => {
     const result = monitor.processMessage(gmailMessage({
       id: 'auto-reply-msg-1',
       threadId: 'different-thread',
-      subject: 'Automatic reply: Subject curious_neighbor',
+      subject: 'Automatic reply: Subject touch_1',
       inReplyTo: '<sent-msg-1@mail.gmail.com>',
       references: '<sent-msg-1@mail.gmail.com>',
     }), new Date('2026-05-05T16:00:00.000Z'));
@@ -123,7 +123,7 @@ describe('EmailResponseMonitor', () => {
     const result = monitor.processMessage(gmailMessage({
       id: 'auto-reply-msg-1',
       threadId: 'different-thread',
-      subject: 'Automatic reply: Subject curious_neighbor',
+      subject: 'Automatic reply: Subject touch_1',
       inReplyTo: '<sent-msg-1@mail.gmail.com>',
     }), new Date('2026-05-05T16:00:00.000Z'));
 

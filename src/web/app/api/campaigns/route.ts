@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       leadIds,
       startAt: body.start_at || new Date().toISOString(),
       dailyCap,
-      touchStyles: ['curious_neighbor', 'value_lead', 'compliment_question'],
+      touchStyles: ['touch_1', 'touch_2', 'touch_3'],
       status: 'active',
     });
     return NextResponse.json(campaign, { status: 201 });

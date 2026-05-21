@@ -32,9 +32,9 @@ const SAMPLE_LEAD = {
 };
 
 const SAMPLE_DRAFTS = {
-  curious_neighbor: { email_subject: 'Hi', email_body: 'Hey...', dm: 'Hey!' },
-  value_lead: { email_subject: 'Tip', email_body: 'Quick tip...', dm: 'Tip!' },
-  compliment_question: { email_subject: 'Wow', email_body: 'Love it...', dm: 'Wow!' }
+  touch_1: { email_subject: 'Hi', email_body: 'Hey...', dm: 'Hey!' },
+  touch_2: { email_subject: 'Tip', email_body: 'Quick tip...', dm: 'Tip!' },
+  touch_3: { email_subject: 'Wow', email_body: 'Love it...', dm: 'Wow!' }
 };
 
 test('buildWeeklyLeadsRow formats lead data correctly', () => {

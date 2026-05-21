@@ -84,7 +84,7 @@ const leads = [
   },
 ];
 
-const draftStyles = ['curious_neighbor', 'value_lead', 'compliment_question'];
+const draftStyles = ['touch_1', 'touch_2', 'touch_3'];
 
 for (const l of leads) {
   db.prepare(

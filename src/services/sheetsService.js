@@ -57,12 +57,12 @@ export default class SheetsService {
     }
     return [
       businessName,
-      `Subject: ${drafts.curious_neighbor.email_subject}\n\n${drafts.curious_neighbor.email_body}`,
-      `Subject: ${drafts.value_lead.email_subject}\n\n${drafts.value_lead.email_body}`,
-      `Subject: ${drafts.compliment_question.email_subject}\n\n${drafts.compliment_question.email_body}`,
-      drafts.curious_neighbor.dm,
-      drafts.value_lead.dm,
-      drafts.compliment_question.dm
+      `Subject: ${drafts.touch_1.email_subject}\n\n${drafts.touch_1.email_body}`,
+      `Subject: ${drafts.touch_2.email_subject}\n\n${drafts.touch_2.email_body}`,
+      `Subject: ${drafts.touch_3.email_subject}\n\n${drafts.touch_3.email_body}`,
+      drafts.touch_1.dm,
+      drafts.touch_2.dm,
+      drafts.touch_3.dm
     ];
   }
 

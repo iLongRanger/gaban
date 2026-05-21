@@ -35,20 +35,20 @@ describe('SqliteService', () => {
   };
 
   const sampleDrafts = {
-    curious_neighbor: {
-      email_subject: 'Quick question about your space',
-      email_body: 'Hey, I noticed your restaurant...',
-      dm: 'Hey! Quick question about your spot...'
+    touch_1: {
+      email_subject: 'one thing for your kitchen',
+      email_body: 'Hey, I work with restaurants nearby...',
+      dm: 'Hey! Quick note about kitchen inspections...'
     },
-    value_lead: {
-      email_subject: 'Tip for restaurant floors',
-      email_body: 'I was reading about floor care...',
-      dm: 'Quick tip for your floors...'
+    touch_2: {
+      email_subject: 'follow up on the checklist',
+      email_body: 'I sent a note last week...',
+      dm: 'Following up on that checklist...'
     },
-    compliment_question: {
-      email_subject: 'Love your place',
-      email_body: 'I walked by your restaurant...',
-      dm: 'Your place looks great...'
+    touch_3: {
+      email_subject: 'should I close the file?',
+      email_body: 'I will stop reaching out...',
+      dm: 'Closing the file on my end...'
     }
   };
 
@@ -80,7 +80,7 @@ describe('SqliteService', () => {
     const drafts = db.prepare('SELECT * FROM outreach_drafts WHERE lead_id = 1').all();
     assert.equal(drafts.length, 3);
     const styles = drafts.map(d => d.style).sort();
-    assert.deepEqual(styles, ['compliment_question', 'curious_neighbor', 'value_lead']);
+    assert.deepEqual(styles, ['touch_1', 'touch_2', 'touch_3']);
   });
 
   it('skips duplicate leads on re-run (upsert)', () => {
@@ -141,7 +141,7 @@ describe('SqliteService', () => {
       facebook: undefined
     };
     const partialDrafts = {
-      curious_neighbor: {
+      touch_1: {
         email_subject: undefined,
         email_body: 'Body',
         dm: undefined

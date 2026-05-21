@@ -41,9 +41,9 @@ const MOCK_SCORE_RESPONSE = JSON.stringify({
 });
 
 const MOCK_DRAFT_RESPONSE = JSON.stringify({
-  curious_neighbor: { email_subject: 'Hi', email_body: 'Hey there...', dm: 'Hey!' },
-  value_lead: { email_subject: 'Tip', email_body: 'Quick tip...', dm: 'Tip!' },
-  compliment_question: { email_subject: 'Love it', email_body: 'Great spot...', dm: 'Wow!' }
+  touch_1: { email_subject: 'Hi', email_body: 'Hey there...', dm: 'Hey!' },
+  touch_2: { email_subject: 'Tip', email_body: 'Quick tip...', dm: 'Tip!' },
+  touch_3: { email_subject: 'Love it', email_body: 'Great spot...', dm: 'Wow!' }
 });
 
 test('full pipeline: discover → filter → score → draft → export', async () => {
@@ -87,7 +87,7 @@ test('full pipeline: discover → filter → score → draft → export', async 
   const drafts = await drafting.draftAllLeads(topLeads);
 
   assert.equal(drafts.length, 1);
-  assert.ok(drafts[0].curious_neighbor);
+  assert.ok(drafts[0].touch_1);
 
   // Step 5: Export (mocked sheets)
   const appended = [];

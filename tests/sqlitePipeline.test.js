@@ -25,14 +25,14 @@ describe('Pipeline to SQLite integration', () => {
 
     const drafts = [
       {
-        curious_neighbor: { email_subject: 's1', email_body: 'b1', dm: 'd1' },
-        value_lead: { email_subject: 's2', email_body: 'b2', dm: 'd2' },
-        compliment_question: { email_subject: 's3', email_body: 'b3', dm: 'd3' }
+        touch_1: { email_subject: 's1', email_body: 'b1', dm: 'd1' },
+        touch_2: { email_subject: 's2', email_body: 'b2', dm: 'd2' },
+        touch_3: { email_subject: 's3', email_body: 'b3', dm: 'd3' }
       },
       {
-        curious_neighbor: { email_subject: 's4', email_body: 'b4', dm: 'd4' },
-        value_lead: { email_subject: 's5', email_body: 'b5', dm: 'd5' },
-        compliment_question: { email_subject: 's6', email_body: 'b6', dm: 'd6' }
+        touch_1: { email_subject: 's4', email_body: 'b4', dm: 'd4' },
+        touch_2: { email_subject: 's5', email_body: 'b5', dm: 'd5' },
+        touch_3: { email_subject: 's6', email_body: 'b6', dm: 'd6' }
       }
     ];
 

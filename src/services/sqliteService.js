@@ -95,7 +95,7 @@ export default class SqliteService {
           ]);
         }
 
-        for (const style of ['curious_neighbor', 'value_lead', 'compliment_question']) {
+        for (const style of ['touch_1', 'touch_2', 'touch_3']) {
           const d = draft[style];
           if (!d) continue;
           runStatement(insertDraft, 'insert outreach draft', [

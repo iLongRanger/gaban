@@ -23,7 +23,7 @@ function seedCampaign(db, { startAt = '2026-05-04T16:00:00.000Z', dailyCap = 5 }
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
     .run('pid-a', 'Lead A', 'lead@example.com', 49.2, -123.1, 2, 90, '{}', 'good', 'new', '2026-W18', now, now);
   const leadId = Number(leadResult.lastInsertRowid);
-  for (const style of ['curious_neighbor', 'value_lead', 'compliment_question']) {
+  for (const style of ['touch_1', 'touch_2', 'touch_3']) {
     db.prepare(`INSERT INTO outreach_drafts
       (lead_id, style, email_subject, email_body, dm, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)`)

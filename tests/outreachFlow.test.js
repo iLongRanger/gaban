@@ -57,7 +57,7 @@ describe('Outreach end-to-end flow', () => {
     const sendResult = db.prepare(
       `INSERT INTO email_sends (campaign_lead_id, touch_number, template_style, subject, body, recipient_email, scheduled_for, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run(campaignLeadId, 1, 'curious_neighbor', 'Hello', 'Initial body', 'dest@example.com', now, now);
+    ).run(campaignLeadId, 1, 'touch_1', 'Hello', 'Initial body', 'dest@example.com', now, now);
     const sendId = Number(sendResult.lastInsertRowid);
 
     // Compose email with CASL footer + unsubscribe token
@@ -88,7 +88,7 @@ describe('Outreach end-to-end flow', () => {
     db.prepare(
       `INSERT INTO email_sends (campaign_lead_id, touch_number, template_style, subject, body, recipient_email, scheduled_for, created_at, status)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'scheduled')`
-    ).run(campaignLeadId, 2, 'value_lead', 'Follow', 'FU body', 'dest@example.com', now, now);
+    ).run(campaignLeadId, 2, 'touch_2', 'Follow', 'FU body', 'dest@example.com', now, now);
 
     // Extract token from composed body
     const match = composed.body.match(/\/u\/([^\s)]+)/);

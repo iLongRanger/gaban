@@ -1,4 +1,23 @@
 import OpenAiJsonClient, { createJsonCompletion } from './openAiJsonClient.js';
+import { classifyVertical } from './verticalClassifier.js';
+
+const TOUCH_KEYS = ['touch_1', 'touch_2', 'touch_3'];
+
+const VERTICAL_PAIN = {
+  restaurant: 'grease on hood vents, sticky tile grout, stainless streaking before inspections, late-night deep cleans between dinner and breakfast service',
+  brewery:    'glycol spills on floor drains, kegerator line cleaning, sticky tap mats, sour smell in floor sumps, broken glass in floor drains',
+  industrial: 'fine dust on shelving and high ledges, oil drip on shop floors, dock-area sweep, yard debris around bay doors, safety-walk readiness',
+  retail:     'fingerprints on glass storefronts, dust on display fixtures, change-room mirrors, entrance mat grit during wet months',
+  office:     'desk dust on monitors, kitchenette grime, lobby glass smudges, washroom restock and disinfection between shifts',
+};
+
+const VERTICAL_GIFT = {
+  restaurant: 'a one-page checklist of the five things Vancouver Coastal Health inspectors hit in kitchens this quarter',
+  brewery:    'a one-page checklist for floor-drain and glycol-spill cleanup that won\'t void your warranty',
+  industrial: 'a one-page checklist of the dust-control and safety-walk items that fail WorkSafeBC walkthroughs',
+  retail:     'a one-page winter-entrance protocol that keeps slip risk low without trashing your floors',
+  office:     'a one-page checklist of the post-pandemic disinfection items most janitorial contracts still skip',
+};
 
 export default class DraftingService {
   constructor({ apiKey, model, logger, client, usageRecorder } = {}) {
@@ -9,22 +28,18 @@ export default class DraftingService {
 
   async draftAllLeads(leads) {
     const results = [];
-    for (const lead of leads) {
-      const drafts = await this.draftOutreach(lead);
-      results.push(drafts);
-    }
+    for (const lead of leads) results.push(await this.draftOutreach(lead));
     return results;
   }
 
   async draftOutreach(lead) {
     const prompt = this.buildDraftingPrompt(lead);
-
     try {
       const text = await createJsonCompletion(this.client, {
         model: this.model,
         maxTokens: 4096,
         prompt,
-        operation: 'outreach_drafting'
+        operation: 'outreach_drafting',
       });
       return sanitizeDrafts(JSON.parse(text));
     } catch (error) {
@@ -34,56 +49,68 @@ export default class DraftingService {
   }
 
   buildDraftingPrompt(lead) {
+    const vertical = classifyVertical(lead);
+    const pain = VERTICAL_PAIN[vertical];
+    const gift = VERTICAL_GIFT[vertical];
+
     const reviewSnippets = (lead.reviews_data || [])
       .slice(0, 5)
-      .map(r => `- "${r.review_text}"`)
+      .map((r) => `- "${r.review_text}"`)
       .join('\n');
 
-    return `You are writing cold outreach messages for someone who works with commercial service locations on cleaning services in Metro Vancouver.
+    return `You are writing a three-email cold outreach sequence on behalf of the owner of a commercial cleaning crew based in Metro Vancouver. The sender is a real local operator. Identify honestly. Do not pretend to be a neighbour, walker-by, or unrelated party.
 
-CRITICAL RULES:
-- Do NOT mention any company name
-- Do NOT pitch any service
-- The ONLY goal is to start a conversation
-- Be genuine and specific to this business
-- Keep emails under 80 words
-- Keep DMs under 40 words
-- Write like a real local operator, not a marketing assistant
-- Use normal punctuation: commas, periods, question marks, apostrophes, and colons
-- Do NOT use em dashes, double hyphens, tildes, markdown, bullets, emojis, or decorative separators
-- Do NOT overpraise. One specific observation is enough
-- Avoid phrases that sound automated, including "impressive to see", "consistent turnout", "great operations", and "quick question"
-- Use contractions naturally where they fit
-- Make each message sound like one person wrote it directly to one business
+GLOBAL RULES:
+- Never invent a company name; refer to the sender only as "I" or "we" and let the email signature provide identity.
+- Each email under 90 words. Each DM under 40 words.
+- Plain prose. No em dashes, double hyphens, tildes, markdown, bullets, emojis, or decorative separators. Normal punctuation only.
+- One specific observation per email. No overpraise. No "quick question". No "I hope this finds you well".
+- Use contractions naturally.
+- Subject lines: lowercase, five words or fewer, specific to this business or its street. No clickbait.
 
 BUSINESS:
 - Name: ${lead.business_name}
-- Type: ${lead.type || 'Business service location'}
+- Type: ${lead.type || 'service location'}
+- Vertical: ${vertical}
 - Address: ${lead.formatted_address || 'Metro Vancouver'}
 - Rating: ${lead.rating ?? 'N/A'}/5 (${lead.reviews_count ?? 0} reviews)
 
-REVIEW SNIPPETS:
+VERTICAL PAIN POINTS (pick the one that fits best, do not list more than one):
+${pain}
+
+REVIEW SNIPPETS (use one only if it points at cleanliness, wear, or operations; otherwise ignore):
 ${reviewSnippets || 'No reviews available'}
 
 SCORING INSIGHT: ${lead.reasoning || 'No scoring data'}
 
-Write 3 styles of outreach. For each, write an email (subject + body) and a short DM.
+WRITE THREE TOUCHES, IN ORDER:
 
-STYLE 1 - Curious Neighbor: Casual, ask how they handle cleaning. Reference being in their area.
-STYLE 2 - Value Lead: Share a quick cleaning tip relevant to their business type, then ask a question.
-STYLE 3 - Compliment + Question: Compliment something specific, then ask about their cleaning setup.
+TOUCH 1 — give first, no ask.
+Open by identifying as a commercial cleaner working with ${vertical}s nearby. Offer ${gift}. Tell them you will email it if they reply with "yes" (or simply attach it conceptually). Do NOT ask discovery questions. Do NOT pitch. Close with a one-line sign-off.
+
+TOUCH 2 — soft ask, references touch 1.
+Acknowledge they may not have seen the first note. Reference the gift once. Then make ONE concrete, low-friction offer: a 15-minute walkthrough next week, or a no-cost trial deep-clean of one area. Give a specific suggested time window (e.g. "Tuesday or Thursday after 2pm"). One short paragraph.
+
+TOUCH 3 — breakup.
+Acknowledge no reply. Say you will close the file and stop reaching out. Leave one door open ("If your current setup ever slips, my number is in the signature"). No new offer. Three sentences max. This style consistently produces the highest reply rate in cold outreach because it removes pressure.
+
+For each touch, also write a short DM variant suitable for Instagram or a contact-form message.
 
 Respond with ONLY this JSON (no markdown):
-{"curious_neighbor": {"email_subject": "...", "email_body": "...", "dm": "..."}, "value_lead": {"email_subject": "...", "email_body": "...", "dm": "..."}, "compliment_question": {"email_subject": "...", "email_body": "...", "dm": "..."}}`;
+{
+  "touch_1": {"email_subject": "...", "email_body": "...", "dm": "..."},
+  "touch_2": {"email_subject": "...", "email_body": "...", "dm": "..."},
+  "touch_3": {"email_subject": "...", "email_body": "...", "dm": "..."}
+}`;
   }
 }
 
 export function sanitizeDrafts(drafts) {
-  for (const style of ['curious_neighbor', 'value_lead', 'compliment_question']) {
-    if (!drafts?.[style]) continue;
-    drafts[style].email_subject = sanitizeMessageText(drafts[style].email_subject);
-    drafts[style].email_body = sanitizeMessageText(drafts[style].email_body);
-    drafts[style].dm = sanitizeMessageText(drafts[style].dm);
+  for (const key of TOUCH_KEYS) {
+    if (!drafts?.[key]) continue;
+    drafts[key].email_subject = sanitizeMessageText(drafts[key].email_subject);
+    drafts[key].email_body    = sanitizeMessageText(drafts[key].email_body);
+    drafts[key].dm            = sanitizeMessageText(drafts[key].dm);
   }
   return drafts;
 }
@@ -91,7 +118,7 @@ export function sanitizeDrafts(drafts) {
 export function sanitizeMessageText(value) {
   const cleaned = String(value || '')
     .replace(/[~*_`#>]+/g, '')
-    .replace(/[\u2014\u2013]+/g, '. ')
+    .replace(/[—–]+/g, '. ')
     .replace(/\s+-{2,}\s+/g, '. ')
     .replace(/-{2,}/g, '. ')
     .replace(/\s+([,.;:?!])/g, '$1')
@@ -99,12 +126,9 @@ export function sanitizeMessageText(value) {
     .replace(/\s{2,}/g, ' ')
     .replace(/\s+$/g, '')
     .trim();
-
   return capitalizeSentenceStarts(cleaned);
 }
 
 function capitalizeSentenceStarts(value) {
-  return value.replace(/(^|[.!?]\s+)([a-z])/g, (_match, prefix, letter) =>
-    prefix + letter.toUpperCase()
-  );
+  return value.replace(/(^|[.!?]\s+)([a-z])/g, (_m, prefix, letter) => prefix + letter.toUpperCase());
 }

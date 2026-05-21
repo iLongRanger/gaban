@@ -1,6 +1,6 @@
 import { nextSendTime, scheduleSequence } from './sequenceScheduler.js';
 
-const DEFAULT_TOUCH_STYLES = ['curious_neighbor', 'value_lead', 'compliment_question'];
+const DEFAULT_TOUCH_STYLES = ['touch_1', 'touch_2', 'touch_3'];
 const TOUCH_OFFSETS = { 1: 0, 2: 4, 3: 10 };
 
 function parseJson(value, fallback) {
