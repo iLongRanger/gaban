@@ -217,7 +217,7 @@ async function run() {
     logger.warn('SQLite export failed: ' + error.message + '. Falling back to CSV.');
     const csvPath = path.resolve(dataDir, 'leads-' + weekLabel + '.csv');
     const sheetsService = new SheetsService({ logger });
-    await sheetsService.exportToCSV(topLeads, drafts, csvPath);
+    await sheetsService.exportToCSV(topLeads, csvPath);
     logger.info('Saved fallback CSV to ' + csvPath);
   }
 

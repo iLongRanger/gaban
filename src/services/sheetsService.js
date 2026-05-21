@@ -85,7 +85,7 @@ export default class SheetsService {
     });
   }
 
-  async exportToCSV(leads, drafts, filePath) {
+  async exportToCSV(leads, filePath) {
     const { default: fs } = await import('node:fs/promises');
     const lines = ['business_name,type,address,phone,email,website,score,reasoning'];
 
