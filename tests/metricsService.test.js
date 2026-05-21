@@ -80,3 +80,17 @@ test('outreachFunnel honors the since filter', () => {
   const result = metrics.outreachFunnel({ since: '2026-05-01T00:00:00Z' });
   assert.equal(result.totals.sent, 1);
 });
+
+test('outreachFunnel counts one send only once even when it has multiple events', () => {
+  const db = makeDb();
+  seedSend(db, { id: 10, template_style: 'touch_1' });
+  seedEvent(db, { send_id: 10, type: 'bounced' });
+  seedEvent(db, { send_id: 10, type: 'replied' });
+
+  const metrics = new MetricsService({ db });
+  const result = metrics.outreachFunnel({ since: '2026-05-01T00:00:00Z' });
+  const t1 = result.by_template.find((r) => r.template_style === 'touch_1');
+  assert.equal(t1.sent, 1);
+  assert.equal(t1.bounced, 1);
+  assert.equal(t1.replied, 1);
+});

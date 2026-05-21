@@ -10,7 +10,7 @@ export class MetricsService {
     const rows = this.db.prepare(`
       SELECT
         es.template_style,
-        COUNT(*) AS sent,
+        COUNT(DISTINCT es.id) AS sent,
         SUM(CASE WHEN ev.type = 'replied'        THEN 1 ELSE 0 END) AS replied,
         SUM(CASE WHEN ev.type = 'bounced'        THEN 1 ELSE 0 END) AS bounced,
         SUM(CASE WHEN ev.type = 'auto_replied'   THEN 1 ELSE 0 END) AS auto_replied,
