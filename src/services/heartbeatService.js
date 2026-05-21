@@ -1,4 +1,5 @@
 import { WarmupCapService } from './warmupCapService.js';
+import { MetricsService } from './metricsService.js';
 
 function hasGmailEnv(env) {
   return Boolean(
@@ -42,6 +43,21 @@ export class HeartbeatService {
       return values;
     }, {});
 
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const funnel = new MetricsService({ db: this.db }).outreachFunnel({ since: sevenDaysAgo });
+
+    const invalidCount = this.db.prepare(`
+      SELECT COUNT(*) AS c FROM email_events ev
+      JOIN email_sends es ON es.id = ev.send_id
+      WHERE ev.type = 'cancelled'
+        AND ev.raw_payload LIKE '%invalid_recipient%'
+        AND ev.detected_at >= ?
+    `).get(sevenDaysAgo).c;
+    const queuedCount = this.db.prepare(`
+      SELECT COUNT(*) AS c FROM email_sends WHERE created_at >= ?
+    `).get(sevenDaysAgo).c;
+    const invalidRecipientRate7d = queuedCount ? invalidCount / queuedCount : 0;
+
     return {
       checked_at: now.toISOString(),
       gmail_configured: hasGmailEnv(this.env),
@@ -66,6 +82,9 @@ export class HeartbeatService {
          WHERE type = 'bounced'
            AND detected_at >= ?`
       ).get(`${day}T00:00:00.000Z`).count,
+      bounce_rate_7d: funnel.totals.bounce_rate,
+      reply_rate_7d: funnel.totals.reply_rate,
+      invalid_recipient_rate_7d: invalidRecipientRate7d,
       next_send_at: nextSend?.scheduled_for || null,
       last_startup_recovery: settings['outreach.last_startup_recovery'] || null,
       last_backup_path: settings['outreach.last_backup_path'] || null,
