@@ -1,4 +1,5 @@
 import { buildOutreachEmail } from './emailTemplateService.js';
+import { RecipientValidator } from './recipientValidator.js';
 import { SuppressionService } from './suppressionService.js';
 import { nextSendTime } from './sequenceScheduler.js';
 import { StartupRecovery } from './startupRecovery.js';
@@ -42,7 +43,7 @@ function writeSetting(db, key, value, at) {
 }
 
 export class SendQueueWorker {
-  constructor({ db, mailer, env = process.env, capService, suppressionService, logger = console }) {
+  constructor({ db, mailer, env = process.env, capService, suppressionService, validator, logger = console }) {
     if (!db) throw new Error('db required');
     if (!mailer) throw new Error('mailer required');
     this.db = db;
@@ -50,6 +51,7 @@ export class SendQueueWorker {
     this.env = env;
     this.capService = capService || new WarmupCapService({ db });
     this.suppressionService = suppressionService || new SuppressionService({ db });
+    this.validator = validator || new RecipientValidator();
     this.usage = new UsageService({ db });
     this.logger = logger;
   }
@@ -102,6 +104,12 @@ export class SendQueueWorker {
     if (this.suppressionService.isSuppressed(send.recipient_email)) {
       this.cancel(send, 'recipient suppressed', now);
       return { id: send.id, status: 'cancelled' };
+    }
+
+    const validation = await this.validator.validate(send.recipient_email);
+    if (!validation.valid) {
+      this.cancel(send, `invalid_recipient: ${validation.reason}`, now);
+      return { id: send.id, status: 'cancelled', reason: `invalid_recipient: ${validation.reason}` };
     }
 
     const cap = this.capService.canSend({ campaign: send, at: now });
