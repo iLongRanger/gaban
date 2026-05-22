@@ -17,6 +17,10 @@ function requireConfig(env) {
   for (const [key, value] of Object.entries(config)) {
     if (!value) throw new Error(`${key} is required`);
   }
+  config.senderName = env.BUSINESS_SENDER_NAME || null;
+  config.senderRole = env.BUSINESS_SENDER_ROLE || null;
+  config.senderPhone = env.BUSINESS_SENDER_PHONE || null;
+  config.senderWebsite = env.BUSINESS_SENDER_WEBSITE || null;
   return config;
 }
 

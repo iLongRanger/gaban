@@ -28,7 +28,17 @@ export function buildOutreachEmail({ sendId, subject, body, config }) {
   const token = signUnsubscribeToken({ sendId }, config.tokenSecret);
   const unsubscribeUrl = `${config.publicAppUrl.replace(/\/$/, '')}/u/${token}`;
 
+  const senderLines = [
+    config.senderName,
+    config.senderRole,
+    config.senderPhone,
+    config.senderWebsite,
+  ].filter(Boolean);
+
+  const signatureLines = senderLines.length ? ['', ...senderLines] : [];
+
   const footer = [
+    ...signatureLines,
     '',
     '—',
     `${config.legalName} (operating as ${config.operatingName})`,
@@ -38,7 +48,12 @@ export function buildOutreachEmail({ sendId, subject, body, config }) {
     `Unsubscribe: ${unsubscribeUrl}`,
   ].join('\n');
 
+  const htmlSignature = senderLines.length
+    ? `<div style="margin-top:14px;font-family:Arial,sans-serif;font-size:13px;line-height:1.45;color:#111827;">${senderLines.map((line) => `<div>${escapeHtml(line)}</div>`).join('')}</div>`
+    : '';
+
   const htmlFooter = `
+${htmlSignature}
 <div style="margin-top:18px;padding-top:10px;border-top:1px solid #e5e7eb;color:#6b7280;font-family:Arial,sans-serif;font-size:11px;line-height:1.45;">
   <div>${escapeHtml(config.legalName)} (operating as ${escapeHtml(config.operatingName)})</div>
   <div>${escapeHtml(config.mailingAddress)}</div>

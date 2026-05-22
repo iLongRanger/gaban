@@ -76,4 +76,37 @@ describe('buildOutreachEmail', () => {
       sendId: 1, subject: 'x', body: 'y', config: bad,
     }), /legalName/i);
   });
+
+  it('appends the sender signature block above the legal footer when provided', () => {
+    const { body, html } = buildOutreachEmail({
+      sendId: 9,
+      subject: 'hi',
+      body: 'Body text.',
+      config: {
+        ...CONFIG,
+        senderName: 'Ralp Ortiz',
+        senderRole: 'Owner, Gleam Pro Cleaning',
+        senderPhone: '778 681 0922',
+        senderWebsite: 'gleampro.ca',
+      },
+    });
+    assert.ok(body.includes('Ralp Ortiz'), 'missing sender name');
+    assert.ok(body.includes('Owner, Gleam Pro Cleaning'), 'missing sender role');
+    assert.ok(body.includes('778 681 0922'), 'missing sender phone');
+    assert.ok(body.includes('gleampro.ca'), 'missing sender website');
+    assert.ok(body.indexOf('Ralp Ortiz') < body.indexOf('Gleam & Lift Solutions'), 'signature should sit above legal footer');
+    assert.ok(html.includes('Ralp Ortiz'), 'html missing sender name');
+    assert.ok(html.includes('778 681 0922'), 'html missing sender phone');
+  });
+
+  it('omits the signature block entirely when no sender fields are configured', () => {
+    const { body } = buildOutreachEmail({
+      sendId: 9,
+      subject: 'hi',
+      body: 'Body text.',
+      config: CONFIG,
+    });
+    assert.ok(!body.includes('Ralp Ortiz'));
+    assert.match(body, /Body text\.\n\n—/);
+  });
 });

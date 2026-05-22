@@ -61,7 +61,9 @@ export default class DraftingService {
     return `You are writing a three-email cold outreach sequence on behalf of the owner of a commercial cleaning crew based in Metro Vancouver. The sender is a real local operator. Identify honestly. Do not pretend to be a neighbour, walker-by, or unrelated party.
 
 GLOBAL RULES:
-- Never invent a company name; refer to the sender only as "I" or "we" and let the email signature provide identity.
+- Never invent a company name, a personal name, a phone number, a website, or an email address. The system appends a real signature block with the sender's name, role, phone, and website automatically. Do not duplicate or pre-empt any of that content inside the body.
+- Refer to the sender only as "I" or "we". Do not name the sender or the business anywhere in the body or subject.
+- Do NOT end the email with a sign-off line. No "Thanks", "Thank you", "Best", "Cheers", "Sincerely", "Regards", "Warmly", "Talk soon", "Looking forward", or any other closing salutation. No trailing name. No trailing phone. No trailing website. End the body with an ordinary sentence and let the system-appended signature handle identity.
 - Each email under 90 words. Each DM under 40 words.
 - Plain prose. No em dashes, double hyphens, tildes, markdown, bullets, emojis, or decorative separators. Normal punctuation only.
 - One specific observation per email. No overpraise. No "quick question". No "I hope this finds you well".
@@ -92,7 +94,7 @@ TOUCH 2 — soft ask, references touch 1.
 Acknowledge they may not have seen the first note. Reference the gift once. Then make ONE concrete, low-friction offer: a 15-minute walkthrough next week, or a no-cost trial deep-clean of one area. Give a specific suggested time window (e.g. "Tuesday or Thursday after 2pm"). One short paragraph.
 
 TOUCH 3 — breakup.
-Acknowledge no reply. Say you will close the file and stop reaching out. Leave one door open ("If your current setup ever slips, my number is in the signature"). No new offer. Three sentences max. This style consistently produces the highest reply rate in cold outreach because it removes pressure.
+Acknowledge no reply. Say you will close the file and stop reaching out. Leave one door open by inviting them to reach back out if their current setup ever slips. Do NOT mention "signature", a phone number, contact details, or how to reach you — the appended signature handles that. No new offer. Three sentences max. This style consistently produces the highest reply rate in cold outreach because it removes pressure.
 
 For each touch, also write a short DM variant suitable for Instagram or a contact-form message.
 
@@ -109,10 +111,39 @@ export function sanitizeDrafts(drafts) {
   for (const key of TOUCH_KEYS) {
     if (!drafts?.[key]) continue;
     drafts[key].email_subject = sanitizeMessageText(drafts[key].email_subject);
-    drafts[key].email_body    = sanitizeMessageText(drafts[key].email_body);
-    drafts[key].dm            = sanitizeMessageText(drafts[key].dm);
+    drafts[key].email_body    = sanitizeMessageText(stripTrailingSignature(drafts[key].email_body));
+    drafts[key].dm            = sanitizeMessageText(stripTrailingSignature(drafts[key].dm));
   }
   return drafts;
+}
+
+const SIGNOFF_RE = /^(thanks(?:\s+(?:so much|again|a lot|in advance))?|thank you|thx|ty|best(?:\s+regards)?|cheers|sincerely(?:\s+yours)?|regards|kind\s+regards|warmly|warm\s+regards|talk\s+soon|cordially|yours(?:\s+truly)?|with\s+thanks|all\s+the\s+best|appreciate\s+it|looking\s+forward|respectfully)\b[,.!\s-]*$/i;
+const PHONE_RE = /(?:\+?\d[\s().-]?){7,}\d/;
+const URL_RE = /\b(?:https?:\/\/|www\.)\S+|\b[a-z0-9][a-z0-9-]*\.(?:com|ca|net|org|io|co|biz)\b(?:\/\S*)?/i;
+const ENDS_SENTENCE = /[.!?]\s*['")\]]?$/;
+
+export function stripTrailingSignature(body) {
+  const lines = String(body || '').split(/\r?\n/);
+
+  while (lines.length > 1) {
+    const last = lines[lines.length - 1].trim();
+    if (last === '') { lines.pop(); continue; }
+
+    if (PHONE_RE.test(last) || URL_RE.test(last) || SIGNOFF_RE.test(last)) {
+      lines.pop();
+      continue;
+    }
+
+    // Strip short trailing lines that don't end like a sentence (likely names / titles)
+    if (!ENDS_SENTENCE.test(last) && last.length <= 60 && /^[A-Z]/.test(last)) {
+      lines.pop();
+      continue;
+    }
+
+    break;
+  }
+
+  return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
 }
 
 export function sanitizeMessageText(value) {
