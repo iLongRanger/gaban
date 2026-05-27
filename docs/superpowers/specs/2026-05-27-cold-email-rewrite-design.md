@@ -127,9 +127,17 @@ No schema change. `email_sends.template_style` continues to hold `touch_1 | touc
 
 **Delete:** none.
 
-### Out-of-scope cleanup deferred
+### Rollout constraint — new campaigns only
 
-- One-off redraft script (`scripts/redraft-active-campaigns.js` or similar, per commit `6af13a0`) will need to be re-run against active campaigns after the prompt change ships, but is not modified by this design.
+**The new prompt applies only to campaigns drafted after deploy. Active and existing campaigns keep their previously-drafted email bodies unchanged.**
+
+- `email_sends` rows already in `scheduled` or `sent` status retain their current `subject` and `body`. We do not redraft, replace, or migrate them.
+- The one-off redraft script from commit `6af13a0` (`scripts/redraft-active-campaigns.js` or similar) **must not be run** as part of this change.
+- New drafts produced after deploy will naturally use the new prompt because drafting happens at campaign-creation time.
+- `MetricsService.outreachFunnel` will continue to display legacy `template_style` rows alongside new ones — already accounted for in the existing design.
+
+### Other deferred items
+
 - The historical plan doc `docs/superpowers/plans/2026-05-21-marketing-hardening.md` still references `VERTICAL_GIFT` and "WorkSafeBC walkthroughs" — left as a historical artifact, not edited.
 
 ---
