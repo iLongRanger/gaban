@@ -2,6 +2,10 @@
 // One-off: re-run the new drafting prompt against all active campaign leads
 // and reseed any still-scheduled email_sends with the new copy.
 //
+// NOTE: Do not run after the 2026-05-27 cold-email prompt rewrite without
+// explicit operator approval. The new prompt is intentionally applied to
+// new campaigns only; existing email_sends rows retain their original bodies.
+//
 // Usage:
 //   node scripts/redraft-active.mjs           # do it
 //   node scripts/redraft-active.mjs --dry     # print plan, no writes, no API calls
