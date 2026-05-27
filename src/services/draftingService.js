@@ -14,7 +14,7 @@ const VERTICAL_PAIN = {
 const VERTICAL_GIFT = {
   restaurant: 'a one-page checklist of the five things Vancouver Coastal Health inspectors hit in kitchens this quarter',
   brewery:    'a one-page checklist for floor-drain and glycol-spill cleanup that won\'t void your warranty',
-  industrial: 'a one-page checklist of the dust-control and safety-walk items that fail WorkSafeBC walkthroughs',
+  industrial: 'a one-page checklist of the dust-control and housekeeping items that most often get flagged on shop-floor safety walks',
   retail:     'a one-page winter-entrance protocol that keeps slip risk low without trashing your floors',
   office:     'a one-page checklist of the post-pandemic disinfection items most janitorial contracts still skip',
 };
