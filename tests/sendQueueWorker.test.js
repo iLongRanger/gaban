@@ -221,29 +221,25 @@ describe('SendQueueWorker', () => {
     assert.ok(gap.value.includes('rescheduled_sends'));
   });
 
-  it('finalizes a single-touch campaign after the final touch when grace is 0', async () => {
+  it('finalizes the campaign after the final touch sends (grace 0)', async () => {
+    const campaign = seedCampaign(db);
     db.prepare(`INSERT INTO system_settings (key, value, updated_at) VALUES ('outreach.finish_grace_hours', '0', ?)`)
       .run(new Date().toISOString());
-    const now = new Date().toISOString();
-    db.prepare(`INSERT INTO presets (name, location, radius_km, office_lat, office_lng, categories, top_n, created_at, updated_at)
-      VALUES ('P','V',10,49.2,-123.1,'["x"]',5,?,?)`).run(now, now);
-    const preset = db.prepare('SELECT * FROM presets ORDER BY id DESC LIMIT 1').get();
-    const leadRes = db.prepare(`INSERT INTO leads (place_id, business_name, email, latitude, longitude, distance_km, total_score, factor_scores, reasoning, status, week, created_at, updated_at)
-      VALUES ('pid-solo','Solo','solo@example.com',49.2,-123.1,2,90,'{}','ok','new','2026-W18',?,?)`).run(now, now);
-    const leadId = Number(leadRes.lastInsertRowid);
-    db.prepare(`INSERT INTO outreach_drafts (lead_id, style, email_subject, email_body, dm, created_at, updated_at)
-      VALUES (?, 'touch_1', 'S', 'B', 'D', ?, ?)`).run(leadId, now, now);
-    const campaign = new CampaignService({ db }).createCampaign({
-      presetId: preset.id, name: 'Solo', leadIds: [leadId],
-      startAt: '2026-05-04T16:00:00.000Z', touchStyles: ['touch_1'],
-    });
+    const cl = db.prepare('SELECT id FROM campaign_leads WHERE campaign_id = ?').get(campaign.id);
+    // Touches 1 and 2 already sent; lead sits at touch 2 with only the final touch left.
+    db.prepare("UPDATE email_sends SET status = 'sent' WHERE campaign_lead_id = ? AND touch_number IN (1, 2)").run(cl.id);
+    db.prepare("UPDATE campaign_leads SET status = 'active', touch_count = 2, last_touch_at = '2026-05-10T16:00:00.000Z' WHERE id = ?").run(cl.id);
+    const tickNow = new Date('2026-05-20T16:00:00.000Z');
+    db.prepare("UPDATE email_sends SET scheduled_for = ? WHERE campaign_lead_id = ? AND touch_number = 3").run(tickNow.toISOString(), cl.id);
 
     const worker = new SendQueueWorker({
       db, env: ENV, validator: permissiveValidator,
       mailer: { send: async () => ({ gmail_message_id: 'm', gmail_thread_id: 't', gmail_rfc_message_id: '<m@x>' }) },
     });
-    await worker.tick({ now: new Date('2026-05-04T16:00:00.000Z'), limit: 1 });
+    await worker.tick({ now: tickNow, limit: 1 });
 
+    const send3 = db.prepare("SELECT status FROM email_sends WHERE campaign_lead_id = ? AND touch_number = 3").get(cl.id);
+    assert.strictEqual(send3.status, 'sent');
     const row = db.prepare('SELECT status, summary FROM campaigns WHERE id = ?').get(campaign.id);
     assert.strictEqual(row.status, 'finished');
     assert.ok(JSON.parse(row.summary).totals);

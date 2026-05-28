@@ -165,10 +165,6 @@ export class SendQueueWorker {
       try {
         const maxTouches = JSON.parse(send.campaign_touch_styles || '[]').length || 3;
         if (send.touch_number >= maxTouches) {
-          this.db.prepare(
-            `UPDATE email_sends SET status = 'cancelled', error_message = 'sequence complete'
-             WHERE campaign_lead_id = ? AND status = 'scheduled' AND touch_number > ?`
-          ).run(send.campaign_lead_id, maxTouches);
           this.campaignService.finalizeIfDone(send.campaign_id, now);
         }
       } catch (hookErr) {
