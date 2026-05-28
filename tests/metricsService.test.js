@@ -147,7 +147,8 @@ test('campaignSummary returns totals, per-touch, per-vertical, and outcomes', ()
   assert.equal(office.sent, 1);
 
   assert.equal(s.leads, 2);
-  assert.equal(typeof s.duration_days, 'number');
+  // started_at = earliest sent (2026-05-15), now injected = 2026-05-20 -> 5 whole days
+  assert.equal(s.duration_days, 5);
 });
 
 test('campaignSummary returns null for an unknown campaign', () => {
