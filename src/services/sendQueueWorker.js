@@ -1,4 +1,5 @@
 import { buildOutreachEmail } from './emailTemplateService.js';
+import { CampaignService } from './campaignService.js';
 import { RecipientValidator } from './recipientValidator.js';
 import { SuppressionService } from './suppressionService.js';
 import { nextSendTime } from './sequenceScheduler.js';
@@ -47,7 +48,7 @@ function writeSetting(db, key, value, at) {
 }
 
 export class SendQueueWorker {
-  constructor({ db, mailer, env = process.env, capService, suppressionService, validator, logger = console }) {
+  constructor({ db, mailer, env = process.env, capService, suppressionService, validator, campaignService, logger = console }) {
     if (!db) throw new Error('db required');
     if (!mailer) throw new Error('mailer required');
     this.db = db;
@@ -57,12 +58,14 @@ export class SendQueueWorker {
     this.suppressionService = suppressionService || new SuppressionService({ db });
     this.validator = validator || new RecipientValidator();
     this.usage = new UsageService({ db });
+    this.campaignService = campaignService || new CampaignService({ db });
     this.logger = logger;
   }
 
   dueSends({ now = new Date(), limit = 1 } = {}) {
     return this.db.prepare(
       `SELECT es.*, cl.status AS campaign_lead_status, c.status AS campaign_status,
+              c.id AS campaign_id, c.touch_styles AS campaign_touch_styles,
               c.daily_cap, c.timezone, c.send_window_start, c.send_window_end, c.send_days
        FROM email_sends es
        JOIN campaign_leads cl ON cl.id = es.campaign_lead_id
@@ -142,7 +145,7 @@ export class SendQueueWorker {
         body: composed.body,
         html: composed.html,
       });
-      const sentAt = new Date().toISOString();
+      const sentAt = now.toISOString();
       this.db.prepare(
         `UPDATE email_sends
          SET status = 'sent', sent_at = ?, gmail_message_id = ?, gmail_thread_id = ?, gmail_rfc_message_id = ?, error_message = NULL
@@ -159,6 +162,18 @@ export class SendQueueWorker {
          SET status = 'active', touch_count = MAX(touch_count, ?), last_touch_at = ?
          WHERE id = ?`
       ).run(send.touch_number, sentAt, send.campaign_lead_id);
+      try {
+        const maxTouches = JSON.parse(send.campaign_touch_styles || '[]').length || 3;
+        if (send.touch_number >= maxTouches) {
+          this.db.prepare(
+            `UPDATE email_sends SET status = 'cancelled', error_message = 'sequence complete'
+             WHERE campaign_lead_id = ? AND status = 'scheduled' AND touch_number > ?`
+          ).run(send.campaign_lead_id, maxTouches);
+          this.campaignService.finalizeIfDone(send.campaign_id, now);
+        }
+      } catch (hookErr) {
+        this.logger.error?.(`finalize hook failed: ${hookErr.message}`);
+      }
       this.usage.safeRecord({
         provider: 'google',
         service: 'gmail_api',

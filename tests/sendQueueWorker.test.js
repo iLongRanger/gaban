@@ -220,4 +220,32 @@ describe('SendQueueWorker', () => {
     const gap = db.prepare("SELECT value FROM system_settings WHERE key = 'outreach.last_send_worker_gap'").get();
     assert.ok(gap.value.includes('rescheduled_sends'));
   });
+
+  it('finalizes a single-touch campaign after the final touch when grace is 0', async () => {
+    db.prepare(`INSERT INTO system_settings (key, value, updated_at) VALUES ('outreach.finish_grace_hours', '0', ?)`)
+      .run(new Date().toISOString());
+    const now = new Date().toISOString();
+    db.prepare(`INSERT INTO presets (name, location, radius_km, office_lat, office_lng, categories, top_n, created_at, updated_at)
+      VALUES ('P','V',10,49.2,-123.1,'["x"]',5,?,?)`).run(now, now);
+    const preset = db.prepare('SELECT * FROM presets ORDER BY id DESC LIMIT 1').get();
+    const leadRes = db.prepare(`INSERT INTO leads (place_id, business_name, email, latitude, longitude, distance_km, total_score, factor_scores, reasoning, status, week, created_at, updated_at)
+      VALUES ('pid-solo','Solo','solo@example.com',49.2,-123.1,2,90,'{}','ok','new','2026-W18',?,?)`).run(now, now);
+    const leadId = Number(leadRes.lastInsertRowid);
+    db.prepare(`INSERT INTO outreach_drafts (lead_id, style, email_subject, email_body, dm, created_at, updated_at)
+      VALUES (?, 'touch_1', 'S', 'B', 'D', ?, ?)`).run(leadId, now, now);
+    const campaign = new CampaignService({ db }).createCampaign({
+      presetId: preset.id, name: 'Solo', leadIds: [leadId],
+      startAt: '2026-05-04T16:00:00.000Z', touchStyles: ['touch_1'],
+    });
+
+    const worker = new SendQueueWorker({
+      db, env: ENV, validator: permissiveValidator,
+      mailer: { send: async () => ({ gmail_message_id: 'm', gmail_thread_id: 't', gmail_rfc_message_id: '<m@x>' }) },
+    });
+    await worker.tick({ now: new Date('2026-05-04T16:00:00.000Z'), limit: 1 });
+
+    const row = db.prepare('SELECT status, summary FROM campaigns WHERE id = ?').get(campaign.id);
+    assert.strictEqual(row.status, 'finished');
+    assert.ok(JSON.parse(row.summary).totals);
+  });
 });
