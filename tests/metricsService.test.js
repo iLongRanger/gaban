@@ -95,8 +95,6 @@ test('outreachFunnel counts one send only once even when it has multiple events'
   assert.equal(t1.replied, 1);
 });
 
-import { classifyVertical } from '../src/services/verticalClassifier.js';
-
 function seedLeadTyped(db, { leadId, campaignLeadId, type, status = 'active' }) {
   const now = '2026-05-15T12:00:00Z';
   db.prepare(`INSERT INTO leads (id, place_id, business_name, type, email, latitude, longitude, distance_km, total_score, factor_scores, reasoning, status, week, created_at, updated_at)
