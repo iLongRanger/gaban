@@ -132,3 +132,17 @@ test('finalizeAllActive finishes every eligible active campaign', () => {
   const finished = new CampaignService({ db }).finalizeAllActive(NOW);
   assert.deepEqual(finished, [1]);
 });
+
+test('last lead going terminal finishes a campaign whose other leads are past grace', () => {
+  const db = initDb(':memory:');
+  setGrace(db, 48);
+  seedCampaign(db);
+  // lead 1: silent, past grace; lead 2: just replied (terminal)
+  seedLead(db, { leadId: 1, campaignLeadId: 1, status: 'active', touch_count: 3, last_touch_at: '2026-05-17T12:00:00Z' });
+  seedSend(db, { id: 1, campaignLeadId: 1, touch_number: 3, status: 'sent' });
+  seedLead(db, { leadId: 2, campaignLeadId: 2, status: 'replied', touch_count: 2, last_touch_at: '2026-05-19T12:00:00Z' });
+  seedSend(db, { id: 2, campaignLeadId: 2, touch_number: 2, status: 'sent' });
+
+  const res = new CampaignService({ db }).finalizeIfDone(1, NOW);
+  assert.equal(res.finished, true);
+});

@@ -156,6 +156,17 @@ export class EmailResponseMonitor {
     });
     apply();
 
+    if (shouldCompleteLead) {
+      const link = this.db.prepare('SELECT campaign_id FROM campaign_leads WHERE id = ?').get(send.campaign_lead_id);
+      if (link?.campaign_id) {
+        try {
+          this.campaigns.finalizeIfDone(link.campaign_id, now);
+        } catch (hookErr) {
+          this.logger?.error?.(`finalize hook failed: ${hookErr.message}`);
+        }
+      }
+    }
+
     return { id: message.id, status: type, send_id: send.id, campaign_lead_id: send.campaign_lead_id };
   }
 }
