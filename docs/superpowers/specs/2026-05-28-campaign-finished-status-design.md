@@ -44,7 +44,9 @@ Additive columns on `campaigns` (add to the `CREATE TABLE` in `src/web/lib/db.js
 - `finished_at TEXT` — ISO timestamp when the campaign was finished.
 - `summary TEXT` — frozen JSON summary (see shape below).
 
-No migration framework exists; `initDb` recreates/ensures schema. Confirm during implementation that adding columns does not require a manual `ALTER` for existing DBs; if it does, add an idempotent `ALTER TABLE ... ADD COLUMN` guard.
+Use the existing schema-evolution pattern in `src/web/lib/db.js`:
+1. Add `finished_at TEXT` and `summary TEXT` to the `campaigns` `CREATE TABLE` block (fresh DBs).
+2. In `initDb`, add `ensureColumn(db, 'campaigns', 'finished_at', 'TEXT')` and `ensureColumn(db, 'campaigns', 'summary', 'TEXT')` (existing DBs). `ensureColumn` (`db.js:226`) checks `table_info` and runs an idempotent `ALTER TABLE ... ADD COLUMN` only when missing — the same mechanism already used for `gmail_rfc_message_id` and `distance_center_address`. No separate migration framework needed.
 
 ## Finish condition
 
