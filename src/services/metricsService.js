@@ -121,7 +121,7 @@ export class MetricsService {
     const end = campaign.finished_at || nowIso;
     const duration_days = Math.max(
       0,
-      Math.round((new Date(end).getTime() - new Date(started_at).getTime()) / 86400000)
+      Math.floor((new Date(end).getTime() - new Date(started_at).getTime()) / 86400000)
     );
 
     return {
