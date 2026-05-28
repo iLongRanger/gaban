@@ -108,6 +108,22 @@ test('grace hours setting of 0 finishes immediately after final touch', () => {
   assert.equal(res.finished, true);
 });
 
+test('a follow_up_later lead does not pin the campaign open', () => {
+  const db = initDb(':memory:');
+  setGrace(db, 48);
+  seedCampaign(db);
+  seedLead(db, { leadId: 1, campaignLeadId: 1, status: 'follow_up_later', touch_count: 3, last_touch_at: '2026-05-17T12:00:00Z' });
+  const res = new CampaignService({ db }).finalizeIfDone(1, NOW);
+  assert.equal(res.finished, true);
+});
+
+test('returns not_found for an unknown campaign', () => {
+  const db = initDb(':memory:');
+  const res = new CampaignService({ db }).finalizeIfDone(999, NOW);
+  assert.equal(res.finished, false);
+  assert.equal(res.reason, 'not_found');
+});
+
 test('finalizeAllActive finishes every eligible active campaign', () => {
   const db = initDb(':memory:');
   setGrace(db, 48);

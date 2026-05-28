@@ -3,15 +3,19 @@ import { MetricsService } from './metricsService.js';
 
 const DEFAULT_TOUCH_STYLES = ['touch_1', 'touch_2', 'touch_3'];
 
+// follow_up_later is included: it's an operator note to revisit manually and does not
+// cancel future sends, so once the sequence finishes it must not pin the campaign open.
 const TERMINAL_LEAD_STATUSES = new Set([
   'replied', 'bounced', 'auto_replied', 'unsubscribed',
-  'interested', 'not_interested', 'out_of_scope', 'meeting_booked', 'contract_signed',
+  'interested', 'not_interested', 'out_of_scope', 'follow_up_later',
+  'meeting_booked', 'contract_signed',
 ]);
 
 function readSetting(db, key) {
   const row = db.prepare('SELECT value FROM system_settings WHERE key = ?').get(key);
   return row?.value;
 }
+
 const TOUCH_OFFSETS = { 1: 0, 2: 4, 3: 10 };
 
 function parseJson(value, fallback) {
