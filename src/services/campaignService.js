@@ -223,7 +223,13 @@ export class CampaignService {
     const nowDate = now instanceof Date ? now : new Date(now);
     const maxTouches = parseJson(campaign.touch_styles, DEFAULT_TOUCH_STYLES).length;
     const graceSetting = readSetting(this.db, 'outreach.finish_grace_hours');
-    const graceHours = graceSetting != null ? Number(graceSetting) : 48;
+    const parsedGrace = Number(graceSetting);
+    // Default to 48h unless the setting is a valid non-negative number. An empty
+    // string or garbage value falls back rather than silently zeroing the window.
+    const graceHours =
+      graceSetting != null && graceSetting !== '' && Number.isFinite(parsedGrace) && parsedGrace >= 0
+        ? parsedGrace
+        : 48;
     const graceCutoff = new Date(nowDate.getTime() - graceHours * 3600 * 1000).toISOString();
 
     const pending = this.db.prepare(`
@@ -261,7 +267,11 @@ export class CampaignService {
     const active = this.db.prepare("SELECT id FROM campaigns WHERE status = 'active'").all();
     const finished = [];
     for (const c of active) {
-      if (this.finalizeIfDone(c.id, now).finished) finished.push(c.id);
+      try {
+        if (this.finalizeIfDone(c.id, now).finished) finished.push(c.id);
+      } catch {
+        // One campaign failing to finalize must not abort the whole sweep.
+      }
     }
     return finished;
   }

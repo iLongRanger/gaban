@@ -117,6 +117,18 @@ test('a follow_up_later lead does not pin the campaign open', () => {
   assert.equal(res.finished, true);
 });
 
+test('a malformed grace setting falls back to the 48h default', () => {
+  const db = initDb(':memory:');
+  db.prepare(`INSERT INTO system_settings (key, value, updated_at)
+              VALUES ('outreach.finish_grace_hours', 'not-a-number', ?)`).run(NOW.toISOString());
+  seedCampaign(db);
+  // last touch 3h ago: would finish if grace were mis-parsed to 0/NaN, must NOT finish under 48h default
+  seedLead(db, { leadId: 1, campaignLeadId: 1, status: 'active', touch_count: 3, last_touch_at: '2026-05-20T09:00:00Z' });
+  const res = new CampaignService({ db }).finalizeIfDone(1, NOW);
+  assert.equal(res.finished, false);
+  assert.equal(res.reason, 'lead_in_progress');
+});
+
 test('returns not_found for an unknown campaign', () => {
   const db = initDb(':memory:');
   const res = new CampaignService({ db }).finalizeIfDone(999, NOW);
