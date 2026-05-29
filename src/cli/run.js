@@ -110,7 +110,7 @@ async function run() {
     settings = mergeConfig(settings, override);
   }
 
-  logger.info('=== Gleam Lead Scraper - Weekly Run ===');
+  logger.info('=== GABAN DEV - Weekly Run ===');
 
   if (settings.operational.dry_run) {
     logger.info('Dry run enabled. Exiting.');
