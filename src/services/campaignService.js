@@ -1,6 +1,21 @@
 import { nextSendTime, scheduleSequence } from './sequenceScheduler.js';
+import { MetricsService } from './metricsService.js';
 
 const DEFAULT_TOUCH_STYLES = ['touch_1', 'touch_2', 'touch_3'];
+
+// follow_up_later is included: it's an operator note to revisit manually and does not
+// cancel future sends, so once the sequence finishes it must not pin the campaign open.
+const TERMINAL_LEAD_STATUSES = new Set([
+  'replied', 'bounced', 'auto_replied', 'unsubscribed',
+  'interested', 'not_interested', 'out_of_scope', 'follow_up_later',
+  'meeting_booked', 'contract_signed',
+]);
+
+function readSetting(db, key) {
+  const row = db.prepare('SELECT value FROM system_settings WHERE key = ?').get(key);
+  return row?.value;
+}
+
 const TOUCH_OFFSETS = { 1: 0, 2: 4, 3: 10 };
 
 function parseJson(value, fallback) {
@@ -198,5 +213,66 @@ export class CampaignService {
        SET status = 'cancelled', error_message = ?
        WHERE campaign_lead_id = ? AND status = 'scheduled'`
     ).run(reason, campaignLeadId).changes;
+  }
+
+  finalizeIfDone(campaignId, now = new Date()) {
+    const campaign = this.db.prepare('SELECT * FROM campaigns WHERE id = ?').get(campaignId);
+    if (!campaign) return { finished: false, reason: 'not_found' };
+    if (campaign.status !== 'active') return { finished: false, reason: 'not_active' };
+
+    const nowDate = now instanceof Date ? now : new Date(now);
+    const maxTouches = parseJson(campaign.touch_styles, DEFAULT_TOUCH_STYLES).length;
+    const graceSetting = readSetting(this.db, 'outreach.finish_grace_hours');
+    const parsedGrace = Number(graceSetting);
+    // Default to 48h unless the setting is a valid non-negative number. An empty
+    // string or garbage value falls back rather than silently zeroing the window.
+    const graceHours =
+      graceSetting != null && graceSetting !== '' && Number.isFinite(parsedGrace) && parsedGrace >= 0
+        ? parsedGrace
+        : 48;
+    const graceCutoff = new Date(nowDate.getTime() - graceHours * 3600 * 1000).toISOString();
+
+    const pending = this.db.prepare(`
+      SELECT COUNT(*) AS c FROM email_sends es
+      JOIN campaign_leads cl ON cl.id = es.campaign_lead_id
+      WHERE cl.campaign_id = ? AND es.status IN ('scheduled', 'sending')
+    `).get(campaignId).c;
+    if (pending > 0) return { finished: false, reason: 'sends_pending' };
+
+    const leads = this.db.prepare(
+      'SELECT status, touch_count, last_touch_at FROM campaign_leads WHERE campaign_id = ?'
+    ).all(campaignId);
+    if (leads.length === 0) return { finished: false, reason: 'no_leads' };
+
+    for (const lead of leads) {
+      if (lead.status === 'queued') return { finished: false, reason: 'lead_queued' };
+      if (TERMINAL_LEAD_STATUSES.has(lead.status)) continue;
+      const exhausted =
+        lead.status === 'active' &&
+        lead.touch_count >= maxTouches &&
+        lead.last_touch_at &&
+        lead.last_touch_at <= graceCutoff;
+      if (!exhausted) return { finished: false, reason: 'lead_in_progress' };
+    }
+
+    const summary = new MetricsService({ db: this.db }).campaignSummary(campaignId, { now: nowDate });
+    const finishedAt = nowDate.toISOString();
+    this.db.prepare(
+      `UPDATE campaigns SET status = 'finished', finished_at = ?, summary = ?, updated_at = ? WHERE id = ?`
+    ).run(finishedAt, JSON.stringify(summary), finishedAt, campaignId);
+    return { finished: true };
+  }
+
+  finalizeAllActive(now = new Date()) {
+    const active = this.db.prepare("SELECT id FROM campaigns WHERE status = 'active'").all();
+    const finished = [];
+    for (const c of active) {
+      try {
+        if (this.finalizeIfDone(c.id, now).finished) finished.push(c.id);
+      } catch {
+        // One campaign failing to finalize must not abort the whole sweep.
+      }
+    }
+    return finished;
   }
 }

@@ -115,6 +115,8 @@ CREATE TABLE IF NOT EXISTS campaigns (
   send_window_end    TEXT NOT NULL DEFAULT '17:00',
   send_days          TEXT NOT NULL DEFAULT 'mon,tue,wed,thu,fri',
   touch_styles       TEXT NOT NULL DEFAULT '["touch_1","touch_2","touch_3"]',
+  finished_at        TEXT,
+  summary            TEXT,
   created_at         TEXT NOT NULL,
   updated_at         TEXT NOT NULL
 );
@@ -238,6 +240,8 @@ export function initDb(dbPath) {
   db.exec(SCHEMA);
   ensureColumn(db, 'email_sends', 'gmail_rfc_message_id', 'TEXT');
   ensureColumn(db, 'presets', 'distance_center_address', 'TEXT');
+  ensureColumn(db, 'campaigns', 'finished_at', 'TEXT');
+  ensureColumn(db, 'campaigns', 'summary', 'TEXT');
   _db = db;
   return db;
 }

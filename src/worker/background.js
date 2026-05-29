@@ -10,6 +10,7 @@ import { createGmailClientFromEnv, GmailService } from '../services/gmailService
 import { HealthCheckService } from '../services/healthCheckService.js';
 import { EmailResponseMonitor } from '../services/emailResponseMonitor.js';
 import { SendQueueWorker } from '../services/sendQueueWorker.js';
+import { CampaignService } from '../services/campaignService.js';
 import { StartupRecovery } from '../services/startupRecovery.js';
 
 const TIMEZONE = 'America/Vancouver';
@@ -20,6 +21,7 @@ let activeRun = null;
 let sendWorkerRunning = false;
 let responseMonitorRunning = false;
 let healthCheckRunning = false;
+let finalizeRunning = false;
 let reconcileRunning = false;
 
 function writeSetting(key, value, at = new Date()) {
@@ -231,6 +233,19 @@ async function main() {
       await healthCheck.run({ now: new Date() });
     } finally {
       healthCheckRunning = false;
+    }
+  }, { timezone: TIMEZONE });
+
+  cron.schedule('*/15 * * * *', () => {
+    if (finalizeRunning) return;
+    finalizeRunning = true;
+    try {
+      const finished = new CampaignService({ db }).finalizeAllActive(new Date());
+      if (finished.length) console.log(`Finalized campaigns: ${finished.join(', ')}`);
+    } catch (err) {
+      console.error(`Campaign finalize sweep failed: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      finalizeRunning = false;
     }
   }, { timezone: TIMEZONE });
 

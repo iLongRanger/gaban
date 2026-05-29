@@ -220,4 +220,28 @@ describe('SendQueueWorker', () => {
     const gap = db.prepare("SELECT value FROM system_settings WHERE key = 'outreach.last_send_worker_gap'").get();
     assert.ok(gap.value.includes('rescheduled_sends'));
   });
+
+  it('finalizes the campaign after the final touch sends (grace 0)', async () => {
+    const campaign = seedCampaign(db);
+    db.prepare(`INSERT INTO system_settings (key, value, updated_at) VALUES ('outreach.finish_grace_hours', '0', ?)`)
+      .run(new Date().toISOString());
+    const cl = db.prepare('SELECT id FROM campaign_leads WHERE campaign_id = ?').get(campaign.id);
+    // Touches 1 and 2 already sent; lead sits at touch 2 with only the final touch left.
+    db.prepare("UPDATE email_sends SET status = 'sent' WHERE campaign_lead_id = ? AND touch_number IN (1, 2)").run(cl.id);
+    db.prepare("UPDATE campaign_leads SET status = 'active', touch_count = 2, last_touch_at = '2026-05-10T16:00:00.000Z' WHERE id = ?").run(cl.id);
+    const tickNow = new Date('2026-05-20T16:00:00.000Z');
+    db.prepare("UPDATE email_sends SET scheduled_for = ? WHERE campaign_lead_id = ? AND touch_number = 3").run(tickNow.toISOString(), cl.id);
+
+    const worker = new SendQueueWorker({
+      db, env: ENV, validator: permissiveValidator,
+      mailer: { send: async () => ({ gmail_message_id: 'm', gmail_thread_id: 't', gmail_rfc_message_id: '<m@x>' }) },
+    });
+    await worker.tick({ now: tickNow, limit: 1 });
+
+    const send3 = db.prepare("SELECT status FROM email_sends WHERE campaign_lead_id = ? AND touch_number = 3").get(cl.id);
+    assert.strictEqual(send3.status, 'sent');
+    const row = db.prepare('SELECT status, summary FROM campaigns WHERE id = ?').get(campaign.id);
+    assert.strictEqual(row.status, 'finished');
+    assert.ok(JSON.parse(row.summary).totals);
+  });
 });

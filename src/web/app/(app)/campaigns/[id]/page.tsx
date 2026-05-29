@@ -12,7 +12,7 @@ function formatDate(value: string | null) {
 }
 
 function statusTagClass(status: string) {
-  if (['sent', 'replied'].includes(status)) return 'tag tag--accent';
+  if (['sent', 'replied', 'finished'].includes(status)) return 'tag tag--accent';
   if (['failed', 'bounced'].includes(status)) return 'tag tag--danger';
   if (['unsubscribed', 'sending', 'scheduled'].includes(status)) return 'tag tag--warn';
   if (status === 'cancelled') return 'tag tag--mute';
@@ -113,6 +113,50 @@ export default async function CampaignDetailPage({
           <span className="text-xl font-semibold">{campaign.daily_cap}</span>
         </div>
       </div>
+
+      {campaign.status === 'finished' && campaign.summary ? (() => {
+        const s = JSON.parse(campaign.summary);
+        return (
+          <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-semibold text-gray-900">Results</h2>
+              <span className="text-xs text-gray-400">
+                Finished {formatDate(campaign.finished_at)} · {s.duration_days}d · {s.leads} leads
+              </span>
+            </div>
+            <div className="grid grid-cols-4 gap-3 mb-4 text-sm">
+              <div><span className="block text-xs text-gray-400">Sent</span><span className="font-medium">{s.totals.sent}</span></div>
+              <div><span className="block text-xs text-gray-400">Replied</span><span className="font-medium">{s.totals.replied} ({(s.totals.reply_rate * 100).toFixed(1)}%)</span></div>
+              <div><span className="block text-xs text-gray-400">Bounced</span><span className="font-medium">{s.totals.bounced} ({(s.totals.bounce_rate * 100).toFixed(1)}%)</span></div>
+              <div><span className="block text-xs text-gray-400">Contracts</span><span className="font-medium">{s.outcomes.contract_signed}</span></div>
+            </div>
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <h3 className="text-xs uppercase tracking-wide text-gray-400 mb-2">By touch</h3>
+                <table className="w-full text-sm">
+                  <thead><tr className="text-left text-gray-400"><th>Touch</th><th>Sent</th><th>Replied</th><th>Bounced</th></tr></thead>
+                  <tbody>
+                    {s.by_touch.map((r: any) => (
+                      <tr key={r.touch}><td>{r.touch}</td><td>{r.sent}</td><td>{r.replied}</td><td>{r.bounced}</td></tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div>
+                <h3 className="text-xs uppercase tracking-wide text-gray-400 mb-2">By vertical</h3>
+                <table className="w-full text-sm">
+                  <thead><tr className="text-left text-gray-400"><th>Vertical</th><th>Sent</th><th>Replied</th><th>Reply %</th></tr></thead>
+                  <tbody>
+                    {s.by_vertical.map((r: any) => (
+                      <tr key={r.vertical}><td>{r.vertical}</td><td>{r.sent}</td><td>{r.replied}</td><td>{(r.reply_rate * 100).toFixed(1)}%</td></tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        );
+      })() : null}
 
       <div className="space-y-3">
         {leads.map((lead) => {
