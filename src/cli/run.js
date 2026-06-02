@@ -181,7 +181,10 @@ async function run() {
     logger,
     usageRecorder
   });
-  const scoredLeads = await scoring.scoreLeads(passed, officeLocation);
+  const scoredLeads = await scoring.scoreLeads(passed, officeLocation, {
+    locationLabel: settings.search?.location,
+    radiusKm: settings.search?.radius_km,
+  });
   if (didAllScoringFail(scoredLeads)) {
     throw new Error('All scoring attempts failed. Check OPENAI_API_KEY billing/quota before rerunning.');
   }

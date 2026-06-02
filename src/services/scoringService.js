@@ -8,12 +8,12 @@ export default class ScoringService {
     this.client = client || new OpenAiJsonClient({ apiKey, usageRecorder });
   }
 
-  async scoreLeads(leads, officeLocation) {
+  async scoreLeads(leads, officeLocation, options = {}) {
     const scored = [];
 
     for (const lead of leads) {
       const distance = calculateDistance(officeLocation, lead.location);
-      const score = await this.scoreSingleLead(lead, distance);
+      const score = await this.scoreSingleLead(lead, distance, options);
       scored.push({ ...lead, ...score, distance_km: Math.round(distance * 10) / 10 });
     }
 
@@ -21,8 +21,8 @@ export default class ScoringService {
     return scored;
   }
 
-  async scoreSingleLead(lead, distanceKm) {
-    const prompt = this.buildScoringPrompt(lead, distanceKm);
+  async scoreSingleLead(lead, distanceKm, options = {}) {
+    const prompt = this.buildScoringPrompt(lead, distanceKm, options);
 
     try {
       const text = await createJsonCompletion(this.client, {
@@ -48,13 +48,13 @@ export default class ScoringService {
     }
   }
 
-  buildScoringPrompt(lead, distanceKm) {
+  buildScoringPrompt(lead, distanceKm, { locationLabel = 'your office area', radiusKm = 50 } = {}) {
     const reviewTexts = (lead.reviews_data || [])
       .slice(0, 10)
       .map(r => `- (${r.review_rating}/5) ${r.review_text}`)
       .join('\n');
 
-    return `You are a lead scoring assistant for a commercial cleaning company in Metro Vancouver.
+    return `You are a lead scoring assistant for a commercial cleaning company operating around ${locationLabel}.
 
 Score this business as a potential cleaning service client on a 0-100 scale.
 
@@ -77,7 +77,7 @@ ${reviewTexts || 'No reviews available'}
 SCORING FACTORS (weights):
 1. Size signals (20%): More reviews, photos, longer hours = larger service location
 2. Cleanliness pain (20%): Reviews mentioning dirty, messy, sticky, smell, washroom issues
-3. Location (15%): Closer to New Westminster = higher score (max 50km)
+3. Location (15%): Closer to ${locationLabel} = higher score (max ${radiusKm}km)
 4. Online presence (15%): Has website, email, social = more reachable and established
 5. Business age (15%): Newer businesses (1-3 years) may need help setting up operations
 6. No current cleaner (15%): No mentions of cleaning service = likely opportunity
