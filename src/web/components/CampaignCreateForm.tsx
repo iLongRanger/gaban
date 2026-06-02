@@ -23,6 +23,7 @@ interface Lead {
   preset_id: number;
   rank: number;
   business_name: string;
+  place_id: string;
   type: string | null;
   email: string | null;
   address: string | null;
@@ -237,7 +238,16 @@ export default function CampaignCreateForm({
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-4">
-                    <span className="font-medium text-sm text-gray-900 truncate">{lead.business_name}</span>
+                    <a
+                      href={`https://www.google.com/maps/place/?q=place_id:${encodeURIComponent(lead.place_id)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="font-medium text-sm text-gray-900 truncate hover:text-blue-600 hover:underline"
+                      title="Open on Google Maps"
+                    >
+                      {lead.business_name}
+                    </a>
                     <span className="text-sm font-semibold text-blue-600">{lead.total_score}</span>
                   </div>
                   <p className="text-xs text-gray-500 truncate">
