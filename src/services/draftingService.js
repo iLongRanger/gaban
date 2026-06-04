@@ -6,8 +6,8 @@ const TOUCH_KEYS = ['touch_1', 'touch_2', 'touch_3'];
 const VERTICAL_COPY = {
   restaurant: {
     noun: 'kitchen',
-    pain_observation: 'kitchens running this hot tend to put real miles on hood vents and floor grout before anyone notices',
-    specialty_line: 'Restaurants are most of what we do, especially the late-night deep work between dinner and breakfast service.',
+    pain_observation: 'a busy kitchen leaves grease on the hood vents, sticky floor grout, and a lingering smell in the washrooms by close, and whatever gets skipped overnight is what the morning crew finds first',
+    specialty_line: 'Restaurants are most of what we do, especially routine overnight cleans that leave the kitchen, dining room, and washrooms ready for the next day of service.',
   },
   brewery: {
     noun: 'taproom',
