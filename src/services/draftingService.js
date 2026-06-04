@@ -89,7 +89,7 @@ GLOBAL RULES:
 - Plain prose. No em dashes, double hyphens, tildes, markdown, bullets, emojis, or decorative separators. Normal punctuation only.
 - One specific observation per email. No overpraise. No "quick question". No "I hope this finds you well".
 - Use contractions naturally.
-- Subject lines: lowercase, five words or fewer. No clickbait. No exclamation marks.
+- Subject lines: lowercase, 4-7 words, built around one specific noun pulled from the vertical observation (e.g. grease, grout, drain, taproom, treatment room, lobby). Should read like a passing thought a busy operator would open, not a sales pitch. No clickbait. No exclamation marks. No question marks. Do NOT include "walkthrough", "quote", "price", or "free" in the subject; the body carries the offer.
 
 BUSINESS:
 - Name: ${lead.business_name}
@@ -103,7 +103,7 @@ VERTICAL CONTEXT:
 - Specialty line for this vertical (paraphrase as the third sentence of touch 1): ${copy.specialty_line}
 - Noun for this vertical (use in touch 2's "if you already have someone cleaning your ___" line): ${copy.noun}
 
-REVIEW SNIPPETS (use one only if it points at cleanliness, wear, or operations; otherwise ignore):
+REVIEW SNIPPETS (touch 1 may paraphrase any concrete detail about THIS business — wear, smell, layout, busy nights, line length, anything specific — not only cleanliness. Ignore generic praise like "great food"):
 ${reviewSnippets || 'No reviews available'}
 
 SCORING INSIGHT: ${lead.reasoning || 'No scoring data'}
@@ -111,14 +111,13 @@ SCORING INSIGHT: ${lead.reasoning || 'No scoring data'}
 WRITE THREE TOUCHES, IN ORDER:
 
 TOUCH 1 — walkthrough offer.
+Word cap: 60 words for the email body. Goal: scannable in 5 seconds, specific enough to feel like a 1:1 note rather than a template.
 Structure (in order):
-  1. Opening 1 to 2 sentences: an operational observation drawn from the vertical pain observation above, or a relevant cleanliness-related review snippet if one is present. Pattern-recognition, not flattery.
-  2. One sentence identifying the sender as a small commercial cleaning crew in Metro Vancouver.
-  3. One sentence on what we specialize in for this vertical (paraphrase the specialty line above, do not quote verbatim).
-  4. The offer: a free 15-minute walkthrough with a written quote on the spot, no pressure, no follow-up sales calls.
-  5. The ask: invite the prospect to reply with a couple of times that work and say we will fit one in.
+  1. One opening line, attention-grabbing. If the review snippets contain anything specific to THIS business (wear, smell, layout, busy nights, line length, any concrete detail), paraphrase one concrete detail in your own words. Otherwise use the vertical pain observation as a sharp one-line operational observation. No flattery, no overpraise, no "I noticed your great reviews".
+  2. The offer in one sentence: a free 15-minute walkthrough with a written quote on the spot, no follow-up sales calls. Tie it to the specialty hook (paraphrased from the specialty line above — for restaurants, the routine overnight clean that has the place ready for the next day; for breweries, the floor-trough and drain-line work; etc.).
+  3. One short sentence identifying the sender as a small commercial cleaning crew in Metro Vancouver. Place it AFTER the offer, not before.
+  4. The ask: invite them to reply with a couple of times that work and say we will fit one in.
 Do NOT propose specific dates, days, or time windows. The crew handles scheduling on reply.
-Subject: lowercase, walkthrough-themed, 5 words or fewer.
 
 TOUCH 2 — invoice match.
 Structure (in order):
