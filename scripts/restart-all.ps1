@@ -46,6 +46,9 @@ foreach ($task in @("Gaban Bot Web", "Gaban Bot Worker", "Gaban Cloudflare Tunne
   try { schtasks /Run /TN $task | Out-Null; Write-Host "  started: $task" } catch { Write-Warning ("  failed to start: {0}" -f $task) }
 }
 
-Write-Step "Done"
+Write-Step "Waiting for services to come up"
+& node (Join-Path $PSScriptRoot "await-services.mjs")
+
+Write-Host ""
 Write-Host "Web:    http://localhost:3010"
 Write-Host "Logs:   $RepoRoot\logs\bot-web.log, bot-worker.log"
