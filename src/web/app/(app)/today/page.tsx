@@ -5,9 +5,11 @@ export const dynamic = 'force-dynamic';
 
 const TIME_ZONE = 'America/Vancouver';
 
-function localDayRange() {
-  const now = new Date();
-  const start = new Date(now);
+function localDayRange(dateParam?: string) {
+  // dateParam is an optional 'YYYY-MM-DD'; default to today.
+  const start = dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)
+    ? new Date(`${dateParam}T00:00:00`)
+    : new Date();
   start.setHours(0, 0, 0, 0);
   const end = new Date(start);
   end.setDate(end.getDate() + 1);
@@ -39,9 +41,14 @@ function statusTagClass(status: string) {
   return 'tag tag--mute';
 }
 
-export default async function TodayPage() {
+export default async function TodayPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ date?: string }>;
+}) {
+  const { date } = await searchParams;
   const db = getDb();
-  const { start, end } = localDayRange();
+  const { start, end } = localDayRange(date);
   const sends = db.prepare(
     `SELECT es.id,
             es.touch_number,
