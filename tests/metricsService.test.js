@@ -155,3 +155,23 @@ test('campaignSummary returns null for an unknown campaign', () => {
   const db = makeDb();
   assert.equal(new MetricsService({ db }).campaignSummary(424242), null);
 });
+
+test('abComparison reports reply rate per opener arm', () => {
+  const db = makeDb();
+  // poke: 4 sent, 2 replied
+  for (let i = 1; i <= 4; i += 1) seedSend(db, { id: i, template_style: 'touch_1_poke' });
+  seedEvent(db, { send_id: 1, type: 'replied' });
+  seedEvent(db, { send_id: 2, type: 'replied' });
+  // route: 4 sent, 0 replied
+  for (let i = 5; i <= 8; i += 1) seedSend(db, { id: i, template_style: 'touch_1_route' });
+
+  const result = new MetricsService({ db }).abComparison({ since: '2026-05-01T00:00:00Z' });
+
+  assert.equal(result.poke.sent, 4);
+  assert.equal(result.poke.replied, 2);
+  assert.equal(result.poke.reply_rate.toFixed(2), '0.50');
+  assert.equal(result.route.sent, 4);
+  assert.equal(result.route.replied, 0);
+  assert.equal(result.route.reply_rate.toFixed(2), '0.00');
+  assert.equal(result.winner, 'poke');
+});

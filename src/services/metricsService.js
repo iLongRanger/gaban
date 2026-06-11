@@ -50,6 +50,32 @@ export class MetricsService {
     return { by_template, totals, since: sinceIso };
   }
 
+  abComparison({ since } = {}) {
+    const sinceIso = since || '1970-01-01T00:00:00Z';
+    const arm = (style) => {
+      const row = this.db.prepare(`
+        SELECT COUNT(DISTINCT es.id) AS sent,
+               SUM(CASE WHEN ev.type = 'replied' THEN 1 ELSE 0 END) AS replied
+        FROM email_sends es
+        LEFT JOIN email_events ev ON ev.send_id = es.id
+        WHERE es.status = 'sent' AND es.sent_at >= ? AND es.template_style = ?
+      `).get(sinceIso, style);
+      const sent = row.sent || 0;
+      const replied = row.replied || 0;
+      return { sent, replied, reply_rate: sent ? replied / sent : 0 };
+    };
+
+    const poke = arm('touch_1_poke');
+    const route = arm('touch_1_route');
+    let winner = null;
+    if (poke.sent && route.sent) {
+      if (poke.reply_rate > route.reply_rate) winner = 'poke';
+      else if (route.reply_rate > poke.reply_rate) winner = 'route';
+      else winner = 'tie';
+    }
+    return { poke, route, winner, since: sinceIso };
+  }
+
   campaignSummary(campaignId, { now = new Date() } = {}) {
     const campaign = this.db.prepare('SELECT * FROM campaigns WHERE id = ?').get(campaignId);
     if (!campaign) return null;
