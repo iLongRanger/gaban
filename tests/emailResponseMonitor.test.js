@@ -15,7 +15,7 @@ function seedSentCampaign(db) {
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
     .run('pid-a', 'Lead A', 'lead@example.com', 49.2, -123.1, 2, 90, '{}', 'good', 'new', '2026-W18', now, now);
   const leadId = Number(leadResult.lastInsertRowid);
-  for (const style of ['touch_1', 'touch_2', 'touch_3']) {
+  for (const style of ['touch_1_poke', 'touch_1_route', 'touch_2', 'touch_3', 'touch_4']) {
     db.prepare(`INSERT INTO outreach_drafts
       (lead_id, style, email_subject, email_body, dm, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)`)
@@ -78,7 +78,7 @@ describe('EmailResponseMonitor', () => {
     const campaignLead = db.prepare('SELECT status FROM campaign_leads WHERE id = 1').get();
     assert.strictEqual(campaignLead.status, 'replied');
     const cancelled = db.prepare(`SELECT COUNT(*) AS count FROM email_sends WHERE status = 'cancelled'`).get();
-    assert.strictEqual(cancelled.count, 2);
+    assert.strictEqual(cancelled.count, 3);
     const event = db.prepare(`SELECT type FROM email_events WHERE send_id = 1`).get();
     assert.strictEqual(event.type, 'replied');
   });
@@ -103,7 +103,7 @@ describe('EmailResponseMonitor', () => {
     const campaignLead = db.prepare('SELECT status FROM campaign_leads WHERE id = 1').get();
     assert.strictEqual(campaignLead.status, 'queued');
     const scheduled = db.prepare(`SELECT COUNT(*) AS count FROM email_sends WHERE status = 'scheduled'`).get();
-    assert.strictEqual(scheduled.count, 2);
+    assert.strictEqual(scheduled.count, 3);
     const event = db.prepare(`SELECT type FROM email_events WHERE send_id = 1`).get();
     assert.strictEqual(event.type, 'auto_replied');
   });
@@ -132,7 +132,7 @@ describe('EmailResponseMonitor', () => {
     const campaignLead = db.prepare('SELECT status FROM campaign_leads WHERE id = 1').get();
     assert.strictEqual(campaignLead.status, 'auto_replied');
     const cancelled = db.prepare(`SELECT COUNT(*) AS count FROM email_sends WHERE status = 'cancelled'`).get();
-    assert.strictEqual(cancelled.count, 2);
+    assert.strictEqual(cancelled.count, 3);
   });
 
   it('marks bounces separately', () => {

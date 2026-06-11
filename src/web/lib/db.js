@@ -114,7 +114,7 @@ CREATE TABLE IF NOT EXISTS campaigns (
   send_window_start  TEXT NOT NULL DEFAULT '09:00',
   send_window_end    TEXT NOT NULL DEFAULT '17:00',
   send_days          TEXT NOT NULL DEFAULT 'mon,tue,wed,thu,fri',
-  touch_styles       TEXT NOT NULL DEFAULT '["touch_1","touch_2","touch_3"]',
+  touch_styles       TEXT NOT NULL DEFAULT '["touch_1","touch_2","touch_3","touch_4"]',
   finished_at        TEXT,
   summary            TEXT,
   created_at         TEXT NOT NULL,

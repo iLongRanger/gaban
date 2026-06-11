@@ -17,7 +17,7 @@ function seedLeadWithDrafts(db, suffix) {
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
     .run(`pid-${suffix}`, `Lead ${suffix}`, `lead${suffix}@example.com`, 49.2, -123.1, 2, 90, '{}', 'good', 'new', '2026-W18', now, now);
   const leadId = Number(leadResult.lastInsertRowid);
-  for (const style of ['touch_1', 'touch_2', 'touch_3']) {
+  for (const style of ['touch_1_poke', 'touch_1_route', 'touch_2', 'touch_3', 'touch_4']) {
     db.prepare(`INSERT INTO outreach_drafts
       (lead_id, style, email_subject, email_body, dm, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)`)
@@ -51,7 +51,7 @@ describe('CampaignService', () => {
     const campaignLeads = db.prepare('SELECT COUNT(*) AS c FROM campaign_leads').get();
     assert.strictEqual(campaignLeads.c, 2);
     const sends = db.prepare('SELECT * FROM email_sends ORDER BY scheduled_for, id').all();
-    assert.strictEqual(sends.length, 6);
+    assert.strictEqual(sends.length, 8);
     assert.strictEqual(sends[0].scheduled_for, '2026-05-04T16:00:00.000Z');
     assert.strictEqual(sends[1].scheduled_for, '2026-05-04T16:02:00.000Z');
   });
@@ -111,6 +111,7 @@ describe('CampaignService', () => {
       '2026-05-11T16:00:00.000Z',
       '2026-05-15T16:00:00.000Z',
       '2026-05-25T16:00:00.000Z',
+      '2026-06-09T16:00:00.000Z',
     ]);
   });
 
@@ -135,7 +136,46 @@ describe('CampaignService', () => {
     assert.deepStrictEqual(sends.slice(1).map((send) => send.scheduled_for), [
       '2026-05-11T16:00:00.000Z',
       '2026-05-19T16:00:00.000Z',
+      '2026-06-03T16:00:00.000Z',
     ]);
+  });
+
+  it('schedules four touches and assigns each lead an opener arm', () => {
+    const preset = seedPreset(db);
+    const leadA = seedLeadWithDrafts(db, 'arm-a');
+    const leadB = seedLeadWithDrafts(db, 'arm-b');
+
+    const service = new CampaignService({ db });
+    const campaign = service.createCampaign({
+      presetId: preset.id,
+      name: 'rebuild test',
+      leadIds: [leadA, leadB],
+      startAt: '2026-06-11T16:00:00Z',
+    });
+
+    const rows = db.prepare(`
+      SELECT cl.lead_id, es.touch_number, es.template_style
+      FROM email_sends es JOIN campaign_leads cl ON cl.id = es.campaign_lead_id
+      WHERE cl.campaign_id = ? ORDER BY cl.lead_id, es.touch_number
+    `).all(campaign.id);
+
+    // Each lead must have exactly 4 touches.
+    const perLead = new Map();
+    for (const r of rows) perLead.set(r.lead_id, (perLead.get(r.lead_id) || 0) + 1);
+    for (const count of perLead.values()) assert.equal(count, 4);
+
+    // Touch 1 arm is determined by lead-id parity.
+    const t1 = (leadId) => rows.find((r) => r.lead_id === leadId && r.touch_number === 1).template_style;
+    const expectedArmA = Number(leadA) % 2 === 0 ? 'touch_1_poke' : 'touch_1_route';
+    const expectedArmB = Number(leadB) % 2 === 0 ? 'touch_1_poke' : 'touch_1_route';
+    assert.equal(t1(leadA), expectedArmA);
+    assert.equal(t1(leadB), expectedArmB);
+    // The two leads must be assigned different arms (50/50 split).
+    assert.notEqual(t1(leadA), t1(leadB));
+
+    // Touch 4 must use the touch_4 style.
+    const t4 = rows.find((r) => r.touch_number === 4).template_style;
+    assert.equal(t4, 'touch_4');
   });
 
   it('cancels future sends for a campaign lead', () => {
@@ -152,10 +192,10 @@ describe('CampaignService', () => {
 
     const changed = service.cancelFutureSends(campaignLead.id, { reason: 'manual pause' });
 
-    assert.strictEqual(changed, 3);
+    assert.strictEqual(changed, 4);
     const remaining = db.prepare("SELECT COUNT(*) AS c FROM email_sends WHERE status = 'scheduled'").get();
     assert.strictEqual(remaining.c, 0);
     const cancelled = db.prepare("SELECT COUNT(*) AS c FROM email_sends WHERE status = 'cancelled'").get();
-    assert.strictEqual(cancelled.c, 3);
+    assert.strictEqual(cancelled.c, 4);
   });
 });

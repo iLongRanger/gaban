@@ -84,7 +84,7 @@ const leads = [
   },
 ];
 
-const draftStyles = ['touch_1', 'touch_2', 'touch_3'];
+const draftStyles = ['touch_1_poke', 'touch_1_route', 'touch_2', 'touch_3', 'touch_4'];
 
 for (const l of leads) {
   db.prepare(

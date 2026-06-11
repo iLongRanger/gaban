@@ -12,7 +12,7 @@ function seedCampaignLead(db) {
     (place_id, business_name, email, latitude, longitude, distance_km, total_score, factor_scores, reasoning, status, week, created_at, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
     .run('pid-1', 'Lead', 'lead@example.com', 49.2, -123.1, 2, 80, '{}', 'ok', 'new', '2026-W18', now, now);
-  for (const style of ['touch_1', 'touch_2', 'touch_3']) {
+  for (const style of ['touch_1_poke', 'touch_1_route', 'touch_2', 'touch_3', 'touch_4']) {
     db.prepare(`INSERT INTO outreach_drafts
       (lead_id, style, email_subject, email_body, dm, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)`)

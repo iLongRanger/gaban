@@ -1,7 +1,7 @@
 import { nextSendTime, scheduleSequence } from './sequenceScheduler.js';
 import { MetricsService } from './metricsService.js';
 
-const DEFAULT_TOUCH_STYLES = ['touch_1', 'touch_2', 'touch_3'];
+const DEFAULT_TOUCH_STYLES = ['touch_1', 'touch_2', 'touch_3', 'touch_4'];
 
 // follow_up_later is included: it's an operator note to revisit manually and does not
 // cancel future sends, so once the sequence finishes it must not pin the campaign open.
@@ -16,7 +16,13 @@ function readSetting(db, key) {
   return row?.value;
 }
 
-const TOUCH_OFFSETS = { 1: 0, 2: 4, 3: 10 };
+const TOUCH_OFFSETS = { 1: 0, 2: 4, 3: 10, 4: 21 };
+
+// Deterministic 50/50 opener-arm assignment by lead id.
+// NOTE: arm styles must stay in sync with draftingService.js TOUCH_KEYS.
+function openerArm(leadId) {
+  return Number(leadId) % 2 === 0 ? 'touch_1_poke' : 'touch_1_route';
+}
 
 function parseJson(value, fallback) {
   try {
@@ -84,14 +90,18 @@ export class CampaignService {
         ).run(campaignId, leadId, now);
         const campaignLeadId = Number(clResult.lastInsertRowid);
 
+        const touchOffsets = touchStyles.map((_, i) => TOUCH_OFFSETS[i + 1] ?? 0);
         const sequence = scheduleSequence({
           startAt: start,
           existingScheduledTimes: existingTimes,
+          touchOffsets,
           options,
         });
 
         for (const scheduled of sequence) {
-          const style = touchStyles[scheduled.touchNumber - 1] || touchStyles[0];
+          const style = scheduled.touchNumber === 1
+            ? openerArm(leadId)
+            : (touchStyles[scheduled.touchNumber - 1] || touchStyles[0]);
           const draft = this.db.prepare(
             `SELECT * FROM outreach_drafts
              WHERE lead_id = ? AND style = ?
