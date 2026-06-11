@@ -175,3 +175,68 @@ test('abComparison reports reply rate per opener arm', () => {
   assert.equal(result.route.reply_rate.toFixed(2), '0.00');
   assert.equal(result.winner, 'poke');
 });
+
+test('abComparison winner: null when one arm has zero sends, route wins, and tie', () => {
+  // --- scenario 1: winner = null (route arm has no sends) ---
+  {
+    const db = makeDb();
+    seedSend(db, { id: 1, template_style: 'touch_1_poke' });
+    seedSend(db, { id: 2, template_style: 'touch_1_poke' });
+    seedEvent(db, { send_id: 1, type: 'replied' });
+    // no touch_1_route sends at all
+
+    const result = new MetricsService({ db }).abComparison({ since: '2026-05-01T00:00:00Z' });
+
+    assert.equal(result.winner, null);
+    assert.equal(result.route.sent, 0);
+    assert.equal(result.route.replied, 0);
+    assert.equal(result.route.reply_rate, 0);
+    assert.equal(result.poke.sent, 2);
+  }
+
+  // --- scenario 2: winner = 'route' (route reply rate > poke reply rate) ---
+  {
+    const db = makeDb();
+    // poke: 4 sent, 1 replied -> 25 %
+    for (let i = 1; i <= 4; i += 1) seedSend(db, { id: i, template_style: 'touch_1_poke' });
+    seedEvent(db, { send_id: 1, type: 'replied' });
+    // route: 4 sent, 3 replied -> 75 %
+    for (let i = 5; i <= 8; i += 1) seedSend(db, { id: i, template_style: 'touch_1_route' });
+    seedEvent(db, { send_id: 5, type: 'replied' });
+    seedEvent(db, { send_id: 6, type: 'replied' });
+    seedEvent(db, { send_id: 7, type: 'replied' });
+
+    const result = new MetricsService({ db }).abComparison({ since: '2026-05-01T00:00:00Z' });
+
+    assert.equal(result.winner, 'route');
+    assert.equal(result.route.sent, 4);
+    assert.equal(result.route.replied, 3);
+    assert.equal(result.route.reply_rate.toFixed(2), '0.75');
+    assert.equal(result.poke.sent, 4);
+    assert.equal(result.poke.replied, 1);
+    assert.equal(result.poke.reply_rate.toFixed(2), '0.25');
+  }
+
+  // --- scenario 3: winner = 'tie' (equal non-zero reply rates: 2/2 each = 50 %) ---
+  {
+    const db = makeDb();
+    // poke: 2 sent, 1 replied -> 50 %
+    seedSend(db, { id: 1, template_style: 'touch_1_poke' });
+    seedSend(db, { id: 2, template_style: 'touch_1_poke' });
+    seedEvent(db, { send_id: 1, type: 'replied' });
+    // route: 2 sent, 1 replied -> 50 %
+    seedSend(db, { id: 3, template_style: 'touch_1_route' });
+    seedSend(db, { id: 4, template_style: 'touch_1_route' });
+    seedEvent(db, { send_id: 3, type: 'replied' });
+
+    const result = new MetricsService({ db }).abComparison({ since: '2026-05-01T00:00:00Z' });
+
+    assert.equal(result.winner, 'tie');
+    assert.equal(result.poke.sent, 2);
+    assert.equal(result.poke.replied, 1);
+    assert.equal(result.poke.reply_rate.toFixed(2), '0.50');
+    assert.equal(result.route.sent, 2);
+    assert.equal(result.route.replied, 1);
+    assert.equal(result.route.reply_rate.toFixed(2), '0.50');
+  }
+});
