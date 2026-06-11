@@ -35,10 +35,15 @@ describe('SqliteService', () => {
   };
 
   const sampleDrafts = {
-    touch_1: {
+    touch_1_poke: {
       email_subject: 'one thing for your kitchen',
       email_body: 'Hey, I work with restaurants nearby...',
       dm: 'Hey! Quick note about kitchen inspections...'
+    },
+    touch_1_route: {
+      email_subject: 'cleaning route nearby',
+      email_body: 'We already clean restaurants nearby...',
+      dm: 'Quick note about our cleaning route...'
     },
     touch_2: {
       email_subject: 'follow up on the checklist',
@@ -49,6 +54,11 @@ describe('SqliteService', () => {
       email_subject: 'should I close the file?',
       email_body: 'I will stop reaching out...',
       dm: 'Closing the file on my end...'
+    },
+    touch_4: {
+      email_subject: 'last note',
+      email_body: 'One final thought before I go...',
+      dm: 'Last message from me...'
     }
   };
 
@@ -76,11 +86,11 @@ describe('SqliteService', () => {
     assert.equal(JSON.parse(lead.reviews_data).length, 2);
   });
 
-  it('inserts 3 outreach drafts per lead', () => {
+  it('inserts 5 outreach drafts per lead', () => {
     const drafts = db.prepare('SELECT * FROM outreach_drafts WHERE lead_id = 1').all();
-    assert.equal(drafts.length, 3);
+    assert.equal(drafts.length, 5);
     const styles = drafts.map(d => d.style).sort();
-    assert.deepEqual(styles, ['touch_1', 'touch_2', 'touch_3']);
+    assert.deepEqual(styles, ['touch_1_poke', 'touch_1_route', 'touch_2', 'touch_3', 'touch_4']);
   });
 
   it('skips duplicate leads on re-run (upsert)', () => {
@@ -141,7 +151,7 @@ describe('SqliteService', () => {
       facebook: undefined
     };
     const partialDrafts = {
-      touch_1: {
+      touch_1_poke: {
         email_subject: undefined,
         email_body: 'Body',
         dm: undefined
@@ -178,6 +188,24 @@ describe('SqliteService', () => {
     assert.match(lead.place_id, /^generated:/);
 
     const drafts = db.prepare('SELECT * FROM outreach_drafts WHERE lead_id = ?').all(lead.id);
-    assert.equal(drafts.length, 3);
+    assert.equal(drafts.length, 5);
+  });
+
+  it('persists all five draft styles for a lead', () => {
+    const fiveDraft = {
+      touch_1_poke:  { email_subject: 'overnight clean', email_body: 'a', dm: 'a' },
+      touch_1_route: { email_subject: 'cleaning',        email_body: 'b', dm: 'b' },
+      touch_2:       { email_subject: 'spots',           email_body: 'c', dm: 'c' },
+      touch_3:       { email_subject: 'tip',             email_body: 'd', dm: 'd' },
+      touch_4:       { email_subject: 'closing',         email_body: 'e', dm: 'e' },
+    };
+    const fiveLead = { ...sampleLead, place_id: 'ChIJ_five_styles_001', business_name: 'Five Styles Bistro' };
+
+    service.exportResults([fiveLead], [fiveDraft], '2026-W11');
+
+    const styles = db.prepare(
+      `SELECT od.style FROM outreach_drafts od JOIN leads l ON l.id = od.lead_id WHERE l.place_id = ? ORDER BY od.style`
+    ).all('ChIJ_five_styles_001').map((r) => r.style);
+    assert.deepEqual(styles, ['touch_1_poke', 'touch_1_route', 'touch_2', 'touch_3', 'touch_4']);
   });
 });
