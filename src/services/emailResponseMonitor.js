@@ -147,16 +147,11 @@ export class EmailResponseMonitor {
         `INSERT INTO email_events (send_id, type, detected_at, raw_payload)
          VALUES (?, ?, ?, ?)`
       ).run(send.id, type, detectedAt, rawPayload);
-      if (type === 'bounced') {
-        const recipient = this.db.prepare(
-          'SELECT recipient_email FROM email_sends WHERE id = ?'
-        ).get(send.id)?.recipient_email;
-        if (recipient) {
-          try {
-            this.suppression.add({ email: recipient, reason: 'bounced', source: 'email_response_monitor' });
-          } catch {
-            // invalid address shape: nothing to suppress, do not abort event recording
-          }
+      if (type === 'bounced' && send.recipient_email) {
+        try {
+          this.suppression.add({ email: send.recipient_email, reason: 'bounced', source: 'email_response_monitor' });
+        } catch {
+          // invalid address shape: nothing to suppress, do not abort event recording
         }
       }
       if (shouldCompleteLead) {
