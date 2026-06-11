@@ -91,7 +91,7 @@ export default class DraftingService {
       .map((r) => `- "${r.review_text}"`)
       .join('\n');
 
-    return `You are writing a four-email cold outreach sequence on behalf of the owner of a commercial cleaning crew in Metro Vancouver. The sender is a real local operator. Identify honestly. Never pretend to be a neighbour or unrelated party.
+    return `You are writing a cold outreach sequence with five drafts: two Touch 1 opener variants plus three follow-ups, on behalf of the owner of a commercial cleaning crew in Metro Vancouver. The sender is a real local operator. Identify honestly. Never pretend to be a neighbour or unrelated party.
 
 GLOBAL RULES:
 - Never invent a company name, person name, phone, website, email, or a client you do not have. A real signature is appended by the system; do not write a sign-off, closing salutation, or trailing name/phone/website.

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import DraftingService, { sanitizeMessageText } from '../src/services/draftingService.js';
+import DraftingService, { sanitizeMessageText, stripTrailingSignature, sanitizeDrafts } from '../src/services/draftingService.js';
 
 const DRAFT_RESPONSE = JSON.stringify({
   touch_1_poke:  { email_subject: 'overnight clean',  email_body: 'Hi, ...', dm: 'Hey ...' },
@@ -72,4 +72,45 @@ test('draftOutreach handles API error gracefully', async () => {
 test('sanitizeMessageText still strips em dashes and markdown', () => {
   const result = sanitizeMessageText('Hello — world *bold* and __under__');
   assert.doesNotMatch(result, /[—–*_]/);
+});
+
+test('stripTrailingSignature removes Thanks + name + phone block', () => {
+  const input = [
+    'Hope your patio holds up through the wet stretch.',
+    '',
+    'Thanks,',
+    'Ralp Ortiz',
+    'Owner, Gleam Pro Cleaning',
+    '778 681 0922',
+    'gleampro.ca',
+  ].join('\n');
+  const out = stripTrailingSignature(input);
+  assert.equal(out, 'Hope your patio holds up through the wet stretch.');
+});
+
+test('stripTrailingSignature strips a bare phone number tail', () => {
+  const input = 'Drop a note if useful.\n778-681-0922';
+  assert.equal(stripTrailingSignature(input), 'Drop a note if useful.');
+});
+
+test('stripTrailingSignature keeps body that ends with a real sentence', () => {
+  const input = 'No need to reply if not useful.';
+  assert.equal(stripTrailingSignature(input), 'No need to reply if not useful.');
+});
+
+test('sanitizeDrafts applies signature stripping to all five touch bodies', () => {
+  const body = 'Reply with a couple of times that work.\n\nThanks,\nAlex Morgan\n604 555 0101';
+  const drafts = {
+    touch_1_poke:  { email_subject: 'overnight clean',  email_body: body, dm: 'Quick note.' },
+    touch_1_route: { email_subject: 'cleaning',         email_body: body, dm: 'Quick note.' },
+    touch_2:       { email_subject: 'spots that slip',  email_body: body, dm: 'Quick note.' },
+    touch_3:       { email_subject: 'one quick thing',  email_body: body, dm: 'Quick note.' },
+    touch_4:       { email_subject: 'closing the file', email_body: body, dm: 'Quick note.' },
+  };
+  const cleaned = sanitizeDrafts(drafts);
+  for (const key of ['touch_1_poke', 'touch_1_route', 'touch_2', 'touch_3', 'touch_4']) {
+    assert.doesNotMatch(cleaned[key].email_body, /Alex Morgan/, `${key} still has name`);
+    assert.doesNotMatch(cleaned[key].email_body, /604 555 0101/, `${key} still has phone`);
+    assert.doesNotMatch(cleaned[key].email_body, /Thanks,/, `${key} still has sign-off`);
+  }
 });
