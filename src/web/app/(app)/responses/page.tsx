@@ -52,7 +52,7 @@ export default async function ResponsesPage() {
       route: { sent: number; replied: number; reply_rate: number };
       winner: 'poke' | 'route' | 'tie' | null;
       since: string;
-    } | null,
+    },
   };
 
   const replyCount = events.filter((event) => event.type === 'replied').length;
@@ -90,7 +90,7 @@ export default async function ResponsesPage() {
 
       <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-gray-700">Touch 1 opener A/B · last 30 days</h2>
+          <h2 className="text-sm font-semibold text-gray-700">Touch 1 opener A/B · last 30 days{funnel.ab.winner === 'tie' ? ' · tied' : ''}</h2>
         </div>
         <table className="w-full text-sm">
           <thead>
@@ -104,10 +104,10 @@ export default async function ResponsesPage() {
           <tbody>
             {(['poke', 'route'] as const).map((arm) => (
               <tr key={arm} className="border-b border-gray-50 last:border-0">
-                <td className="py-2">{arm === 'poke' ? 'Poke-the-bear' : 'Routing question'}{funnel.ab?.winner === arm ? ' · leading' : ''}</td>
-                <td className="py-2">{funnel.ab?.[arm]?.sent ?? 0}</td>
-                <td className="py-2">{funnel.ab?.[arm]?.replied ?? 0}</td>
-                <td className="py-2">{((funnel.ab?.[arm]?.reply_rate ?? 0) * 100).toFixed(1)}%</td>
+                <td className="py-2">{arm === 'poke' ? 'Poke-the-bear' : 'Routing question'}{funnel.ab.winner === arm ? ' · leading' : ''}</td>
+                <td className="py-2">{funnel.ab[arm].sent}</td>
+                <td className="py-2">{funnel.ab[arm].replied}</td>
+                <td className="py-2">{(funnel.ab[arm].reply_rate * 100).toFixed(1)}%</td>
               </tr>
             ))}
           </tbody>
