@@ -1,4 +1,5 @@
 import { CampaignService } from './campaignService.js';
+import { SuppressionService } from './suppressionService.js';
 
 const DEFAULT_HEADERS = ['From', 'To', 'Subject', 'Message-ID', 'In-Reply-To', 'References', 'Auto-Submitted'];
 
@@ -86,7 +87,7 @@ function findMatchingSend(db, message) {
 }
 
 export class EmailResponseMonitor {
-  constructor({ db, gmail, senderEmail, logger = console } = {}) {
+  constructor({ db, gmail, senderEmail, suppression, logger = console } = {}) {
     if (!db) throw new Error('db required');
     if (!gmail) throw new Error('gmail required');
     if (!senderEmail) throw new Error('senderEmail required');
@@ -95,6 +96,7 @@ export class EmailResponseMonitor {
     this.senderEmail = senderEmail.toLowerCase();
     this.logger = logger;
     this.campaigns = new CampaignService({ db });
+    this.suppression = suppression || new SuppressionService({ db });
   }
 
   async poll({ query = 'in:inbox newer_than:14d', maxResults = 25, now = new Date() } = {}) {
@@ -145,6 +147,18 @@ export class EmailResponseMonitor {
         `INSERT INTO email_events (send_id, type, detected_at, raw_payload)
          VALUES (?, ?, ?, ?)`
       ).run(send.id, type, detectedAt, rawPayload);
+      if (type === 'bounced') {
+        const recipient = this.db.prepare(
+          'SELECT recipient_email FROM email_sends WHERE id = ?'
+        ).get(send.id)?.recipient_email;
+        if (recipient) {
+          try {
+            this.suppression.add({ email: recipient, reason: 'bounced', source: 'email_response_monitor' });
+          } catch {
+            // invalid address shape: nothing to suppress, do not abort event recording
+          }
+        }
+      }
       if (shouldCompleteLead) {
         this.db.prepare(
           `UPDATE campaign_leads

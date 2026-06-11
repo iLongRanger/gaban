@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { initDb } from '../src/web/lib/db.js';
 import { CampaignService } from '../src/services/campaignService.js';
 import { EmailResponseMonitor } from '../src/services/emailResponseMonitor.js';
+import { SuppressionService } from '../src/services/suppressionService.js';
 
 function seedSentCampaign(db) {
   const now = new Date().toISOString();
@@ -170,5 +171,22 @@ describe('EmailResponseMonitor', () => {
     assert.strictEqual(first[0].status, 'replied');
     assert.strictEqual(second[0].status, 'skipped');
     assert.strictEqual(calls[0].format, 'metadata');
+  });
+
+  it('a bounced message suppresses the recipient', () => {
+    seedSentCampaign(db);
+    const monitor = new EmailResponseMonitor({
+      db,
+      gmail: {},
+      senderEmail: 'outreach@gleampro.ca',
+    });
+
+    monitor.processMessage(gmailMessage({
+      from: 'Mail Delivery Subsystem <mailer-daemon@googlemail.com>',
+      subject: 'Delivery Status Notification (Failure)',
+    }), new Date('2026-05-05T16:00:00.000Z'));
+
+    const suppression = new SuppressionService({ db });
+    assert.equal(suppression.isSuppressed('lead@example.com'), true);
   });
 });
