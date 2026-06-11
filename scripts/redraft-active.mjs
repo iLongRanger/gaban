@@ -75,7 +75,7 @@ const reseedSend = db.prepare(`
 `);
 
 const findScheduledSends = db.prepare(`
-  SELECT es.id, es.touch_number
+  SELECT es.id, es.touch_number, es.template_style
   FROM email_sends es
   JOIN campaign_leads cl ON cl.id = es.campaign_lead_id
   JOIN campaigns c       ON c.id  = cl.campaign_id
@@ -109,14 +109,32 @@ for (const lead of leads) {
     continue;
   }
 
+  // Legacy template_style -> new style mapping
+  const LEGACY_MAP = {
+    touch_1: 'touch_1_poke',
+    touch_2: 'touch_2',
+    touch_3: 'touch_3',
+  };
+  const NEW_STYLES = ['touch_1_poke', 'touch_1_route', 'touch_2', 'touch_3', 'touch_4'];
+
   const txn = db.transaction(() => {
-    for (const key of ['touch_1', 'touch_2', 'touch_3']) {
+    for (const key of NEW_STYLES) {
       const d = drafts[key];
       if (!d) continue;
       insertDraft.run(lead.id, key, d.email_subject, d.email_body, d.dm, now, now);
     }
     for (const send of findScheduledSends.all(lead.id)) {
-      const key = `touch_${send.touch_number}`;
+      // Resolve the draft key: use template_style directly if it's a new style,
+      // otherwise fall back to legacy mapping.
+      let key = send.template_style;
+      if (!NEW_STYLES.includes(key)) {
+        const mapped = LEGACY_MAP[key];
+        if (!mapped) {
+          console.log(`  SKIP send ${send.id}: unknown legacy template_style '${key}', cannot map safely.`);
+          continue;
+        }
+        key = mapped;
+      }
       const d = drafts[key];
       if (!d) continue;
       reseedSend.run(d.email_subject, d.email_body, key, send.id);

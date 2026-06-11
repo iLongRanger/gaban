@@ -32,9 +32,11 @@ const SAMPLE_LEAD = {
 };
 
 const SAMPLE_DRAFTS = {
-  touch_1: { email_subject: 'Hi', email_body: 'Hey...', dm: 'Hey!' },
-  touch_2: { email_subject: 'Tip', email_body: 'Quick tip...', dm: 'Tip!' },
-  touch_3: { email_subject: 'Wow', email_body: 'Love it...', dm: 'Wow!' }
+  touch_1_poke:  { email_subject: 'Poke',  email_body: 'Poke body...',  dm: 'Poke DM!'  },
+  touch_1_route: { email_subject: 'Route', email_body: 'Route body...', dm: 'Route DM!' },
+  touch_2:       { email_subject: 'Tip',   email_body: 'Quick tip...',  dm: 'Tip!'      },
+  touch_3:       { email_subject: 'Give',  email_body: 'Give first...', dm: 'Give DM!'  },
+  touch_4:       { email_subject: 'Bye',   email_body: 'Last chance...', dm: 'Bye DM!'  },
 };
 
 test('buildWeeklyLeadsRow formats lead data correctly', () => {
@@ -51,7 +53,7 @@ test('buildDraftsRow formats drafts correctly', () => {
   const row = service.buildDraftsRow('Joe\'s Bistro', SAMPLE_DRAFTS);
 
   assert.equal(row[0], 'Joe\'s Bistro');
-  assert.equal(row.length, 7); // name + 6 drafts
+  assert.equal(row.length, 11); // name + 5 email cols + 5 dm cols
 });
 
 test('buildHistoryRow formats history entry correctly', () => {

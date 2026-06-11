@@ -176,6 +176,23 @@ test('abComparison reports reply rate per opener arm', () => {
   assert.equal(result.winner, 'poke');
 });
 
+test('abComparison does not double-count a send with two replied events', () => {
+  const db = makeDb();
+  // One poke send that has TWO 'replied' events — should still count as replied=1
+  seedSend(db, { id: 1, template_style: 'touch_1_poke' });
+  seedEvent(db, { send_id: 1, type: 'replied' });
+  seedEvent(db, { send_id: 1, type: 'replied' });
+  // One more poke send with no reply
+  seedSend(db, { id: 2, template_style: 'touch_1_poke' });
+
+  const result = new MetricsService({ db }).abComparison({ since: '2026-05-01T00:00:00Z' });
+
+  assert.equal(result.poke.sent, 2);
+  assert.equal(result.poke.replied, 1, 'two replied events on the same send should count as 1');
+  assert.ok(result.poke.reply_rate <= 1, 'reply_rate must not exceed 1');
+  assert.equal(result.poke.reply_rate.toFixed(2), '0.50');
+});
+
 test('abComparison winner: null when one arm has zero sends, route wins, and tie', () => {
   // --- scenario 1: winner = null (route arm has no sends) ---
   {

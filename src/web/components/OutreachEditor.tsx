@@ -14,9 +14,11 @@ interface Draft {
 }
 
 const STYLE_LABELS: Record<string, string> = {
-  touch_1: 'Touch 1 · Give',
-  touch_2: 'Touch 2 · Ask',
-  touch_3: 'Touch 3 · Breakup',
+  touch_1_poke: 'Touch 1A · Poke-the-bear',
+  touch_1_route: 'Touch 1B · Routing question',
+  touch_2: 'Touch 2 · Social proof',
+  touch_3: 'Touch 3 · Give-first',
+  touch_4: 'Touch 4 · Breakup',
 };
 
 export default function OutreachEditor({

@@ -55,7 +55,7 @@ export class MetricsService {
     const arm = (style) => {
       const row = this.db.prepare(`
         SELECT COUNT(DISTINCT es.id) AS sent,
-               SUM(CASE WHEN ev.type = 'replied' THEN 1 ELSE 0 END) AS replied
+               COUNT(DISTINCT CASE WHEN ev.type = 'replied' THEN es.id END) AS replied
         FROM email_sends es
         LEFT JOIN email_events ev ON ev.send_id = es.id
         WHERE es.status = 'sent' AND es.sent_at >= ? AND es.template_style = ?

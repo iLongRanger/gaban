@@ -1,0 +1,839 @@
+[
+  {
+    "id": 147,
+    "campaign_lead_id": 49,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing your file today",
+    "body": "I haven’t heard back, so I’ll close your file and stop reaching out. I did notice the lobby glass smudges on previous visits and I’ll step away for now. If your current setup ever slips, feel free to reach back out.",
+    "scheduled_for": "2026-05-29T20:00:00.000Z"
+  },
+  {
+    "id": 150,
+    "campaign_lead_id": 50,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing your file now",
+    "body": "I haven’t heard back, so I’ll close your file and stop reaching out. If your current cleaning setup ever slips or you want that checklist, feel free to reach out. I’ll leave the door open.",
+    "scheduled_for": "2026-05-29T20:02:00.000Z"
+  },
+  {
+    "id": 153,
+    "campaign_lead_id": 51,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "6th st final note",
+    "body": "I haven’t heard back, so I’ll close your file and stop reaching out. If washroom restock or disinfection between shifts ever becomes a concern, feel free to reach back out. Wishing you an easy week.",
+    "scheduled_for": "2026-05-29T20:04:00.000Z"
+  },
+  {
+    "id": 156,
+    "campaign_lead_id": 52,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing your file",
+    "body": "I haven’t heard back about the lobby glass smudges I flagged, so I’ll close your file and stop reaching out. If your current setup ever slips, feel free to reach back out.",
+    "scheduled_for": "2026-05-29T20:06:00.000Z"
+  },
+  {
+    "id": 159,
+    "campaign_lead_id": 53,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing your file",
+    "body": "I haven’t heard back, so I’ll close your file and stop reaching out. If washroom restock or between-shift disinfection ever slips with your current setup, feel free to reach out. I’ll leave the checklist offer open if you change your mind.",
+    "scheduled_for": "2026-05-29T20:08:00.000Z"
+  },
+  {
+    "id": 162,
+    "campaign_lead_id": 54,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing your file",
+    "body": "I haven’t heard back, so I’ll close your file and stop reaching out. If your current cleaning setup ever slips or you want that checklist, feel free to reach back out. Wishing you a smooth day at the clinic.",
+    "scheduled_for": "2026-05-29T20:10:00.000Z"
+  },
+  {
+    "id": 165,
+    "campaign_lead_id": 55,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing file: e columbia",
+    "body": "I haven’t heard back, so I’ll close your file and stop reaching out. I know washroom restock and between-shift disinfection can slip without notice. If your setup ever slips, feel free to reach back out.",
+    "scheduled_for": "2026-05-29T20:12:00.000Z"
+  },
+  {
+    "id": 168,
+    "campaign_lead_id": 56,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing your file",
+    "body": "I haven’t heard back so I’ll close your file and stop reaching out. If your current cleaning setup ever slips or you want that checklist, feel free to reach back out. Wishing you smooth operations.",
+    "scheduled_for": "2026-05-29T20:14:00.000Z"
+  },
+  {
+    "id": 171,
+    "campaign_lead_id": 57,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "625 5th ave follow-up",
+    "body": "I haven’t heard back, so I’ll close your file and stop reaching out. If your current setup ever slips on washroom restock or disinfection between shifts, feel free to reach back out.",
+    "scheduled_for": "2026-05-29T20:16:00.000Z"
+  },
+  {
+    "id": 174,
+    "campaign_lead_id": 58,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing your file",
+    "body": "I haven’t heard back so I’ll close your file and stop reaching out; I noticed washroom restock and between-shift disinfection could still be a concern for dental offices. If your current setup ever slips, feel free to reach back out.",
+    "scheduled_for": "2026-05-29T20:18:00.000Z"
+  },
+  {
+    "id": 177,
+    "campaign_lead_id": 59,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Derwent wy follow up",
+    "body": "I haven’t heard back so I’ll close your file and stop reaching out. If the current cleaning setup ever slips or you need help with dust on shelving and ledges, feel free to reach back out. I’ll leave the checklist offer open if you want it later.",
+    "scheduled_for": "2026-06-03T19:00:00.000Z"
+  },
+  {
+    "id": 180,
+    "campaign_lead_id": 60,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Huston rd closing file",
+    "body": "I haven’t heard back, so I’ll close your file and stop reaching out. If the fine dust on high shelving ever becomes a problem or your current setup slips, feel free to reach out. I’ll leave the checklist offer open should you want it later.",
+    "scheduled_for": "2026-06-03T19:02:00.000Z"
+  },
+  {
+    "id": 183,
+    "campaign_lead_id": 61,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing your file today",
+    "body": "I haven’t heard back so I’ll close your file and stop reaching out. If your current setup ever slips on safety-walk readiness, feel free to get in touch. I’ll leave the door open.",
+    "scheduled_for": "2026-06-03T19:04:00.000Z"
+  },
+  {
+    "id": 189,
+    "campaign_lead_id": 63,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Beedie way closing file",
+    "body": "I haven’t heard back, so I’ll close the file and stop reaching out. If your current cleaning setup ever slips or you need help with safety-walk readiness, feel free to get in touch. Thanks for your time.",
+    "scheduled_for": "2026-06-03T19:08:00.000Z"
+  },
+  {
+    "id": 192,
+    "campaign_lead_id": 64,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing your file",
+    "body": "I haven't heard back, so I'll close your file and stop reaching out. If your dust-control or safety-walk setup ever slips, feel free to reach back out. I've seen fine dust on high ledges become a recurring issue for similar units.",
+    "scheduled_for": "2026-06-03T19:10:00.000Z"
+  },
+  {
+    "id": 204,
+    "campaign_lead_id": 68,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing your file today",
+    "body": "I haven’t heard back, so I’ll close your file and stop reaching out. If your current setup ever slips and you need help with dust control or safety-walk readiness, feel free to reach back out.",
+    "scheduled_for": "2026-06-03T19:18:00.000Z"
+  },
+  {
+    "id": 207,
+    "campaign_lead_id": 69,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing your file today",
+    "body": "I haven’t heard back, so I’ll close your file and stop reaching out. If your current cleaning setup ever slips, feel free to get in touch and I’ll reopen the conversation. Wishing you smooth service.",
+    "scheduled_for": "2026-06-05T17:04:00.000Z"
+  },
+  {
+    "id": 210,
+    "campaign_lead_id": 70,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing file burrard",
+    "body": "I haven't heard back, so I'll close your file and stop reaching out. If your current cleaning setup ever slips or you want that checklist later, feel free to reach out. Wishing you smooth service nights.",
+    "scheduled_for": "2026-06-05T17:06:00.000Z"
+  },
+  {
+    "id": 213,
+    "campaign_lead_id": 71,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing file w hastings",
+    "body": "I haven’t heard back, so I’ll close your file and stop reaching out. I know late-night service makes operations busy. Feel free to reach out if your current setup ever slips.",
+    "scheduled_for": "2026-06-05T17:08:00.000Z"
+  },
+  {
+    "id": 216,
+    "campaign_lead_id": 72,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing file marinaside",
+    "body": "I haven’t heard back, so I’ll close my file and stop reaching out. If your late-night turnaround or cleaning setup ever slips, feel free to reach back out. I’ll leave the checklist offer open should you ask for it later.",
+    "scheduled_for": "2026-06-05T17:10:00.000Z"
+  },
+  {
+    "id": 219,
+    "campaign_lead_id": 73,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing our file 17th ave",
+    "body": "I haven’t heard back, so I’ll close our file and stop reaching out. Busy dinner shifts often make cleaning schedules slip, so feel free to reach out if your setup ever changes. I’ll close our file now.",
+    "scheduled_for": "2026-06-05T17:12:00.000Z"
+  },
+  {
+    "id": 222,
+    "campaign_lead_id": 74,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Alberni st final note",
+    "body": "I haven’t heard back about the checklist or the walkthrough offer. I know late-night deep cleans between dinner and breakfast can slip at busy restaurants. I’ll close your file and stop reaching out; reach back if your setup ever slips.",
+    "scheduled_for": "2026-06-05T17:14:00.000Z"
+  },
+  {
+    "id": 228,
+    "campaign_lead_id": 76,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing file w pender",
+    "body": "I haven’t heard back, so I’ll close your file and stop reaching out. If your current setup ever slips, feel free to reach back out. I’ll leave the checklist offer open should you want it later.",
+    "scheduled_for": "2026-06-05T17:18:00.000Z"
+  },
+  {
+    "id": 231,
+    "campaign_lead_id": 77,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing your file",
+    "body": "Since I haven’t heard back I’ll close your file and stop reaching out. If your current cleaning setup ever slips, especially around late-night deep cleans between dinner and breakfast, feel free to reach back out. I’ll leave the door open.",
+    "scheduled_for": "2026-06-05T17:20:00.000Z"
+  },
+  {
+    "id": 234,
+    "campaign_lead_id": 78,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing your file today",
+    "body": "I haven’t heard back, so I’ll close your file and stop reaching out. If your current setup ever slips or you want that inspector checklist later, feel free to get in touch. Take care.",
+    "scheduled_for": "2026-06-05T17:22:00.000Z"
+  },
+  {
+    "id": 236,
+    "campaign_lead_id": 79,
+    "touch_number": 2,
+    "template_style": "touch_2",
+    "subject": "Lougheed 15-minute walkthrough",
+    "body": "You may have missed my last note about the inspector checklist. As a reminder I can either drop the one-page checklist or do a 15-minute walkthrough next week, or run a no-cost trial deep clean of one area. I’m available Tuesday or Thursday after 2pm if either works for you.",
+    "scheduled_for": "2026-05-29T18:11:00.000Z"
+  },
+  {
+    "id": 237,
+    "campaign_lead_id": 79,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing file for lougheed",
+    "body": "I haven’t heard back so I’ll close your file and stop reaching out. If your current setup ever slips or you need help with late-night deep cleans between dinner and breakfast service, feel free to reach out. I’ll leave the door open.",
+    "scheduled_for": "2026-06-08T18:11:00.000Z"
+  },
+  {
+    "id": 239,
+    "campaign_lead_id": 80,
+    "touch_number": 2,
+    "template_style": "touch_2",
+    "subject": "Lougheed hood vent offer",
+    "body": "Sorry if you missed my note with the checklist. If helpful, I can do a 15-minute walkthrough next week or a no-cost trial deep-clean of one area to show results, Tuesday or Thursday after 2pm works for me. I’ve seen hood vent grease cause inspection headaches and wanted to offer a low-friction option.",
+    "scheduled_for": "2026-05-29T18:13:00.000Z"
+  },
+  {
+    "id": 240,
+    "campaign_lead_id": 80,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing your file",
+    "body": "I haven’t heard back, so I’ll close your file and stop reaching out. If your hood vent grease control or current setup ever slips, feel free to reach back out. I’ll leave the checklist offer open on your reply.",
+    "scheduled_for": "2026-06-08T18:13:00.000Z"
+  },
+  {
+    "id": 242,
+    "campaign_lead_id": 81,
+    "touch_number": 2,
+    "template_style": "touch_2",
+    "subject": "Tuesday or thursday visit",
+    "body": "You may have missed my last note offering the VCH checklist. I can do a 15-minute walkthrough next week or a no-cost trial deep-clean of one area, Tuesday or Thursday after 2pm. I’d focus on reducing stainless streaking around the pass during a quick visit.",
+    "scheduled_for": "2026-05-29T18:15:00.000Z"
+  },
+  {
+    "id": 243,
+    "campaign_lead_id": 81,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing your file",
+    "body": "I haven’t heard back, so I’ll close your file and stop reaching out. If your inspection prep or stainless polish ever slips, feel free to reach out. I’ll be nearby and glad to help if needed.",
+    "scheduled_for": "2026-06-08T18:15:00.000Z"
+  },
+  {
+    "id": 245,
+    "campaign_lead_id": 82,
+    "touch_number": 2,
+    "template_style": "touch_2",
+    "subject": "Hastings short walkthrough offer",
+    "body": "You may not have seen my earlier note about the inspector checklist. I can drop by for a 15-minute walkthrough next week or do a no-cost trial deep-clean of one area to show our work. Would Tuesday or Thursday after 2pm work?",
+    "scheduled_for": "2026-05-29T18:17:00.000Z"
+  },
+  {
+    "id": 246,
+    "campaign_lead_id": 82,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing your file",
+    "body": "I haven’t heard back so I’ll close your file and stop reaching out. If your current cleaning setup ever slips, feel free to reach back out. Appreciate your time.",
+    "scheduled_for": "2026-06-08T18:17:00.000Z"
+  },
+  {
+    "id": 248,
+    "campaign_lead_id": 83,
+    "touch_number": 2,
+    "template_style": "touch_2",
+    "subject": "Jinya lougheed walkthrough offer",
+    "body": "Following up in case you missed my checklist offer. I can do a 15-minute walkthrough next week or a no-cost trial deep-clean of one area; would Tuesday or Thursday after 2pm work for you. I’m proposing this because late-night dinner service often creates gaps that show up before morning prep.",
+    "scheduled_for": "2026-05-29T18:19:00.000Z"
+  },
+  {
+    "id": 249,
+    "campaign_lead_id": 83,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing your file now",
+    "body": "I haven’t heard back so I’ll close your file and stop reaching out. If your current cleaning setup ever slips and you want help maintaining the standards your high rating reflects, feel free to reach out. I’ll leave the door open.",
+    "scheduled_for": "2026-06-08T18:19:00.000Z"
+  },
+  {
+    "id": 251,
+    "campaign_lead_id": 84,
+    "touch_number": 2,
+    "template_style": "touch_2",
+    "subject": "Hastings st follow-up",
+    "body": "You may not have seen my earlier note about the checklist. I can drop by for a 15-minute walkthrough next week or do a no-cost trial deep-clean of one area to show the difference. Are you available Tuesday or Thursday after 2pm?",
+    "scheduled_for": "2026-05-29T18:21:00.000Z"
+  },
+  {
+    "id": 252,
+    "campaign_lead_id": 84,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Hastings st final note",
+    "body": "I haven’t heard back, so I’ll close your file and stop reaching out. If your current cleaning setup ever slips or you need help with hood-vent grease, feel free to reach back out.",
+    "scheduled_for": "2026-06-08T18:21:00.000Z"
+  },
+  {
+    "id": 257,
+    "campaign_lead_id": 86,
+    "touch_number": 2,
+    "template_style": "touch_2",
+    "subject": "Quick walkthrough next week?",
+    "body": "In case you missed my note, I’m still happy to send the checklist. If it helps, I can do a 15-minute walkthrough next week or a no-cost trial deep-clean of one area; Tuesday or Thursday after 2pm works well for me.",
+    "scheduled_for": "2026-05-29T18:25:00.000Z"
+  },
+  {
+    "id": 258,
+    "campaign_lead_id": 86,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing your file",
+    "body": "I haven’t heard back so I’ll close your file and stop reaching out. If your current setup ever slips or you need the checklist later, feel free to reach back out. I’ll keep your spot available.",
+    "scheduled_for": "2026-06-08T18:25:00.000Z"
+  },
+  {
+    "id": 260,
+    "campaign_lead_id": 87,
+    "touch_number": 2,
+    "template_style": "touch_2",
+    "subject": "Hastings st quick offer",
+    "body": "Following my note about the checklist, I often see kitchens on Hastings needing a late-night deep clean between dinner and breakfast. I can do a 15-minute walkthrough next week or a no-cost trial deep-clean of one area. I’m available Tuesday or Thursday after 2pm; reply with a day and I’ll book it.",
+    "scheduled_for": "2026-05-29T18:27:00.000Z"
+  },
+  {
+    "id": 261,
+    "campaign_lead_id": 87,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing your file",
+    "body": "I haven’t heard back, so I’ll close your file and stop reaching out. If your current cleaning setup ever slips or you need a hand, feel free to reach back out.",
+    "scheduled_for": "2026-06-08T18:27:00.000Z"
+  },
+  {
+    "id": 266,
+    "campaign_lead_id": 89,
+    "touch_number": 2,
+    "template_style": "touch_2",
+    "subject": "Halifax st grease check",
+    "body": "Following up in case you missed my checklist offer; I saw some grease buildup on hood vents that can trigger inspector notes. If useful I can do a 15-minute walkthrough next week or a no-cost trial deep-clean of one area, Tuesday or Thursday after 2pm works for me.",
+    "scheduled_for": "2026-05-29T18:31:00.000Z"
+  },
+  {
+    "id": 267,
+    "campaign_lead_id": 89,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Halifax st final note",
+    "body": "I haven't heard back so I'll close your file and stop reaching out. If stainless streaking before inspections or any other cleanliness issue ever slips, feel free to reach out. Wishing you a smooth service period.",
+    "scheduled_for": "2026-06-08T18:31:00.000Z"
+  },
+  {
+    "id": 269,
+    "campaign_lead_id": 90,
+    "touch_number": 2,
+    "template_style": "touch_2",
+    "subject": "Brentwood walk-through offer",
+    "body": "In case you missed my note, I offered a one-page inspector checklist. Grease on hood vents is a common issue I see during visits. Would you be open to a 15-minute walkthrough next week or a no-cost trial deep-clean of one area Tuesday or Thursday after 2pm?",
+    "scheduled_for": "2026-05-29T18:33:00.000Z"
+  },
+  {
+    "id": 270,
+    "campaign_lead_id": 90,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Brentwood follow-up",
+    "body": "I haven’t heard back, so I’ll close your file and stop reaching out. Busy weekends can lead to hood vent grease buildup faster than teams expect. If your current setup ever slips, feel free to reach back out.",
+    "scheduled_for": "2026-06-08T18:33:00.000Z"
+  },
+  {
+    "id": 272,
+    "campaign_lead_id": 91,
+    "touch_number": 2,
+    "template_style": "touch_2",
+    "subject": "Canada way walk or trial",
+    "body": "Following up in case you missed my note about the VCH checklist. I can do a 15-minute walkthrough next week or a no-cost trial deep clean of one area, Tuesday or Thursday after 2pm works for me. I’ve seen busy dinner service at Canada Way spots and wanted to offer low-friction help.",
+    "scheduled_for": "2026-05-29T18:35:00.000Z"
+  },
+  {
+    "id": 273,
+    "campaign_lead_id": 91,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing your file canada way",
+    "body": "I haven’t heard back, so I’ll close your file and stop reaching out. If your cleaning setup ever slips at the Canada Way location, feel free to reach back out. I’ll leave the checklist offer open if you change your mind.",
+    "scheduled_for": "2026-06-08T18:35:00.000Z"
+  },
+  {
+    "id": 275,
+    "campaign_lead_id": 92,
+    "touch_number": 2,
+    "template_style": "touch_2",
+    "subject": "Quick visit near beatty st",
+    "body": "Not sure you saw my earlier note about the checklist. Late-night deep cleans between dinner and breakfast service are a common pinch point this season. I can do a 15-minute walkthrough next week or a no-cost trial deep-clean of one area; would Tuesday or Thursday after 2pm work for you?",
+    "scheduled_for": "2026-05-29T18:37:00.000Z"
+  },
+  {
+    "id": 276,
+    "campaign_lead_id": 92,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing your file",
+    "body": "Since I haven’t heard back I’ll close your file and stop reaching out. I know late-night deep cleans can slip the schedule, so feel free to reach out if your current setup ever needs backup. Take care.",
+    "scheduled_for": "2026-06-08T18:37:00.000Z"
+  },
+  {
+    "id": 281,
+    "campaign_lead_id": 94,
+    "touch_number": 2,
+    "template_style": "touch_2",
+    "subject": "After-dinner walkthrough offer",
+    "body": "You may not have seen my last note about the inspection checklist. I’m offering a 15-minute walkthrough next week or a no-cost trial deep-clean of one area, Tuesday or Thursday after 2pm, to show how we handle grease on hood vents during busy service hours.",
+    "scheduled_for": "2026-05-29T18:41:00.000Z"
+  },
+  {
+    "id": 282,
+    "campaign_lead_id": 94,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing your file",
+    "body": "I haven’t heard back, so I’ll close your file and stop reaching out. I know late-night service can squeeze cleaning windows and cause grease build-up. If your current setup ever slips, feel free to reach out.",
+    "scheduled_for": "2026-06-08T18:41:00.000Z"
+  },
+  {
+    "id": 287,
+    "campaign_lead_id": 96,
+    "touch_number": 2,
+    "template_style": "touch_2",
+    "subject": "15-minute walkthrough offer",
+    "body": "You may not have seen my last note about the VCH checklist I offered. I’ll bring the checklist and can do a 15-minute walkthrough next week or a no-cost trial deep clean of one area, Tuesday or Thursday after 2pm if that works for you.",
+    "scheduled_for": "2026-05-29T18:45:00.000Z"
+  },
+  {
+    "id": 288,
+    "campaign_lead_id": 96,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing your file",
+    "body": "Still haven’t heard back and I’ll close your file and stop reaching out. You run a busy spot on N Fraser Way and that can slip without notice. If your current setup ever slips, feel free to reach out.",
+    "scheduled_for": "2026-06-08T18:45:00.000Z"
+  },
+  {
+    "id": 290,
+    "campaign_lead_id": 97,
+    "touch_number": 2,
+    "template_style": "touch_2",
+    "subject": "Stainless and inspection prep",
+    "body": "Not sure you saw my last note about the checklist. I’ll resend it if you want, and I can do a 15-minute walkthrough next week or a no-cost trial deep clean of one area, Tuesday or Thursday after 2pm.",
+    "scheduled_for": "2026-05-29T18:47:00.000Z"
+  },
+  {
+    "id": 291,
+    "campaign_lead_id": 97,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing your file",
+    "body": "I haven’t heard back so I’ll close your file and stop reaching out. With your busy Royal Oak location you likely have a reliable routine, but reach out if that ever slips. I’ll leave the door open if you need anything.",
+    "scheduled_for": "2026-06-08T18:47:00.000Z"
+  },
+  {
+    "id": 293,
+    "campaign_lead_id": 98,
+    "touch_number": 2,
+    "template_style": "touch_2",
+    "subject": "Mckay ave follow-up",
+    "body": "Thought you might have missed my last note about the VCH checklist. That grease on hood vents is the item showing up most often in nearby hotels. I can do a 15-minute walkthrough next week or a no-cost trial deep-clean of one area, Tuesday or Thursday after 2pm.",
+    "scheduled_for": "2026-05-29T18:49:00.000Z"
+  },
+  {
+    "id": 294,
+    "campaign_lead_id": 98,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Mckay ave final note",
+    "body": "Since I haven’t heard back I’ll close your file and stop reaching out. If your current cleaning setup ever slips, feel free to reach back out. I’ll leave the checklist offer open on your end.",
+    "scheduled_for": "2026-06-08T18:49:00.000Z"
+  },
+  {
+    "id": 296,
+    "campaign_lead_id": 99,
+    "touch_number": 2,
+    "template_style": "touch_2",
+    "subject": "Gilmore wy walkthrough offer",
+    "body": "Following up on the checklist offer I sent earlier. I also noticed washroom restock and disinfection between shifts can be inconsistent for busy labs. Would Tuesday or Thursday after 2pm work for a 15-minute walkthrough next week, or would you prefer a no-cost trial deep-clean of one area?",
+    "scheduled_for": "2026-06-01T18:10:00.000Z"
+  },
+  {
+    "id": 297,
+    "campaign_lead_id": 99,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing file for gilmore wy",
+    "body": "You haven’t replied so I’ll close your file and stop reaching out. If your current setup ever slips or you want that checklist, feel free to reach back out. I’ll be here if you need anything.",
+    "scheduled_for": "2026-06-09T18:10:00.000Z"
+  },
+  {
+    "id": 302,
+    "campaign_lead_id": 101,
+    "touch_number": 2,
+    "template_style": "touch_2",
+    "subject": "Onsite walkthrough or trial",
+    "body": "Following up in case you missed my checklist offer. I noticed lobby glass smudges and small high-touch spots that often get skipped. I can do a 15-minute walkthrough next week or a no-cost trial deep-clean of one area, Tuesday or Thursday after 2pm if that works for you.",
+    "scheduled_for": "2026-06-01T18:14:00.000Z"
+  },
+  {
+    "id": 303,
+    "campaign_lead_id": 101,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing your file now",
+    "body": "I haven’t heard back, so I’ll close your file and stop reaching out. If lobby glass smudges or washroom restock ever slip with your current setup, feel free to reach out. I’ll keep your address on file in case that changes.",
+    "scheduled_for": "2026-06-09T18:14:00.000Z"
+  },
+  {
+    "id": 305,
+    "campaign_lead_id": 102,
+    "touch_number": 2,
+    "template_style": "touch_2",
+    "subject": "Quick walkthrough next week",
+    "body": "Following up in case you missed my checklist offer. I can do a 15-minute walkthrough next week to show common missed spots like dust on monitors, or run a no-cost trial deep-clean of one area. Are you available Tuesday or Thursday after 2pm?",
+    "scheduled_for": "2026-06-01T18:16:00.000Z"
+  },
+  {
+    "id": 306,
+    "campaign_lead_id": 102,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing your file",
+    "body": "I haven’t heard back, so I’ll close your file and stop reaching out. If your current setup ever slips or you want that checklist later, just reach back out. I’ll leave the door open.",
+    "scheduled_for": "2026-06-09T18:16:00.000Z"
+  },
+  {
+    "id": 308,
+    "campaign_lead_id": 103,
+    "touch_number": 2,
+    "template_style": "touch_2",
+    "subject": "Gilmore way walkthrough",
+    "body": "You may have missed my earlier note about lobby glass smudges. I can either do a 15-minute walkthrough next week or a no-cost trial deep-clean of one area; available Tuesday or Thursday after 2pm. Reply with the option you prefer and the day that works.",
+    "scheduled_for": "2026-06-01T18:18:00.000Z"
+  },
+  {
+    "id": 309,
+    "campaign_lead_id": 103,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing file for gilmore wy",
+    "body": "Since I haven’t heard back about the lobby glass smudges, I’ll close your file and stop reaching out. If your current setup ever slips and you want help, feel free to reach back out. I’ll leave the checklist on standby.",
+    "scheduled_for": "2026-06-09T18:18:00.000Z"
+  },
+  {
+    "id": 311,
+    "campaign_lead_id": 104,
+    "touch_number": 2,
+    "template_style": "touch_2",
+    "subject": "Lougheed walkthrough or trial",
+    "body": "Just checking in in case you missed my note about the checklist gift. I can do a 15-minute walkthrough next week or a no-cost trial deep-clean of one area, Tuesday or Thursday after 2pm, if either works for you.",
+    "scheduled_for": "2026-06-01T18:20:00.000Z"
+  },
+  {
+    "id": 312,
+    "campaign_lead_id": 104,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing your file today",
+    "body": "I haven’t heard back so I’ll close your file and stop reaching out. If your current cleaning setup ever slips, feel free to reach out. I’ll leave the checklist offer open if you change your mind.",
+    "scheduled_for": "2026-06-09T18:20:00.000Z"
+  },
+  {
+    "id": 317,
+    "campaign_lead_id": 106,
+    "touch_number": 2,
+    "template_style": "touch_2",
+    "subject": "Walkthrough or trial offer",
+    "body": "In case my last note got missed, I can send that checklist or offer a quick, no-cost trial deep-clean of one area to show the difference. I’m available Tuesday or Thursday after 2pm next week for a 15-minute walkthrough or to schedule the trial.",
+    "scheduled_for": "2026-06-01T18:24:00.000Z"
+  },
+  {
+    "id": 318,
+    "campaign_lead_id": 106,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing your file",
+    "body": "I haven’t heard back so I’ll close your file and stop reaching out. If your current setup ever slips on washroom restock or disinfection between shifts, feel free to reach out. Good luck with your operations.",
+    "scheduled_for": "2026-06-09T18:24:00.000Z"
+  },
+  {
+    "id": 320,
+    "campaign_lead_id": 107,
+    "touch_number": 2,
+    "template_style": "touch_2",
+    "subject": "Metrotower entrance plan",
+    "body": "You may have missed my note about entrance mat grit during wet months and the one-page winter-entrance protocol I offered. If helpful, I can do a 15-minute walkthrough next week or a no-cost trial deep-clean of one area; I’m available Tuesday or Thursday after 2pm.",
+    "scheduled_for": "2026-06-01T18:26:00.000Z"
+  },
+  {
+    "id": 321,
+    "campaign_lead_id": 107,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Kingsway entrance follow-up",
+    "body": "I haven’t heard back about managing entrance mat grit during wet months, so I’ll close your file and stop reaching out. If your current setup ever slips and you want help, feel free to reach back out.",
+    "scheduled_for": "2026-06-09T18:26:00.000Z"
+  },
+  {
+    "id": 323,
+    "campaign_lead_id": 108,
+    "touch_number": 2,
+    "template_style": "touch_2",
+    "subject": "Hastings st walkthrough offer",
+    "body": "Following up on the checklist offer in case you missed it. I can do a 15-minute walkthrough next week or a no-cost trial deep-clean of one area, focusing on washroom restock and disinfection between shifts. I’m available Tuesday or Thursday after 2pm if either works for you.",
+    "scheduled_for": "2026-06-01T18:28:00.000Z"
+  },
+  {
+    "id": 324,
+    "campaign_lead_id": 108,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing your file now",
+    "body": "I haven’t heard back, so I’ll close your file and stop reaching out. If your washroom restock or between-shift disinfection ever slips, feel free to reach back out. I’ll leave the door open.",
+    "scheduled_for": "2026-06-09T18:28:00.000Z"
+  },
+  {
+    "id": 326,
+    "campaign_lead_id": 109,
+    "touch_number": 2,
+    "template_style": "touch_2",
+    "subject": "Still creek entrance cleanup",
+    "body": "You may not have seen my earlier note about entrance mat grit at 4388 Still Creek dr. I can drop by for a 15-minute walkthrough next week or do a no-cost trial deep clean of one high-traffic area; I’m available Tuesday or Thursday after 2pm. Reply with which you'd prefer and which day works.",
+    "scheduled_for": "2026-06-01T18:30:00.000Z"
+  },
+  {
+    "id": 327,
+    "campaign_lead_id": 109,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing your file now",
+    "body": "I haven’t heard back about the entrance mat grit at 4388 Still Creek dr, so I’ll close your file and stop reaching out. If your current setup ever slips and you want help with wet-month grit, feel free to reach back out. I’ll leave the door open.",
+    "scheduled_for": "2026-06-09T18:30:00.000Z"
+  },
+  {
+    "id": 329,
+    "campaign_lead_id": 110,
+    "touch_number": 2,
+    "template_style": "touch_2",
+    "subject": "Entrance mat grit solution",
+    "body": "You may have missed my note about the one-page winter protocol. The entrance mat and lobby area at 252 Esplanade W often show grit this time of year, so I can do a 15-minute walkthrough next week or a no-cost trial deep-clean of one area. I’m available Tuesday or Thursday after 2pm.",
+    "scheduled_for": "2026-06-01T18:32:00.000Z"
+  },
+  {
+    "id": 330,
+    "campaign_lead_id": 110,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing file on esplanade",
+    "body": "Since I haven’t heard back I’ll close my file and stop reaching out. If your entrance mat or lobby starts showing more grit or slip risk down the line, feel free to reach out. I’ll leave the door open.",
+    "scheduled_for": "2026-06-09T18:32:00.000Z"
+  },
+  {
+    "id": 332,
+    "campaign_lead_id": 111,
+    "touch_number": 2,
+    "template_style": "touch_2",
+    "subject": "Henning dr winter protocol",
+    "body": "You may not have seen my first note about entrance mat grit. I can drop by for a 15-minute walkthrough next week or do a no-cost trial deep clean of your entrance; are you available Tuesday or Thursday after 2pm?",
+    "scheduled_for": "2026-06-01T18:34:00.000Z"
+  },
+  {
+    "id": 333,
+    "campaign_lead_id": 111,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing your file",
+    "body": "Since I haven’t heard back I’ll close your file and stop reaching out. If your entrance mat or slip risk ever starts slipping, feel free to reach out. Hope the winter season goes smoothly for you.",
+    "scheduled_for": "2026-06-09T18:34:00.000Z"
+  },
+  {
+    "id": 335,
+    "campaign_lead_id": 112,
+    "touch_number": 2,
+    "template_style": "touch_2",
+    "subject": "Canada way walkthrough",
+    "body": "In case you missed my earlier note about the checklist gift, I wanted to offer a low-friction option: a 15-minute walkthrough next week or a no-cost trial deep-clean of one area. I’m available Tuesday or Thursday after 2pm if either works for you.",
+    "scheduled_for": "2026-06-01T18:36:00.000Z"
+  },
+  {
+    "id": 336,
+    "campaign_lead_id": 112,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing our file today",
+    "body": "Since I haven’t heard back I’ll close my file and stop reaching out. I know lobby glass smudges and visible common-area wear can erode first impressions. If your current setup ever slips, feel free to reach out.",
+    "scheduled_for": "2026-06-09T18:36:00.000Z"
+  },
+  {
+    "id": 338,
+    "campaign_lead_id": 113,
+    "touch_number": 2,
+    "template_style": "touch_2",
+    "subject": "Rosser ave walkthrough offer",
+    "body": "Following up in case you missed my note and the checklist offer. I can do a 15-minute walkthrough next week or a no-cost trial deep-clean of one area, Tuesday or Thursday after 2pm. Tell me which option works and I’ll pencil it in.",
+    "scheduled_for": "2026-06-01T18:38:00.000Z"
+  },
+  {
+    "id": 339,
+    "campaign_lead_id": 113,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing your file",
+    "body": "I haven’t heard back, so I’ll close your file and stop reaching out. If lobby glass smudges or any part of your cleaning setup ever slips, feel free to get in touch. I’ll leave the checklist offer open if you change your mind.",
+    "scheduled_for": "2026-06-09T18:38:00.000Z"
+  },
+  {
+    "id": 341,
+    "campaign_lead_id": 114,
+    "touch_number": 2,
+    "template_style": "touch_2",
+    "subject": "Chadwick ct walkthrough",
+    "body": "You may not have seen my checklist offer; I spotted lobby glass smudges that often signal missed touchpoints. If helpful, I can do a 15-minute walkthrough next week or a no-cost trial deep-clean of one area. Tuesday or Thursday after 2pm works for me.",
+    "scheduled_for": "2026-06-01T18:40:00.000Z"
+  },
+  {
+    "id": 342,
+    "campaign_lead_id": 114,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing file chadwick ct",
+    "body": "I haven't heard back so I'll close your file and stop reaching out. If your cleaning setup ever slips. For example persistent desk dust on monitors or missed glass smudges. Feel free to reach out. I'll leave the door open.",
+    "scheduled_for": "2026-06-09T18:40:00.000Z"
+  },
+  {
+    "id": 344,
+    "campaign_lead_id": 115,
+    "touch_number": 2,
+    "template_style": "touch_2",
+    "subject": "N fraser entrance visit",
+    "body": "Not sure you saw my last note about the winter-entrance protocol. I’m offering a quick 15-minute walkthrough next week to show simple fixes for entrance mat grit and slip risk, Tuesday or Thursday after 2pm works for me. No obligation, just a short look.",
+    "scheduled_for": "2026-06-01T18:42:00.000Z"
+  },
+  {
+    "id": 345,
+    "campaign_lead_id": 115,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing file for n fraser",
+    "body": "I haven’t heard back, so I’ll close your file and stop reaching out. If your entrance mat grit or slip risk ever starts slipping, feel free to reach back out. I’ll leave the door open.",
+    "scheduled_for": "2026-06-09T18:42:00.000Z"
+  },
+  {
+    "id": 347,
+    "campaign_lead_id": 116,
+    "touch_number": 2,
+    "template_style": "touch_2",
+    "subject": "Royal oak follow up",
+    "body": "In case you missed my note, I offered a one-page checklist and I’m still happy to send it. If it helps, I can do a 15-minute walkthrough next week or a no-cost trial deep-clean of one area. I’m available Tuesday or Thursday after 2pm.",
+    "scheduled_for": "2026-06-01T18:44:00.000Z"
+  },
+  {
+    "id": 348,
+    "campaign_lead_id": 116,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing your file",
+    "body": "I haven’t heard back, so I’ll close your file and stop reaching out. If your current cleaning setup ever slips or you want that checklist later, feel free to reach out. Wishing you well with the practice.",
+    "scheduled_for": "2026-06-09T18:44:00.000Z"
+  },
+  {
+    "id": 350,
+    "campaign_lead_id": 117,
+    "touch_number": 2,
+    "template_style": "touch_2",
+    "subject": "Kingsway walkthrough or trial",
+    "body": "Following up in case you missed my checklist offer; I’m seeing the same lobby glass smudges on Kingsway that often signal other overlooked areas. Would you be open to a 15-minute walkthrough next week or a no-cost trial deep-clean of one area? I’m available Tuesday or Thursday after 2pm.",
+    "scheduled_for": "2026-06-01T18:46:00.000Z"
+  },
+  {
+    "id": 351,
+    "campaign_lead_id": 117,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing your file on this",
+    "body": "Since I haven’t heard back I’ll close your file and stop reaching out. If your current cleaning setup ever slips, feel free to reach out. I’ll leave the checklist offer open should you change your mind.",
+    "scheduled_for": "2026-06-09T18:46:00.000Z"
+  },
+  {
+    "id": 353,
+    "campaign_lead_id": 118,
+    "touch_number": 2,
+    "template_style": "touch_2",
+    "subject": "Kingsway walkthrough offer",
+    "body": "You may not have seen my note about the checklist. If you want the checklist I can also do a quick 15-minute walkthrough next week or a no-cost trial deep-clean of one area; available Tuesday or Thursday after 2pm. I’ve noticed washroom restock and disinfection between shifts is where small clinics tend to slip.",
+    "scheduled_for": "2026-06-01T18:48:00.000Z"
+  },
+  {
+    "id": 354,
+    "campaign_lead_id": 118,
+    "touch_number": 3,
+    "template_style": "touch_3",
+    "subject": "Closing your file",
+    "body": "I haven’t heard back, so I’ll close your file and stop reaching out. If your current cleaning setup ever slips or washroom restock becomes an issue, feel free to reach out. I’ll leave the checklist offer open if you change your mind.",
+    "scheduled_for": "2026-06-09T18:48:00.000Z"
+  }
+]

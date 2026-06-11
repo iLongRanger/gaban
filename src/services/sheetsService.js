@@ -23,7 +23,7 @@ export default class SheetsService {
     const draftRows = leads.map((lead, i) =>
       this.buildDraftsRow(lead.business_name, drafts[i])
     );
-    await this.appendRows('Outreach Drafts!A:G', draftRows);
+    await this.appendRows('Outreach Drafts!A:K', draftRows);
 
     // Tab 3: History
     const historyRows = leads.map(lead => this.buildHistoryRow(lead));
@@ -53,16 +53,20 @@ export default class SheetsService {
 
   buildDraftsRow(businessName, drafts) {
     if (drafts?.error) {
-      return [businessName, 'Error', 'Error', 'Error', 'Error', 'Error', 'Error'];
+      return [businessName, 'Error', 'Error', 'Error', 'Error', 'Error', 'Error', 'Error', 'Error', 'Error', 'Error'];
     }
     return [
       businessName,
-      `Subject: ${drafts.touch_1.email_subject}\n\n${drafts.touch_1.email_body}`,
+      `Subject: ${drafts.touch_1_poke.email_subject}\n\n${drafts.touch_1_poke.email_body}`,
+      `Subject: ${drafts.touch_1_route.email_subject}\n\n${drafts.touch_1_route.email_body}`,
       `Subject: ${drafts.touch_2.email_subject}\n\n${drafts.touch_2.email_body}`,
       `Subject: ${drafts.touch_3.email_subject}\n\n${drafts.touch_3.email_body}`,
-      drafts.touch_1.dm,
+      `Subject: ${drafts.touch_4.email_subject}\n\n${drafts.touch_4.email_body}`,
+      drafts.touch_1_poke.dm,
+      drafts.touch_1_route.dm,
       drafts.touch_2.dm,
-      drafts.touch_3.dm
+      drafts.touch_3.dm,
+      drafts.touch_4.dm
     ];
   }
 

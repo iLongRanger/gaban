@@ -41,9 +41,11 @@ const MOCK_SCORE_RESPONSE = JSON.stringify({
 });
 
 const MOCK_DRAFT_RESPONSE = JSON.stringify({
-  touch_1: { email_subject: 'Hi', email_body: 'Hey there...', dm: 'Hey!' },
-  touch_2: { email_subject: 'Tip', email_body: 'Quick tip...', dm: 'Tip!' },
-  touch_3: { email_subject: 'Love it', email_body: 'Great spot...', dm: 'Wow!' }
+  touch_1_poke:  { email_subject: 'Hi',       email_body: 'Hey there...',   dm: 'Hey!'    },
+  touch_1_route: { email_subject: 'Question', email_body: 'Quick q...',     dm: 'Q!'      },
+  touch_2:       { email_subject: 'Tip',      email_body: 'Quick tip...',   dm: 'Tip!'    },
+  touch_3:       { email_subject: 'Give',     email_body: 'Free resource.', dm: 'Give!'   },
+  touch_4:       { email_subject: 'Last',     email_body: 'Final note...',  dm: 'Bye!'    },
 });
 
 test('full pipeline: discover → filter → score → draft → export', async () => {
@@ -87,7 +89,7 @@ test('full pipeline: discover → filter → score → draft → export', async 
   const drafts = await drafting.draftAllLeads(topLeads);
 
   assert.equal(drafts.length, 1);
-  assert.ok(drafts[0].touch_1);
+  assert.ok(drafts[0].touch_1_poke);
 
   // Step 5: Export (mocked sheets)
   const appended = [];
