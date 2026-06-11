@@ -44,7 +44,16 @@ export default async function ResponsesPage() {
 
   const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
   const Metrics = MetricsService as any;
-  const funnel = new Metrics({ db }).outreachFunnel({ since });
+  const metricsService = new Metrics({ db });
+  const funnel = {
+    ...metricsService.outreachFunnel({ since }),
+    ab: metricsService.abComparison({ since }) as {
+      poke: { sent: number; replied: number; reply_rate: number };
+      route: { sent: number; replied: number; reply_rate: number };
+      winner: 'poke' | 'route' | 'tie' | null;
+      since: string;
+    } | null,
+  };
 
   const replyCount = events.filter((event) => event.type === 'replied').length;
   const autoReplyCount = events.filter((event) => event.type === 'auto_replied').length;
@@ -77,6 +86,32 @@ export default async function ResponsesPage() {
           <span className="block text-xs text-gray-400">Unsubscribes</span>
           <span className="text-xl font-semibold">{unsubscribeCount}</span>
         </div>
+      </div>
+
+      <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold text-gray-700">Touch 1 opener A/B · last 30 days</h2>
+        </div>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
+              <th className="py-2">Arm</th>
+              <th className="py-2">Sent</th>
+              <th className="py-2">Replied</th>
+              <th className="py-2">Reply rate</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(['poke', 'route'] as const).map((arm) => (
+              <tr key={arm} className="border-b border-gray-50 last:border-0">
+                <td className="py-2">{arm === 'poke' ? 'Poke-the-bear' : 'Routing question'}{funnel.ab?.winner === arm ? ' · leading' : ''}</td>
+                <td className="py-2">{funnel.ab?.[arm]?.sent ?? 0}</td>
+                <td className="py-2">{funnel.ab?.[arm]?.replied ?? 0}</td>
+                <td className="py-2">{((funnel.ab?.[arm]?.reply_rate ?? 0) * 100).toFixed(1)}%</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
