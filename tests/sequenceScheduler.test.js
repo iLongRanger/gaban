@@ -15,15 +15,16 @@ describe('sequenceScheduler', () => {
     assert.strictEqual(result.toISOString(), '2026-05-04T16:00:00.000Z');
   });
 
-  it('schedules touches on day 0, 4 business days, and 10 business days', () => {
+  it('schedules touches on day 0, 4 business days, 10 business days, and 21 business days', () => {
     const scheduled = scheduleSequence({
       startAt: '2026-05-04T16:00:00.000Z',
       options: OPTIONS,
     });
-    assert.deepStrictEqual(scheduled.map((row) => row.touchNumber), [1, 2, 3]);
+    assert.deepStrictEqual(scheduled.map((row) => row.touchNumber), [1, 2, 3, 4]);
     assert.strictEqual(scheduled[0].scheduledFor, '2026-05-04T16:00:00.000Z');
     assert.strictEqual(scheduled[1].scheduledFor, '2026-05-08T16:00:00.000Z');
     assert.strictEqual(scheduled[2].scheduledFor, '2026-05-18T16:00:00.000Z');
+    assert.strictEqual(scheduled[3].scheduledFor, '2026-06-02T16:00:00.000Z');
   });
 
   it('spaces sends apart when existing times conflict', () => {

@@ -171,6 +171,7 @@ describe('CampaignService', () => {
     assert.equal(t1(leadA), expectedArmA);
     assert.equal(t1(leadB), expectedArmB);
     // The two leads must be assigned different arms (50/50 split).
+    // This relies on a fresh in-memory DB giving consecutive IDs, so the two leads have opposite parities.
     assert.notEqual(t1(leadA), t1(leadB));
 
     // Touch 4 must use the touch_4 style.

@@ -1,6 +1,9 @@
 import { nextSendTime, scheduleSequence } from './sequenceScheduler.js';
 import { MetricsService } from './metricsService.js';
 
+// Stored on the campaign for sequence length / finalize count. Slot 0 ('touch_1') is a
+// length placeholder only — the per-send touch-1 style is always set by openerArm() to
+// touch_1_poke or touch_1_route. Slots 1-3 ARE used as draft-lookup keys for touches 2-4.
 const DEFAULT_TOUCH_STYLES = ['touch_1', 'touch_2', 'touch_3', 'touch_4'];
 
 // follow_up_later is included: it's an operator note to revisit manually and does not

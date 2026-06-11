@@ -163,7 +163,7 @@ export class SendQueueWorker {
          WHERE id = ?`
       ).run(send.touch_number, sentAt, send.campaign_lead_id);
       try {
-        const maxTouches = JSON.parse(send.campaign_touch_styles || '[]').length || 3;
+        const maxTouches = JSON.parse(send.campaign_touch_styles || '[]').length || 4;
         if (send.touch_number >= maxTouches) {
           this.campaignService.finalizeIfDone(send.campaign_id, now);
         }

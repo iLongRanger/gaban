@@ -1,5 +1,5 @@
 const DEFAULT_SEND_DAYS = ['mon', 'tue', 'wed', 'thu', 'fri'];
-const DEFAULT_TOUCH_OFFSETS = [0, 4, 10];
+const DEFAULT_TOUCH_OFFSETS = [0, 4, 10, 21];
 
 const WEEKDAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 
