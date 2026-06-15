@@ -144,10 +144,45 @@ export function sanitizeDrafts(drafts) {
   for (const key of TOUCH_KEYS) {
     if (!drafts?.[key]) continue;
     drafts[key].email_subject = sanitizeMessageText(drafts[key].email_subject);
-    drafts[key].email_body    = sanitizeMessageText(stripTrailingSignature(drafts[key].email_body));
-    drafts[key].dm            = sanitizeMessageText(stripTrailingSignature(drafts[key].dm));
+    drafts[key].email_body    = sanitizeMessageText(stripSenderLocationClaims(stripTrailingSignature(drafts[key].email_body)));
+    drafts[key].dm            = sanitizeMessageText(stripSenderLocationClaims(stripTrailingSignature(drafts[key].dm)));
   }
   return drafts;
+}
+
+// Defense-in-depth safety net: even with the corrected prompt, never let a body claim a
+// street address as the sender's or claim physical proximity to the recipient (their address
+// is not ours). Drops only the offending sentence so the rest of the message survives.
+// Deliberately narrow to avoid stripping benign phrases like "Out of curiosity".
+// ’ is the curly apostrophe used in stored drafts; match it alongside the straight one.
+const SENDER_LOCATION_RE = new RegExp([
+  // A sender operation attributed to a street address: "...out of 4260 Hastings", "located at 12 Main".
+  String.raw`\b(?:out of|based at|located at|based out of|operate[sd]? out of)\s+\d{1,6}\s+\w`,
+  // A sender operation attributed to a base location: "(cleaning) crew out of Burnaby",
+  // "business out of New West". The operation noun anchors it so "out of curiosity" is safe.
+  String.raw`\b(?:crew|business|operation|company|shop)\s+out of\b`,
+  String.raw`\b(?:i|we)\s+(?:run|operate|work)\b[^.?!]*\bout of\b`,
+  // Proximity / neighbour self-description ("I'm nearby", "I'm a neighbour", "I'm in the area").
+  String.raw`\bi(?:['’]m|\s+am)\s+(?:a\s+)?(?:nearby\b|in the (?:area|neighbou?rhood)|(?:a\s+)?neighbou?r\b)`,
+  String.raw`\b(?:i|we)\s+(?:work|live|operate|am|are)\s+(?:just\s+)?(?:nearby|down the street|around the corner|up the street|close by)`,
+  // Any first-person "neighbour"/"neighbor" self-reference (impersonation). "neighbourhood" is
+  // unaffected by the word boundary.
+  String.raw`\bneighbou?r\b`,
+  // Proximity by block distance: "a few blocks away", "a couple blocks over", "2 blocks from".
+  String.raw`\b(?:a few|a couple(?: of)?|several|two|three|four|five|\d+)\s+blocks?\b`,
+  String.raw`\bblocks?\s+(?:away|over|down|up|from)\b`,
+  // Habitual proximity to the recipient's location: walk/drive/pass past/by.
+  String.raw`\b(?:walk|drive|pass)(?:es|ing|ed|s)?\s+(?:past|by)\b`,
+  String.raw`\bdown the street\b`,
+  String.raw`\baround the corner\b`,
+].join('|'), 'i');
+
+export function stripSenderLocationClaims(body) {
+  const text = String(body || '');
+  // Split into sentences, keeping each sentence's trailing punctuation via lookbehind.
+  const sentences = text.split(/(?<=[.!?])\s+/);
+  const kept = sentences.filter((sentence) => !SENDER_LOCATION_RE.test(sentence));
+  return kept.join(' ').replace(/\s{2,}/g, ' ').trim();
 }
 
 const SIGNOFF_RE = /^(thanks(?:\s+(?:so much|again|a lot|in advance))?|thank you|thx|ty|best(?:\s+regards)?|cheers|sincerely(?:\s+yours)?|regards|kind\s+regards|warmly|warm\s+regards|talk\s+soon|cordially|yours(?:\s+truly)?|with\s+thanks|all\s+the\s+best|appreciate\s+it|looking\s+forward|respectfully)\b[,.!\s-]*$/i;

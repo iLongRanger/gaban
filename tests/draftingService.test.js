@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import DraftingService, { sanitizeMessageText, stripTrailingSignature, sanitizeDrafts } from '../src/services/draftingService.js';
+import DraftingService, { sanitizeMessageText, stripTrailingSignature, sanitizeDrafts, stripSenderLocationClaims } from '../src/services/draftingService.js';
 
 const DRAFT_RESPONSE = JSON.stringify({
   touch_1_poke:  { email_subject: 'overnight clean',  email_body: 'Hi, ...', dm: 'Hey ...' },
@@ -79,6 +79,76 @@ test('draftOutreach handles API error gracefully', async () => {
   const service = new DraftingService({ apiKey: 'test', model: 'gpt-5-mini', client });
   const drafts = await service.draftOutreach(SAMPLE_LEAD);
   assert.match(drafts.error, /Drafting failed/);
+});
+
+test('stripSenderLocationClaims removes a sentence attributing a street address to the sender', () => {
+  const input = "I noticed your busy lunches. I run a cleaning crew out of 4260 Hastings St, Burnaby. How do you handle it?";
+  const out = stripSenderLocationClaims(input);
+  assert.doesNotMatch(out, /4260 Hastings/);
+  assert.doesNotMatch(out, /crew out of/i);
+  assert.match(out, /I noticed your busy lunches\./);
+  assert.match(out, /How do you handle it\?/);
+});
+
+test('stripSenderLocationClaims removes neighbour and walk-past proximity claims', () => {
+  const input = "Hi, I'm a neighbour in Metro Vancouver and walk past your place often. How do you handle nightly cleaning?";
+  const out = stripSenderLocationClaims(input);
+  assert.doesNotMatch(out, /neighbou?r/i);
+  assert.doesNotMatch(out, /walk past/i);
+  assert.match(out, /How do you handle nightly cleaning\?/);
+});
+
+test('stripSenderLocationClaims handles smart apostrophes, "pass by", and "operate nearby"', () => {
+  // Real stored drafts use curly apostrophes (U+2019).
+  const a = stripSenderLocationClaims('Hi, I’m nearby in Metro Vancouver and pass by your cafe often. How do you handle cleaning?');
+  assert.doesNotMatch(a, /nearby|pass by/i);
+  assert.match(a, /How do you handle cleaning\?/);
+
+  const b = stripSenderLocationClaims('Hi, I operate nearby on Columbia Street and pass by your shop a lot. Who handles cleaning?');
+  assert.doesNotMatch(b, /operate nearby|pass by|Columbia Street/i);
+  assert.match(b, /Who handles cleaning\?/);
+
+  const c = stripSenderLocationClaims('Hi, I’m a local operator a few blocks away in Metro Vancouver. How do you handle end-of-day cleaning?');
+  assert.doesNotMatch(c, /a few blocks/i);
+  assert.match(c, /How do you handle end-of-day cleaning\?/);
+});
+
+test('stripSenderLocationClaims strips sender base city ("crew out of Burnaby") and bare neighbour claims', () => {
+  const a = stripSenderLocationClaims('I run a local cleaning crew out of Burnaby and handle kitchens. How do you manage it?');
+  assert.doesNotMatch(a, /crew out of|Burnaby/i);
+  assert.match(a, /How do you manage it\?/);
+
+  const b = stripSenderLocationClaims('Neighbour here in Metro Vancouver. How do you handle nightly cleaning?');
+  assert.doesNotMatch(b, /neighbou?r/i);
+  assert.match(b, /How do you handle nightly cleaning\?/);
+
+  // Must not break the benign idiom or general-area mentions.
+  assert.equal(
+    stripSenderLocationClaims('Out of curiosity, how do you handle cleaning in the neighbourhood?'),
+    'Out of curiosity, how do you handle cleaning in the neighbourhood?'
+  );
+});
+
+test('stripSenderLocationClaims keeps benign "Out of curiosity"', () => {
+  const input = 'Out of curiosity, how do you handle day-to-day cleaning between rushes?';
+  assert.equal(stripSenderLocationClaims(input), input);
+});
+
+test('sanitizeDrafts strips sender-location claims from all five bodies', () => {
+  const body = 'Quick thought for you. I run a cleaning crew out of 4260 Hastings St. Reply if useful.';
+  const drafts = {
+    touch_1_poke:  { email_subject: 'overnight clean',  email_body: body, dm: body },
+    touch_1_route: { email_subject: 'cleaning',         email_body: body, dm: body },
+    touch_2:       { email_subject: 'spots that slip',  email_body: body, dm: body },
+    touch_3:       { email_subject: 'one quick thing',  email_body: body, dm: body },
+    touch_4:       { email_subject: 'closing the file', email_body: body, dm: body },
+  };
+  const cleaned = sanitizeDrafts(drafts);
+  for (const key of ['touch_1_poke', 'touch_1_route', 'touch_2', 'touch_3', 'touch_4']) {
+    assert.doesNotMatch(cleaned[key].email_body, /4260 Hastings|crew out of/i, `${key} body still leaks address`);
+    assert.doesNotMatch(cleaned[key].dm, /4260 Hastings|crew out of/i, `${key} dm still leaks address`);
+    assert.match(cleaned[key].email_body, /Reply if useful\./, `${key} dropped benign content`);
+  }
 });
 
 test('sanitizeMessageText still strips em dashes and markdown', () => {
