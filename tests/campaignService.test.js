@@ -179,6 +179,97 @@ describe('CampaignService', () => {
     assert.equal(t4, 'touch_4');
   });
 
+  it('updates the send window columns and re-clamps pending sends to the new start time', () => {
+    const preset = seedPreset(db);
+    const leadId = seedLeadWithDrafts(db, 'window');
+    const service = new CampaignService({ db });
+    const campaign = service.createCampaign({
+      presetId: preset.id,
+      name: 'Window campaign',
+      leadIds: [leadId],
+      startAt: '2026-05-04T16:00:00.000Z',
+    });
+
+    const updated = service.updateSendWindow(campaign.id, { sendWindowStart: '11:00', sendWindowEnd: '15:00' });
+    assert.strictEqual(updated.send_window_start, '11:00');
+    assert.strictEqual(updated.send_window_end, '15:00');
+
+    const stored = db.prepare('SELECT send_window_start, send_window_end FROM campaigns WHERE id = ?').get(campaign.id);
+    assert.strictEqual(stored.send_window_start, '11:00');
+    assert.strictEqual(stored.send_window_end, '15:00');
+
+    // Same calendar dates, moved to the new 11:00 Vancouver (PDT) start = 18:00Z.
+    const sends = db.prepare('SELECT touch_number, scheduled_for FROM email_sends ORDER BY touch_number').all();
+    assert.deepStrictEqual(sends.map((s) => s.scheduled_for), [
+      '2026-05-04T18:00:00.000Z',
+      '2026-05-08T18:00:00.000Z',
+      '2026-05-18T18:00:00.000Z',
+      '2026-06-02T18:00:00.000Z',
+    ]);
+  });
+
+  it('leaves already-sent sends untouched when the window changes', () => {
+    const preset = seedPreset(db);
+    const leadId = seedLeadWithDrafts(db, 'window-sent');
+    const service = new CampaignService({ db });
+    const campaign = service.createCampaign({
+      presetId: preset.id,
+      name: 'Window sent campaign',
+      leadIds: [leadId],
+      startAt: '2026-05-04T16:00:00.000Z',
+    });
+    db.prepare("UPDATE email_sends SET status = 'sent', sent_at = ? WHERE touch_number = 1")
+      .run('2026-05-04T16:00:00.000Z');
+
+    service.updateSendWindow(campaign.id, { sendWindowStart: '11:00', sendWindowEnd: '15:00' });
+
+    const sends = db.prepare('SELECT touch_number, status, scheduled_for FROM email_sends ORDER BY touch_number').all();
+    assert.strictEqual(sends[0].scheduled_for, '2026-05-04T16:00:00.000Z');
+    assert.deepStrictEqual(sends.slice(1).map((s) => s.scheduled_for), [
+      '2026-05-08T18:00:00.000Z',
+      '2026-05-18T18:00:00.000Z',
+      '2026-06-02T18:00:00.000Z',
+    ]);
+  });
+
+  it('rejects an invalid send window by throwing', () => {
+    const preset = seedPreset(db);
+    const leadId = seedLeadWithDrafts(db, 'window-bad');
+    const service = new CampaignService({ db });
+    const campaign = service.createCampaign({
+      presetId: preset.id,
+      name: 'Window bad campaign',
+      leadIds: [leadId],
+      startAt: '2026-05-04T16:00:00.000Z',
+    });
+
+    assert.throws(() => service.updateSendWindow(campaign.id, { sendWindowStart: '17:00', sendWindowEnd: '09:00' }), /before/i);
+    assert.throws(() => service.updateSendWindow(campaign.id, { sendWindowStart: '9:00', sendWindowEnd: '17:00' }), /HH:MM/);
+
+    // Schedule untouched after a rejected update.
+    const first = db.prepare('SELECT scheduled_for FROM email_sends ORDER BY touch_number LIMIT 1').get();
+    assert.strictEqual(first.scheduled_for, '2026-05-04T16:00:00.000Z');
+  });
+
+  it('returns null for a finished campaign without modifying sends', () => {
+    const preset = seedPreset(db);
+    const leadId = seedLeadWithDrafts(db, 'window-finished');
+    const service = new CampaignService({ db });
+    const campaign = service.createCampaign({
+      presetId: preset.id,
+      name: 'Window finished campaign',
+      leadIds: [leadId],
+      startAt: '2026-05-04T16:00:00.000Z',
+    });
+    db.prepare("UPDATE campaigns SET status = 'finished' WHERE id = ?").run(campaign.id);
+
+    const result = service.updateSendWindow(campaign.id, { sendWindowStart: '11:00', sendWindowEnd: '15:00' });
+    assert.strictEqual(result, null);
+
+    const first = db.prepare('SELECT scheduled_for FROM email_sends ORDER BY touch_number LIMIT 1').get();
+    assert.strictEqual(first.scheduled_for, '2026-05-04T16:00:00.000Z');
+  });
+
   it('cancels future sends for a campaign lead', () => {
     const preset = seedPreset(db);
     const leadId = seedLeadWithDrafts(db, 'cancel');

@@ -11,6 +11,15 @@ function formatDate(value: string | null) {
   return new Date(value).toLocaleString();
 }
 
+function formatSendDays(sendDays: string | null) {
+  const labels: Record<string, string> = {
+    mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun',
+  };
+  const days = String(sendDays || 'mon,tue,wed,thu,fri').split(',').map((d) => d.trim()).filter(Boolean);
+  if (days.join(',') === 'mon,tue,wed,thu,fri') return 'Mon–Fri';
+  return days.map((d) => labels[d] || d).join(', ');
+}
+
 function statusTagClass(status: string) {
   if (['sent', 'replied', 'finished'].includes(status)) return 'tag tag--accent';
   if (['failed', 'bounced'].includes(status)) return 'tag tag--danger';
@@ -79,7 +88,12 @@ export default async function CampaignDetailPage({
         </div>
         <div className="flex items-center gap-3">
           <span className={statusTagClass(campaign.status)}>{campaign.status}</span>
-          <CampaignActions campaignId={campaign.id} status={campaign.status} />
+          <CampaignActions
+            campaignId={campaign.id}
+            status={campaign.status}
+            sendWindowStart={campaign.send_window_start}
+            sendWindowEnd={campaign.send_window_end}
+          />
         </div>
       </div>
 
@@ -113,6 +127,10 @@ export default async function CampaignDetailPage({
           <span className="text-xl font-semibold">{campaign.daily_cap}</span>
         </div>
       </div>
+
+      <p className="text-xs text-gray-500 mb-6">
+        Window {campaign.send_window_start}–{campaign.send_window_end} · {formatSendDays(campaign.send_days)} · {campaign.timezone}
+      </p>
 
       {campaign.status === 'finished' && campaign.summary ? (() => {
         const s = JSON.parse(campaign.summary);

@@ -1,4 +1,4 @@
-import { nextSendTime, scheduleSequence } from './sequenceScheduler.js';
+import { nextSendTime, scheduleSequence, clampToWindowStart, parseTime } from './sequenceScheduler.js';
 import { MetricsService } from './metricsService.js';
 
 // Stored on the campaign for sequence length / finalize count. Slot 0 ('touch_1') is a
@@ -218,6 +218,60 @@ export class CampaignService {
     }
 
     return changed;
+  }
+
+  updateSendWindow(id, { sendWindowStart, sendWindowEnd } = {}, { minGapMinutes = 2 } = {}) {
+    const start = parseTime(sendWindowStart, 'send_window_start');
+    const end = parseTime(sendWindowEnd, 'send_window_end');
+    if (start.hours * 60 + start.minutes >= end.hours * 60 + end.minutes) {
+      throw new Error('send_window_start must be before send_window_end');
+    }
+
+    const update = this.db.transaction(() => {
+      const campaign = this.db.prepare('SELECT * FROM campaigns WHERE id = ?').get(id);
+      if (!campaign || campaign.status === 'finished') return null;
+
+      const now = new Date().toISOString();
+      this.db.prepare(
+        `UPDATE campaigns SET send_window_start = ?, send_window_end = ?, updated_at = ? WHERE id = ?`
+      ).run(sendWindowStart, sendWindowEnd, now, id);
+
+      const updated = this.db.prepare('SELECT * FROM campaigns WHERE id = ?').get(id);
+      const options = campaignScheduleOptions(updated);
+
+      const otherScheduledTimes = this.db.prepare(
+        `SELECT es.scheduled_for
+         FROM email_sends es
+         JOIN campaign_leads cl ON cl.id = es.campaign_lead_id
+         WHERE es.status = 'scheduled' AND cl.campaign_id != ?
+         ORDER BY es.scheduled_for`
+      ).all(id).map((row) => row.scheduled_for);
+
+      const pending = this.db.prepare(
+        `SELECT es.id, es.scheduled_for
+         FROM email_sends es
+         JOIN campaign_leads cl ON cl.id = es.campaign_lead_id
+         WHERE cl.campaign_id = ? AND es.status = 'scheduled'
+         ORDER BY es.scheduled_for ASC, es.id ASC`
+      ).all(id);
+
+      const minGapMs = minGapMinutes * 60 * 1000;
+      const existingTimes = otherScheduledTimes.map((value) => new Date(value).getTime());
+
+      for (const send of pending) {
+        let candidate = clampToWindowStart(send.scheduled_for, options);
+        while (existingTimes.some((time) => Math.abs(time - candidate.getTime()) < minGapMs)) {
+          candidate = nextSendTime(new Date(candidate.getTime() + minGapMs), options);
+        }
+        this.db.prepare(`UPDATE email_sends SET scheduled_for = ? WHERE id = ?`)
+          .run(candidate.toISOString(), send.id);
+        existingTimes.push(candidate.getTime());
+      }
+
+      return this.getCampaign(id);
+    });
+
+    return update();
   }
 
   cancelFutureSends(campaignLeadId, { reason = 'cancelled' } = {}) {

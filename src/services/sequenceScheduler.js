@@ -3,7 +3,7 @@ const DEFAULT_TOUCH_OFFSETS = [0, 4, 10, 21];
 
 const WEEKDAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 
-function parseTime(value, field) {
+export function parseTime(value, field) {
   const match = /^(\d{2}):(\d{2})$/.exec(value);
   if (!match) throw new Error(`${field} must be HH:MM`);
   const hours = Number(match[1]);
@@ -114,6 +114,19 @@ function addBusinessDays(start, count, options = {}) {
     if (sendDays.includes(weekday)) remaining -= 1;
   }
   return wallTimeToUtc(parts, timeZone);
+}
+
+// Re-clamp an existing UTC ISO timestamp to the window start on its own local date.
+// Reuses nextSendTime so a date on a non-send weekday bumps to the next allowed day.
+export function clampToWindowStart(scheduledFor, options = {}) {
+  const timeZone = options.timeZone || 'America/Vancouver';
+  const windowStart = parseTime(options.sendWindowStart || '09:00', 'sendWindowStart');
+  const parts = partsInTimeZone(new Date(scheduledFor), timeZone);
+  const wallAtStart = wallTimeToUtc(
+    { ...parts, hours: windowStart.hours, minutes: windowStart.minutes },
+    timeZone
+  );
+  return nextSendTime(wallAtStart, options);
 }
 
 export function scheduleSequence({

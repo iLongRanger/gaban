@@ -1,7 +1,7 @@
 # Editable Campaign Send Window — Design Spec
 
 **Date:** 2026-06-11
-**Status:** Awaiting user review
+**Status:** Implemented
 
 ## Problem
 

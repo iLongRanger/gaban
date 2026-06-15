@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { nextSendTime, scheduleSequence } from '../src/services/sequenceScheduler.js';
+import { nextSendTime, scheduleSequence, clampToWindowStart } from '../src/services/sequenceScheduler.js';
 
 const OPTIONS = {
   timeZone: 'America/Vancouver',
@@ -35,5 +35,17 @@ describe('sequenceScheduler', () => {
       options: OPTIONS,
     });
     assert.strictEqual(scheduled[0].scheduledFor, '2026-05-04T16:02:00.000Z');
+  });
+
+  it('clamps a timestamp to the new window start on the same local date', () => {
+    // 2026-05-08T16:00Z is 09:00 Vancouver (PDT). New 11:00 start → 18:00Z same date.
+    const result = clampToWindowStart('2026-05-08T16:00:00.000Z', { ...OPTIONS, sendWindowStart: '11:00' });
+    assert.strictEqual(result.toISOString(), '2026-05-08T18:00:00.000Z');
+  });
+
+  it('bumps to the next send day when the clamped date is a non-send weekday', () => {
+    // 2026-05-09 is a Saturday in Vancouver → clamp lands on Monday 2026-05-11 at window start.
+    const result = clampToWindowStart('2026-05-09T16:00:00.000Z', OPTIONS);
+    assert.strictEqual(result.toISOString(), '2026-05-11T16:00:00.000Z');
   });
 });
