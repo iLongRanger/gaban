@@ -46,6 +46,18 @@ test('prompt describes both opener arms and the 1-2-3 breakup, and drops the inv
   assert.doesNotMatch(prompt, /Who handles your cleaning/i);
 });
 
+test('prompt never feeds the lead address as the sender location or invites proximity claims', () => {
+  const service = new DraftingService({ apiKey: 'test', model: 'gpt-5-mini', client: createMockClient(DRAFT_RESPONSE) });
+  const prompt = service.buildDraftingPrompt(SAMPLE_LEAD);
+  // The lead's own address must never appear — it was being mislabeled as the sender's area,
+  // which produced "I run a cleaning crew out of {recipient's address}".
+  assert.doesNotMatch(prompt, /123 Main St/);
+  assert.doesNotMatch(prompt, /sender's area, use the city in this address/i);
+  // The prompt must forbid sender street addresses and proximity/neighbour claims.
+  assert.match(prompt, /never state a street address/i);
+  assert.match(prompt, /never claim to be nearby, a neighbour/i);
+});
+
 test('prompt swaps social proof and gap examples per vertical', () => {
   const service = new DraftingService({ apiKey: 'test', model: 'gpt-5-mini', client: createMockClient(DRAFT_RESPONSE) });
   const restaurant = service.buildDraftingPrompt({ ...SAMPLE_LEAD, type: 'Restaurant' });

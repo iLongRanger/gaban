@@ -94,10 +94,10 @@ export default class DraftingService {
     return `You are writing a cold outreach sequence with five drafts: two Touch 1 opener variants plus three follow-ups, on behalf of the owner of a commercial cleaning crew in Metro Vancouver. The sender is a real local operator. Identify honestly. Never pretend to be a neighbour or unrelated party.
 
 GLOBAL RULES:
-- Never invent a company name, person name, phone, website, email, or a client you do not have. A real signature is appended by the system; do not write a sign-off, closing salutation, or trailing name/phone/website.
+- Never invent a company name, person name, phone, website, email, street address, or a client you do not have. A real signature with the sender's name and address is appended by the system; do not write a sign-off, closing salutation, or trailing name/phone/website/address.
 - Refer to the sender only as "I" or "we". Each email under 75 words. Each DM under 40 words. Plain prose, normal punctuation only. No em dashes, double hyphens, tildes, markdown, bullets, or emojis.
 - You-dominant: the reader's situation should lead, not who we are. Use contractions. Aim for a 5th-grade reading level. No "quick question", no "I hope this finds you well".
-- For the sender's area, use the city in this address: "${lead.formatted_address || 'Metro Vancouver'}". If unclear, say "around Metro Vancouver".
+- The sender is a commercial cleaning operator based in Metro Vancouver who serves the wider region. Refer to the reader's location only in general terms (e.g. "around Metro Vancouver" or "your area"). The recipient's mailing address is THEIRS, never yours: never state a street address in the body, and never claim to be nearby, a neighbour, or to walk or drive past their location.
 - Subjects: lowercase, 2 to 4 words, internal-looking (e.g. "overnight clean", "shop floor"). No clickbait, no question marks, no "free"/"quote"/"price".
 
 BUSINESS:
