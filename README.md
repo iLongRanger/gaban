@@ -109,9 +109,12 @@ Every page lives at `src/web/app/(app)/<section>/page.tsx`; the layout (`(app)/l
 | `npm start`           | Run the pipeline once.                            |
 | `npm test`            | Node test runner (145 tests).                     |
 | `npm run test:watch`  | Watch mode.                                       |
-| `npm run dev`         | Next dev server on `:3003`.                       |
+| `npm run dev`         | Next dev server on `:3010`.                       |
+| `npm run dev:all`     | Web + worker + Cloudflare tunnel in one terminal with a live status dashboard (dev mode). |
 | `npm run build:web`   | Production Next build.                            |
-| `npm run start:web`   | Production Next server on `:3003`.                |
+| `npm run start:web`   | Production Next server on `:3010`.                |
+| `npm run start:worker`| Background worker (send queue, response monitor, health checks, finalize sweep). |
+| `npm run start:all`   | Web + worker + Cloudflare tunnel in one terminal with a live status dashboard (prod; run `build:web` first). |
 | `npm run dev:pipeline`| `node --watch` of the pipeline (for local dev).   |
 | `npm run seed`        | Seed initial presets / system settings.           |
 
@@ -119,7 +122,8 @@ Standalone helpers in `scripts/`:
 
 - `import-leads-csv.mjs` — recover a fallback CSV into SQLite.
 - `microsoft-auth-url.mjs` / `microsoft-exchange-code.mjs` — Outlook OAuth flow.
-- `start-cloudflared-tunnel.ps1`, `start-bot-web.ps1`, `install-startup-tasks.ps1` — Windows service wiring.
+- `start-all.mjs` — single-terminal supervisor: starts web + worker + Cloudflare tunnel, streams each to `logs/`, and shows a live ✓/✗ status dashboard (`npm run start:all` / `dev:all`).
+- `start-cloudflared-tunnel.ps1`, `start-bot-web.ps1`, `install-startup-tasks.ps1` — Windows scheduled-task wiring (runs the same three services headless at logon).
 
 ---
 

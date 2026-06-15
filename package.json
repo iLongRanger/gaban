@@ -10,11 +10,11 @@
     "test:watch": "node --test --watch tests/*.test.js",
     "dev": "next dev src/web -p 3010",
     "dev:pipeline": "node --watch src/cli/run.js",
-    "dev:all": "concurrently -n web,worker -c blue,green \"next dev src/web -p 3010\" \"node src/worker/background.js\"",
+    "dev:all": "node scripts/start-all.mjs --dev",
     "build:web": "next build src/web",
     "start:web": "next start src/web -p 3010",
     "start:worker": "node src/worker/background.js",
-    "start:all": "concurrently -n web,worker -c blue,green \"next start src/web -p 3010\" \"node src/worker/background.js\"",
+    "start:all": "node scripts/start-all.mjs",
     "seed": "node src/web/lib/seed.js"
   },
   "dependencies": {
@@ -33,7 +33,6 @@
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^25.4.0",
     "@types/react": "^19.2.14",
-    "concurrently": "^10.0.3",
     "postcss": "^8.5.8",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.9.3"
