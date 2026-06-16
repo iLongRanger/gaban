@@ -98,7 +98,7 @@ GLOBAL RULES:
 - Refer to the sender only as "I" or "we". Each email under 75 words. Each DM under 40 words. Plain prose, normal punctuation only. No em dashes, double hyphens, tildes, markdown, bullets, or emojis.
 - You-dominant: the reader's situation should lead, not who we are. Use contractions. Aim for a 5th-grade reading level. No "quick question", no "I hope this finds you well".
 - The sender is a commercial cleaning operator based in Metro Vancouver who serves the wider region. Refer to the reader's location only in general terms (e.g. "around Metro Vancouver" or "your area"). The recipient's mailing address is THEIRS, never yours: never state a street address in the body, and never claim to be nearby, a neighbour, or to walk or drive past their location.
-- Subjects: lowercase, 2 to 4 words, internal-looking (e.g. "overnight clean", "shop floor"). No clickbait, no question marks, no "free"/"quote"/"price".
+- Subjects: lowercase, 2 to 4 words, plain and topical so they honestly describe what the email is about (e.g. "office cleaning", "nightly clean", "floor care"). Never disguise the email as internal company mail, a personal note, or a reply. No clickbait, no question marks, no "free"/"quote"/"price".
 
 BUSINESS:
 - Name: ${lead.business_name}
