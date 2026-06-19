@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { ALL_CATEGORIES } from '../../../../config/categories.js';
 
 interface Preset {
   id: number;
@@ -39,12 +40,7 @@ interface Suppression {
   added_at: string;
 }
 
-const ALL_CATEGORIES = [
-  'restaurants', 'offices', 'clinics', 'gyms',
-  'schools', 'retail stores', 'community centers', 'industrial facilities'
-];
-
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const DAYS =['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 function cronToUI(cron: string): { day: number; hour: number; minute: number } {
   const parts = cron.split(' ');
