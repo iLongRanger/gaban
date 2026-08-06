@@ -5,14 +5,26 @@ export const VERTICALS = new Set([
   'retail',
   'office',
   'medical',
+  'physiotherapy',
+  'spa',
   'civic',
 ]);
 
 // Order matters: specific verticals must be tested before general ones.
+// physiotherapy wins over medical so "Physiotherapy Center" -> physiotherapy (medical also matches "physio").
+// spa wins over medical and retail so "Day Spa" -> spa (retail also matches "spa").
 // medical wins over industrial so "Medical equipment supplier" -> medical.
 // civic wins over office so "Government office" -> civic.
 // brewery wins over retail so "Cocktail bar" -> brewery (no retail overlap, but order is intentional).
 const RULES = [
+  {
+    vertical: 'physiotherapy',
+    patterns: [/physio|physical\s+therap|physiotherap/i],
+  },
+  {
+    vertical: 'spa',
+    patterns: [/\bspa\b|day\s*spa|med(?:i)?\s*spa|esthetic|aesthetic/i],
+  },
   {
     vertical: 'medical',
     patterns: [/medical|dental|dentist|physio|clinic|laboratory|\blab\b|skin\s*care|massage|wellness|chiropract|mental\s+health|women'?s\s+health|x-?ray|optometr|naturopath/i],

@@ -8,43 +8,71 @@ const VERTICAL_COPY = {
     noun: 'kitchen',
     gap_examples: 'a greasy hood vent, a sticky floor by the bar, or a washroom that slipped overnight',
     social_proof: 'a restaurant near New West Station that switched because their old crew got inconsistent',
-    value_tip: 'the five things Vancouver Coastal Health inspectors check first in a kitchen',
+    // Grounded in VCH's own published inspection areas (food-contact surfaces, handwashing,
+    // waste/pest control) so the give-first tip is real, not an invented "top five" claim.
+    value_tip: 'the cleaning-side items health inspectors actually flag: sanitized food-contact surfaces, a stocked handwash sink, and clean floor drains and waste areas that keep pests down',
   },
   brewery: {
     noun: 'taproom',
     gap_examples: 'glycol seeping into a floor drain, a sour smell in the trench grate, or sticky tap mats',
     social_proof: 'a brewery in East Van that switched after their old crew kept skipping the floor-trough work',
-    value_tip: "a floor-drain and glycol cleanup routine that won't void your equipment warranty",
+    // WorkSafeBC names standing water and grease on floors as a slip hazard; keep it factual,
+    // not the old unsourceable "won't void your warranty" claim.
+    value_tip: 'the slip risk WorkSafeBC ties to standing water and glycol on the floor, so clean floor troughs and drains and dry tap mats matter more than they look',
   },
   industrial: {
     noun: 'shop',
     gap_examples: 'fine dust on high shelving, oil drift near the bay doors, or yard grit tracking inside',
     social_proof: 'CREDENTIAL_ONLY',
-    value_tip: 'the dust-control and walkway items that fail WorkSafeBC walkthroughs',
+    // WorkSafeBC lists dust, oil and grease on floors as slip hazards and calls for clear
+    // walkways and drip pans/containment. Real attribution, not an invented "fails walkthroughs".
+    value_tip: 'what WorkSafeBC ties to slips on a shop floor, dust, oil and grease plus blocked walkways, so drip pans, contained storage and clear paths matter more than a shiny floor',
   },
   retail: {
     noun: 'store',
     gap_examples: 'fingerprinted entrance glass, dust on display fixtures, or wet-season grit at the door',
     social_proof: 'a store in the River District that switched for a more consistent crew',
-    value_tip: 'a winter-entrance routine that keeps slip risk down without wrecking your floors',
+    // WorkSafeBC names tracked-in water as a slip hazard; a wet-season entrance routine is
+    // genuinely useful advice grounded in that, not a floor-damage claim we can't back.
+    value_tip: 'the slip risk WorkSafeBC ties to tracked-in water and grit at the door, so a wet-season entrance routine with good mats and prompt drying is worth the effort',
   },
   office: {
     noun: 'office',
     gap_examples: 'monitor and desk dust, kitchenette grime, or washroom restock falling behind midweek',
     social_proof: 'CREDENTIAL_ONLY',
-    value_tip: 'the disinfection items most janitorial scopes quietly dropped after 2022',
+    // Public-health guidance (CDC / BCCDC-affiliated NCCEH) says frequently-touched surfaces
+    // get disinfected at least daily. Real, not the old unverifiable "dropped after 2022" claim.
+    value_tip: 'the high-touch spots public-health guidance says to disinfect daily, door handles, light switches, shared phones and keyboards, which are the first thing a rushed crew skips',
   },
   medical: {
     noun: 'clinic',
     gap_examples: 'treatment-room turnover that slips on busy afternoons, or a waiting room that loses its edge before the front desk notices',
     social_proof: 'a clinic in Port Coquitlam that switched because they needed a crew used to treatment-room cadence',
-    value_tip: 'a treatment-room and high-touch disinfection checklist patients actually notice',
+    // Same public-health high-touch guidance, framed for a clinic.
+    value_tip: 'the high-touch points public-health guidance says to disinfect daily, waiting-room door handles, light switches and chair arms, plus treatment-room surfaces between patients',
+  },
+  physiotherapy: {
+    noun: 'clinic',
+    gap_examples: 'treatment tables between patients, shared exercise mats and equipment, or a waiting room that slips on busy afternoons',
+    social_proof: 'CREDENTIAL_ONLY',
+    // Same public-health high-touch guidance, framed for a physio clinic's shared equipment.
+    value_tip: 'the high-touch points public-health guidance says to disinfect daily, treatment tables and shared equipment between patients, plus waiting-room handles and light switches',
+  },
+  spa: {
+    noun: 'spa',
+    gap_examples: 'treatment rooms that lose their edge midday, change and shower areas, or foot-spa basins that need more than a rinse',
+    social_proof: 'CREDENTIAL_ONLY',
+    // Grounded in the BC Guidelines for Personal Service Establishments (foot-spa basins and
+    // shared tools cleaned and disinfected between clients). Real authority, no invented claim.
+    value_tip: 'what BC personal-service guidelines focus on, foot-spa basins and shared tools cleaned and disinfected between clients, plus treatment surfaces wiped down between appointments',
   },
   civic: {
     noun: 'facility',
     gap_examples: 'a high-traffic lobby, public washrooms that need restock cadence not just a nightly scrub, or entrance glass the public reads as your standards',
     social_proof: 'a community center in downtown Vancouver that switched because they wanted a crew comfortable working around active-hour foot traffic',
-    value_tip: 'a public-washroom restock cadence that holds up through peak hours',
+    // High-touch washroom points per public-health guidance, plus operational restock advice
+    // (the restock cadence is our own practical tip, not attributed to any authority).
+    value_tip: 'the washroom high-touch points public-health guidance says to disinfect daily, faucets, stall latches and dispensers, plus a restock cadence that holds through peak hours',
   },
 };
 
@@ -91,14 +119,16 @@ export default class DraftingService {
       .map((r) => `- "${r.review_text}"`)
       .join('\n');
 
-    return `You are writing a cold outreach sequence with five drafts: two Touch 1 opener variants plus three follow-ups, on behalf of the owner of a commercial cleaning crew in Metro Vancouver. The sender is a real local operator. Identify honestly. Never pretend to be a neighbour or unrelated party.
+    return `You are writing a five-touch cold outreach sequence for the owner of a small commercial cleaning crew in Metro Vancouver. The sender is a real local operator. Identify honestly. Never pretend to be a neighbour, a customer, or an unrelated party.
+
+WHAT MAKES THIS CREW DIFFERENT (weave in naturally, never list as features): a small insured crew of five, so the same people clean the space every week and the reader is not chasing a call centre when something is off. That consistency is the hook. The core pain we solve is cleaners who start strong and quietly coast after the first month.
 
 GLOBAL RULES:
 - Never invent a company name, person name, phone, website, email, street address, or a client you do not have. A real signature with the sender's name and address is appended by the system; do not write a sign-off, closing salutation, or trailing name/phone/website/address.
-- Refer to the sender only as "I" or "we". Each email under 75 words. Each DM under 40 words. Plain prose, normal punctuation only. No em dashes, double hyphens, tildes, markdown, bullets, or emojis.
-- You-dominant: the reader's situation should lead, not who we are. Use contractions. Aim for a 5th-grade reading level. No "quick question", no "I hope this finds you well".
+- Refer to the sender only as "I" or "we". Each email under 80 words. Each DM under 40 words. Plain prose, normal punctuation only. No em dashes, double hyphens, tildes, markdown, bullets, or emojis.
+- You-dominant: the reader's situation should lead, not who we are. Use contractions. Aim for a 5th-grade reading level. No "quick question", no "I hope this finds you well", no "just checking in".
 - The sender is a commercial cleaning operator based in Metro Vancouver who serves the wider region. Refer to the reader's location only in general terms (e.g. "around Metro Vancouver" or "your area"). The recipient's mailing address is THEIRS, never yours: never state a street address in the body, and never claim to be nearby, a neighbour, or to walk or drive past their location.
-- Subjects: lowercase, 2 to 4 words, plain and topical so they honestly describe what the email is about (e.g. "office cleaning", "nightly clean", "floor care"). Never disguise the email as internal company mail, a personal note, or a reply. No clickbait, no question marks, no "free"/"quote"/"price".
+- Subjects: lowercase, 2 to 4 words, plain and topical so they honestly describe what the email is about (e.g. "office cleaning", "your cleaners", "nightly clean", "floor care"). Never disguise the email as internal company mail, a personal note, or a reply. No clickbait, no question marks, no "free"/"quote"/"price".
 
 BUSINESS:
 - Name: ${lead.business_name}
@@ -107,7 +137,7 @@ BUSINESS:
 - Rating: ${lead.rating ?? 'N/A'}/5 (${lead.reviews_count ?? 0} reviews)
 
 VERTICAL CONTEXT:
-- Gap examples for this vertical (use ONE, paraphrased): ${copy.gap_examples}
+- Drift examples for this vertical (the reader's cleaners quietly slid to this; use ONE, paraphrased): ${copy.gap_examples}
 - Social proof for touch 2: ${proof}
 - Useful tip for touch 3 (give-first, no pitch): ${copy.value_tip}
 - Noun for this vertical: ${copy.noun}
@@ -117,13 +147,13 @@ ${reviewSnippets || 'No reviews available'}
 
 WRITE THESE FIVE PIECES:
 
-TOUCH 1 ARM A (poke-the-bear question) — open with the trigger observation, then ask ONE neutral question that exposes the invisible reliability gap (for example, whether a missed ${copy.noun} job gets caught by staff or by a customer first). Close with one short identity line. No offer, no pitch.
+TOUCH 1 ARM A (poke + soft walkthrough) — open with the real pain as a poke: ask whether their cleaners still do everything they did the first month, or whether it has quietly slid to ONE of the drift examples above (paraphrased, tied to their ${copy.noun}). Land the consistency hook in one line (same insured crew, no call centre). Close by offering a no-charge 15-minute walkthrough to point out what usually gets missed, with a one-line reply ask such as "reply with a day that works". No pricing talk, no hard pitch.
 
-TOUCH 1 ARM B (routing question) — open with one short observation, then ask plainly who looks after the cleaning there. Offer to share what we'd do if they're the right person, and give an easy out if not. One identity line. No offer beyond that.
+TOUCH 1 ARM B (routing question) — open with one short observation from the drift examples, then ask plainly who looks after the cleaning there. Offer to share what we'd do if they're the right person, and give an easy out if not. One identity line. Keep it shorter than Arm A.
 
-TOUCH 2 (social proof + low-friction walkthrough) — reference the touch 1 gap once, mention the social proof above naturally, then offer a no-obligation 15-minute walkthrough to point out what usually gets missed. No pressure. Do not ask for any financial document, budget figure, or current contract.
+TOUCH 2 (social proof + walkthrough) — reference the touch 1 drift once, mention the social proof above naturally, then re-offer the no-obligation 15-minute walkthrough to point out what usually gets missed. No pressure. Do not ask for any financial document, budget figure, or current contract.
 
-TOUCH 3 (give-first) — share the useful tip above as a genuinely helpful note. End with "no reply needed". No ask.
+TOUCH 3 (give-first with a human face) — open by making clear there's no pitch, just something useful. Introduce yourself in ONE clause as the owner of a small insured cleaning crew that works across Metro Vancouver (do NOT write a name; the appended signature supplies it). Then state the useful tip above INLINE as a genuinely helpful note tied to their ${copy.noun}. Deliver the actual content in the email itself; never promise a list, checklist, PDF, link, or attachment you are not including, and never claim an authority ranks or counts items unless the tip says so. End with "no reply needed". No ask.
 
 TOUCH 4 (breakup, 1-2-3) — acknowledge no reply, say you'll close the file, then offer a one-line reply menu exactly in this spirit: "reply with a number: 1 — worth a quick chat, 2 — not now, check back in a few months, 3 — not for us." Three sentences max plus the menu.
 

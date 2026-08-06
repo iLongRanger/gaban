@@ -86,7 +86,7 @@ export default async function TodayPage({
     <div className="boot">
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, marginBottom: 6 }}>
         <div>
-          <div className="label" style={{ marginBottom: 6 }}>TODAY - 05</div>
+          <div className="label" style={{ marginBottom: 6 }}>TODAY - 06</div>
           <h1 style={{ fontSize: 28, margin: 0 }}>Scheduled email queue</h1>
           <p style={{ fontSize: 13, color: 'var(--mute)', marginTop: 6, marginBottom: 0 }}>
             Messages scheduled for {formatDate(start)} in Vancouver time.

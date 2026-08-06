@@ -41,7 +41,6 @@ test('classifies medical, dental, and wellness into medical', () => {
   assert.equal(classifyVertical({ type: 'Medical clinic' }), 'medical');
   assert.equal(classifyVertical({ type: 'Dentist' }), 'medical');
   assert.equal(classifyVertical({ type: 'Dental clinic' }), 'medical');
-  assert.equal(classifyVertical({ type: 'Physiotherapy Center' }), 'medical');
   assert.equal(classifyVertical({ type: 'Medical laboratory' }), 'medical');
   assert.equal(classifyVertical({ type: 'Skin care clinic' }), 'medical');
   assert.equal(classifyVertical({ type: 'Massage therapist' }), 'medical');
@@ -49,6 +48,19 @@ test('classifies medical, dental, and wellness into medical', () => {
   assert.equal(classifyVertical({ type: "Women's health clinic" }), 'medical');
   assert.equal(classifyVertical({ type: 'X-ray lab' }), 'medical');
   assert.equal(classifyVertical({ type: 'Chiropractor' }), 'medical');
+});
+
+test('classifies physiotherapy into its own vertical (wins over medical)', () => {
+  assert.equal(classifyVertical({ type: 'Physiotherapy Center' }), 'physiotherapy');
+  assert.equal(classifyVertical({ type: 'Physiotherapist' }), 'physiotherapy');
+  assert.equal(classifyVertical({ type: 'Physical therapy clinic' }), 'physiotherapy');
+});
+
+test('classifies spas into their own vertical (wins over medical and retail)', () => {
+  assert.equal(classifyVertical({ type: 'Spa' }), 'spa');
+  assert.equal(classifyVertical({ type: 'Day spa' }), 'spa');
+  assert.equal(classifyVertical({ type: 'Medical spa' }), 'spa');
+  assert.equal(classifyVertical({ type: 'Esthetics' }), 'spa');
 });
 
 test('medical wins over industrial for "medical equipment supplier"', () => {
@@ -79,9 +91,9 @@ test('falls back to office for generic professional services', () => {
   assert.equal(classifyVertical({}), 'office');
 });
 
-test('exports the canonical 7-vertical set', () => {
+test('exports the canonical 9-vertical set', () => {
   assert.deepEqual(
     [...VERTICALS].sort(),
-    ['brewery', 'civic', 'industrial', 'medical', 'office', 'restaurant', 'retail']
+    ['brewery', 'civic', 'industrial', 'medical', 'office', 'physiotherapy', 'restaurant', 'retail', 'spa']
   );
 });

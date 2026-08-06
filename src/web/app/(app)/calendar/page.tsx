@@ -131,7 +131,7 @@ export default async function CalendarPage({
     <div className="boot">
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, marginBottom: 6 }}>
         <div>
-          <div className="label" style={{ marginBottom: 6 }}>CALENDAR - 06</div>
+          <div className="label" style={{ marginBottom: 6 }}>CALENDAR - 07</div>
           <h1 style={{ fontSize: 28, margin: 0 }}>Scheduled email runway</h1>
           <p style={{ fontSize: 13, color: 'var(--mute)', marginTop: 6, marginBottom: 0 }}>
             Upcoming scheduled sends by day. Plan your next scrape before the queue runs dry.
