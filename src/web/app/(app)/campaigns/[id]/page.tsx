@@ -59,6 +59,23 @@ export default async function CampaignDetailPage({
      ORDER BY es.scheduled_for ASC, es.touch_number ASC`
   ).all(id) as any[];
 
+  // Opens are counted per send: the human count drives the badge, and machine
+  // fetches (scanner prefetch) are kept separate so they never read as
+  // interest from the prospect.
+  const openRows = db.prepare(
+    `SELECT ev.send_id,
+            SUM(CASE WHEN COALESCE(json_extract(ev.raw_payload, '$.machine'), 0) = 0 THEN 1 ELSE 0 END) AS opens,
+            MIN(CASE WHEN COALESCE(json_extract(ev.raw_payload, '$.machine'), 0) = 0 THEN ev.detected_at END) AS first_open
+     FROM email_events ev
+     JOIN email_sends es ON es.id = ev.send_id
+     JOIN campaign_leads cl ON cl.id = es.campaign_lead_id
+     WHERE cl.campaign_id = ? AND ev.type = 'opened'
+     GROUP BY ev.send_id`
+  ).all(id) as any[];
+  const opensBySend = new Map<number, { opens: number; first_open: string | null }>(
+    openRows.map((r) => [r.send_id, { opens: r.opens, first_open: r.first_open }])
+  );
+
   const sendsByLead = new Map<number, any[]>();
   for (const send of sends) {
     const current = sendsByLead.get(send.campaign_lead_id) || [];
@@ -200,7 +217,9 @@ export default async function CampaignDetailPage({
               </div>
 
               <div className="grid grid-cols-3 gap-3">
-                {leadSends.map((send) => (
+                {leadSends.map((send) => {
+                  const open = opensBySend.get(send.id);
+                  return (
                   <div key={send.id} className="border border-gray-100 rounded p-3 bg-gray-50">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-medium">Touch {send.touch_number}</span>
@@ -208,11 +227,20 @@ export default async function CampaignDetailPage({
                     </div>
                     <p className="text-xs text-gray-500">{send.template_style}</p>
                     <p className="text-xs text-gray-400 mt-1">{formatDate(send.scheduled_for)}</p>
+                    {send.status === 'sent' && open && open.opens > 0 ? (
+                      <p
+                        className="text-xs text-emerald-700 mt-1"
+                        title={`First opened ${formatDate(open.first_open)}`}
+                      >
+                        Opened{open.opens > 1 ? ` ×${open.opens}` : ''}
+                      </p>
+                    ) : null}
                     {send.error_message ? (
                       <p className="text-xs text-red-600 mt-2">{send.error_message}</p>
                     ) : null}
                   </div>
-                ))}
+                  );
+                })}
               </div>
               <OutcomeForm campaignLeadId={lead.id} />
             </div>

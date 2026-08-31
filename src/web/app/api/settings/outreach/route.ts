@@ -6,7 +6,14 @@ const DAILY_CAP_KEY = 'outreach.daily_cap';
 const WARMUP_START_KEY = 'outreach.warmup_start_date';
 const WARMUP_LADDER_KEY = 'outreach.warmup_ladder';
 const AUTO_REPLY_ACTION_KEY = 'outreach.auto_reply_action';
-const KEYS = [DAILY_CAP_KEY, WARMUP_START_KEY, WARMUP_LADDER_KEY, AUTO_REPLY_ACTION_KEY];
+const TRACKING_ENABLED_KEY = 'outreach.tracking_enabled';
+const KEYS = [
+  DAILY_CAP_KEY,
+  WARMUP_START_KEY,
+  WARMUP_LADDER_KEY,
+  AUTO_REPLY_ACTION_KEY,
+  TRACKING_ENABLED_KEY,
+];
 
 function toResponse(settings: Record<string, string>) {
   return {
@@ -16,6 +23,7 @@ function toResponse(settings: Record<string, string>) {
       ? JSON.parse(settings[WARMUP_LADDER_KEY]).join(',')
       : '',
     auto_reply_action: settings[AUTO_REPLY_ACTION_KEY] ?? 'continue',
+    tracking_enabled: settings[TRACKING_ENABLED_KEY] === 'true',
   };
 }
 
@@ -55,6 +63,12 @@ function parseAutoReplyAction(value: unknown) {
   return action;
 }
 
+// Stored as a string because every system setting is; the send worker compares
+// it against 'true', so anything else leaves tracking off.
+function parseTrackingEnabled(value: unknown) {
+  return value === true || value === 'true' ? 'true' : 'false';
+}
+
 export function GET() {
   const db = getDb();
   const settings = new SystemSettingsService({ db }).getSettings(KEYS);
@@ -71,6 +85,7 @@ export async function PATCH(request: NextRequest) {
       [WARMUP_START_KEY]: parseDate(body.warmup_start_date),
       [WARMUP_LADDER_KEY]: parseLadder(body.warmup_ladder),
       [AUTO_REPLY_ACTION_KEY]: parseAutoReplyAction(body.auto_reply_action),
+      [TRACKING_ENABLED_KEY]: parseTrackingEnabled(body.tracking_enabled),
     };
     const service = new SystemSettingsService({ db });
     service.updateSettings(values);

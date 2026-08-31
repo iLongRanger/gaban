@@ -28,6 +28,7 @@ interface OutreachSettings {
   warmup_start_date: string;
   warmup_ladder: string;
   auto_reply_action: string;
+  tracking_enabled: boolean;
 }
 
 interface Suppression {
@@ -67,6 +68,7 @@ export default function SettingsPage() {
     warmup_start_date: '',
     warmup_ladder: '5,10,15,20',
     auto_reply_action: 'continue',
+    tracking_enabled: false,
   });
   const [suppressions, setSuppressions] = useState<Suppression[]>([]);
   const [suppressionForm, setSuppressionForm] = useState({ kind: 'email', value: '', reason: 'manual' });
@@ -98,6 +100,7 @@ export default function SettingsPage() {
         warmup_start_date: data.warmup_start_date || '',
         warmup_ladder: data.warmup_ladder || '5,10,15,20',
         auto_reply_action: data.auto_reply_action || 'continue',
+        tracking_enabled: !!data.tracking_enabled,
       });
     }
   }, []);
@@ -260,6 +263,7 @@ export default function SettingsPage() {
       warmup_start_date: data.warmup_start_date || '',
       warmup_ladder: data.warmup_ladder || '5,10,15,20',
       auto_reply_action: data.auto_reply_action || 'continue',
+      tracking_enabled: !!data.tracking_enabled,
     });
     setOutreachMessage('Outreach settings saved.');
     setSavingOutreach(false);
@@ -515,6 +519,22 @@ export default function SettingsPage() {
                 <option value="cancel">Cancel future follow-ups</option>
               </select>
               <p className="text-xs text-gray-500 mt-1">Auto-replies are still logged, but they do not stop the sequence unless you choose cancel.</p>
+            </div>
+            <div>
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={outreachSettings.tracking_enabled}
+                  onChange={e => setOutreachSettings(s => ({ ...s, tracking_enabled: e.target.checked }))}
+                  className="rounded"
+                />
+                Open Tracking
+              </label>
+              <p className="text-xs text-gray-500 mt-1">
+                Adds a 1×1 pixel to outgoing mail so opens are recorded, and discloses this in the
+                footer. The pixel is stamped at send time, so this applies to everything that goes
+                out from now on, including sends already sitting in the queue.
+              </p>
             </div>
             <button
               onClick={handleSaveOutreachSettings}

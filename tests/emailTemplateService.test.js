@@ -99,6 +99,64 @@ describe('buildOutreachEmail', () => {
     assert.ok(html.includes('778 681 0922'), 'html missing sender phone');
   });
 
+  it('omits the tracking pixel unless tracking is enabled', () => {
+    const { html, body } = buildOutreachEmail({
+      sendId: 7, subject: 'x', body: 'y', config: CONFIG,
+    });
+    assert.ok(!html.includes('/api/track/o/'), 'pixel must be opt-in');
+    assert.ok(!body.toLowerCase().includes('opened'), 'no disclosure without tracking');
+  });
+
+  it('appends a 1x1 tracking pixel to the html when tracking is enabled', () => {
+    const { html } = buildOutreachEmail({
+      sendId: 7, subject: 'x', body: 'y',
+      config: { ...CONFIG, trackingEnabled: true },
+    });
+    const match = html.match(/<img[^>]+src="([^"]+)"[^>]*>/);
+    assert.ok(match, 'no img tag found');
+    assert.match(match[1], /^https:\/\/outreach\.gleampro\.ca\/api\/track\/o\/[\w.-]+\.gif$/);
+    assert.match(match[0], /width="1"/);
+    assert.match(match[0], /height="1"/);
+  });
+
+  it('signs the pixel with an open token that names the sendId', async () => {
+    const { verifyOpenToken } = await import('../src/services/unsubscribeTokenService.js');
+    const { html } = buildOutreachEmail({
+      sendId: 42, subject: 'x', body: 'y',
+      config: { ...CONFIG, trackingEnabled: true },
+    });
+    const token = html.match(/\/api\/track\/o\/([\w.-]+)\.gif/)[1];
+    assert.strictEqual(verifyOpenToken(token, CONFIG.tokenSecret).sendId, 42);
+  });
+
+  // The plain-text alternative has no way to load an image, so a pixel there
+  // would only ever show up as a stray URL in the reader's message.
+  it('never puts the pixel in the plain-text body', () => {
+    const { body } = buildOutreachEmail({
+      sendId: 7, subject: 'x', body: 'y',
+      config: { ...CONFIG, trackingEnabled: true },
+    });
+    assert.ok(!body.includes('/api/track/'), 'text body must stay clean');
+  });
+
+  it('discloses open tracking in both footers when enabled', () => {
+    const { body, html } = buildOutreachEmail({
+      sendId: 7, subject: 'x', body: 'y',
+      config: { ...CONFIG, trackingEnabled: true },
+    });
+    assert.match(body, /whether this email was opened/i);
+    assert.match(html, /whether this email was opened/i);
+  });
+
+  it('keeps the unsubscribe link working when tracking is enabled', () => {
+    const { body, html } = buildOutreachEmail({
+      sendId: 7, subject: 'x', body: 'y',
+      config: { ...CONFIG, trackingEnabled: true },
+    });
+    assert.ok(body.includes('https://outreach.gleampro.ca/u/'));
+    assert.ok(html.includes('https://outreach.gleampro.ca/u/'));
+  });
+
   it('omits the signature block entirely when no sender fields are configured', () => {
     const { body } = buildOutreachEmail({
       sendId: 9,

@@ -137,7 +137,10 @@ export class SendQueueWorker {
         sendId: send.id,
         subject: send.subject,
         body: send.body,
-        config: requireConfig(this.env),
+        config: {
+          ...requireConfig(this.env),
+          trackingEnabled: readSetting(this.db, 'outreach.tracking_enabled') === 'true',
+        },
       });
       const result = await this.mailer.send({
         to: send.recipient_email,

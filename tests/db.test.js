@@ -103,6 +103,11 @@ describe('Outreach tables', () => {
     }
   });
 
+  it('indexes email_events by send and type for per-send status lookups', () => {
+    const indexes = db.pragma('index_list(email_events)').map(i => i.name);
+    assert.ok(indexes.includes('idx_email_events_send_type'), 'missing send/type index');
+  });
+
   it('creates suppression_list table with unique email_hash', () => {
     const columns = db.pragma('table_info(suppression_list)').map(c => c.name);
     for (const col of ['id', 'email_hash', 'domain', 'reason', 'source', 'added_at']) {

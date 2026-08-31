@@ -1,5 +1,11 @@
 import { classifyVertical } from './verticalClassifier.js';
 
+// A send can carry many 'opened' rows — one per image fetch — so opens are
+// counted as distinct sends, never as raw events. Opens flagged as machine
+// traffic when they were recorded are held apart from the human count.
+const HUMAN_OPEN = `ev.type = 'opened' AND COALESCE(json_extract(ev.raw_payload, '$.machine'), 0) = 0`;
+const MACHINE_OPEN = `ev.type = 'opened' AND json_extract(ev.raw_payload, '$.machine') = 1`;
+
 export class MetricsService {
   constructor({ db }) {
     if (!db) throw new Error('db required');
@@ -16,7 +22,9 @@ export class MetricsService {
         SUM(CASE WHEN ev.type = 'replied'        THEN 1 ELSE 0 END) AS replied,
         SUM(CASE WHEN ev.type = 'bounced'        THEN 1 ELSE 0 END) AS bounced,
         SUM(CASE WHEN ev.type = 'auto_replied'   THEN 1 ELSE 0 END) AS auto_replied,
-        SUM(CASE WHEN ev.type = 'unsubscribed'   THEN 1 ELSE 0 END) AS unsubscribed
+        SUM(CASE WHEN ev.type = 'unsubscribed'   THEN 1 ELSE 0 END) AS unsubscribed,
+        COUNT(DISTINCT CASE WHEN ${HUMAN_OPEN} THEN es.id END) AS opened,
+        COUNT(DISTINCT CASE WHEN ${MACHINE_OPEN} THEN es.id END) AS machine_opened
       FROM email_sends es
       LEFT JOIN email_events ev ON ev.send_id = es.id
       WHERE es.status = 'sent' AND es.sent_at >= ?
@@ -30,8 +38,11 @@ export class MetricsService {
       bounced: r.bounced || 0,
       auto_replied: r.auto_replied || 0,
       unsubscribed: r.unsubscribed || 0,
+      opened: r.opened || 0,
+      machine_opened: r.machine_opened || 0,
       reply_rate:  r.sent ? (r.replied  || 0) / r.sent : 0,
       bounce_rate: r.sent ? (r.bounced  || 0) / r.sent : 0,
+      open_rate:   r.sent ? (r.opened   || 0) / r.sent : 0,
     }));
 
     const totals = by_template.reduce(
@@ -41,11 +52,14 @@ export class MetricsService {
         bounced:      acc.bounced + r.bounced,
         auto_replied: acc.auto_replied + r.auto_replied,
         unsubscribed: acc.unsubscribed + r.unsubscribed,
+        opened: acc.opened + r.opened,
+        machine_opened: acc.machine_opened + r.machine_opened,
       }),
-      { sent: 0, replied: 0, bounced: 0, auto_replied: 0, unsubscribed: 0 }
+      { sent: 0, replied: 0, bounced: 0, auto_replied: 0, unsubscribed: 0, opened: 0, machine_opened: 0 }
     );
     totals.reply_rate  = totals.sent ? totals.replied / totals.sent : 0;
     totals.bounce_rate = totals.sent ? totals.bounced / totals.sent : 0;
+    totals.open_rate   = totals.sent ? totals.opened  / totals.sent : 0;
 
     return { by_template, totals, since: sinceIso };
   }
@@ -89,7 +103,8 @@ export class MetricsService {
       SELECT es.id AS send_id, es.touch_number, l.type AS lead_type,
         SUM(CASE WHEN ev.type = 'replied'      THEN 1 ELSE 0 END) AS replied,
         SUM(CASE WHEN ev.type = 'bounced'      THEN 1 ELSE 0 END) AS bounced,
-        SUM(CASE WHEN ev.type = 'unsubscribed' THEN 1 ELSE 0 END) AS unsubscribed
+        SUM(CASE WHEN ev.type = 'unsubscribed' THEN 1 ELSE 0 END) AS unsubscribed,
+        MAX(CASE WHEN ${HUMAN_OPEN} THEN 1 ELSE 0 END) AS opened
       FROM email_sends es
       JOIN campaign_leads cl ON cl.id = es.campaign_lead_id
       JOIN leads l ON l.id = cl.lead_id
@@ -98,7 +113,7 @@ export class MetricsService {
       GROUP BY es.id
     `).all(campaignId);
 
-    const totals = { sent: 0, replied: 0, bounced: 0, unsubscribed: 0 };
+    const totals = { sent: 0, replied: 0, bounced: 0, unsubscribed: 0, opened: 0 };
     const touchMap = new Map();
     const vertMap = new Map();
 
@@ -106,13 +121,15 @@ export class MetricsService {
       const replied = r.replied || 0;
       const bounced = r.bounced || 0;
       const unsubscribed = r.unsubscribed || 0;
+      const opened = r.opened || 0;
       totals.sent += 1;
       totals.replied += replied;
       totals.bounced += bounced;
       totals.unsubscribed += unsubscribed;
+      totals.opened += opened;
 
-      const t = touchMap.get(r.touch_number) || { touch: r.touch_number, sent: 0, replied: 0, bounced: 0 };
-      t.sent += 1; t.replied += replied; t.bounced += bounced;
+      const t = touchMap.get(r.touch_number) || { touch: r.touch_number, sent: 0, replied: 0, bounced: 0, opened: 0 };
+      t.sent += 1; t.replied += replied; t.bounced += bounced; t.opened += opened;
       touchMap.set(r.touch_number, t);
 
       const vertical = classifyVertical({ type: r.lead_type });
@@ -125,6 +142,7 @@ export class MetricsService {
       ...totals,
       reply_rate: totals.sent ? totals.replied / totals.sent : 0,
       bounce_rate: totals.sent ? totals.bounced / totals.sent : 0,
+      open_rate: totals.sent ? totals.opened / totals.sent : 0,
     };
     const by_touch = [...touchMap.values()].sort((a, b) => a.touch - b.touch);
     const by_vertical = [...vertMap.values()]

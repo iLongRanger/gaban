@@ -95,6 +95,55 @@ test('outreachFunnel counts one send only once even when it has multiple events'
   assert.equal(t1.replied, 1);
 });
 
+function seedOpen(db, { send_id, machine = false, detected_at = '2026-05-16T12:00:00Z' }) {
+  db.prepare(`INSERT INTO email_events (send_id, type, detected_at, raw_payload) VALUES (?, 'opened', ?, ?)`)
+    .run(send_id, detected_at, JSON.stringify({ machine, user_agent: 'ua', ip: null }));
+}
+
+test('outreachFunnel counts unique sends opened, not raw open events', () => {
+  const db = makeDb();
+  seedSend(db, { id: 1, template_style: 'touch_1' });
+  seedSend(db, { id: 2, template_style: 'touch_1' });
+  // One recipient who opened the same email four times.
+  seedOpen(db, { send_id: 1 });
+  seedOpen(db, { send_id: 1, detected_at: '2026-05-16T13:00:00Z' });
+  seedOpen(db, { send_id: 1, detected_at: '2026-05-16T14:00:00Z' });
+  seedOpen(db, { send_id: 1, detected_at: '2026-05-16T15:00:00Z' });
+
+  const t1 = new MetricsService({ db })
+    .outreachFunnel({ since: '2026-05-01T00:00:00Z' })
+    .by_template.find((r) => r.template_style === 'touch_1');
+
+  assert.equal(t1.sent, 2);
+  assert.equal(t1.opened, 1, 'four opens of one email is one opened send');
+  assert.equal(t1.open_rate.toFixed(2), '0.50');
+});
+
+test('outreachFunnel excludes machine opens from the opened count', () => {
+  const db = makeDb();
+  seedSend(db, { id: 1, template_style: 'touch_1' });
+  seedSend(db, { id: 2, template_style: 'touch_1' });
+  seedOpen(db, { send_id: 1, machine: true });
+  seedOpen(db, { send_id: 2, machine: false });
+
+  const t1 = new MetricsService({ db })
+    .outreachFunnel({ since: '2026-05-01T00:00:00Z' })
+    .by_template.find((r) => r.template_style === 'touch_1');
+
+  assert.equal(t1.opened, 1, 'scanner prefetch must not count as a human open');
+  assert.equal(t1.machine_opened, 1);
+});
+
+test('outreachFunnel reports zero opens when tracking has never run', () => {
+  const db = makeDb();
+  seedSend(db, { id: 1, template_style: 'touch_1' });
+
+  const result = new MetricsService({ db }).outreachFunnel({ since: '2026-05-01T00:00:00Z' });
+
+  assert.equal(result.totals.opened, 0);
+  assert.equal(result.totals.open_rate, 0);
+});
+
 function seedLeadTyped(db, { leadId, campaignLeadId, type, status = 'active' }) {
   const now = '2026-05-15T12:00:00Z';
   db.prepare(`INSERT INTO leads (id, place_id, business_name, type, email, latitude, longitude, distance_km, total_score, factor_scores, reasoning, status, week, created_at, updated_at)
@@ -149,6 +198,28 @@ test('campaignSummary returns totals, per-touch, per-vertical, and outcomes', ()
   assert.equal(s.leads, 2);
   // started_at = earliest sent (2026-05-15), now injected = 2026-05-20 -> 5 whole days
   assert.equal(s.duration_days, 5);
+});
+
+test('campaignSummary counts opened sends per touch and in totals', () => {
+  const db = makeDb();
+  seedSend(db, { id: 999, template_style: 'touch_1', status: 'cancelled' });
+  db.prepare("DELETE FROM email_sends WHERE id = 999").run();
+  db.prepare("DELETE FROM campaign_leads WHERE id = 1").run();
+
+  seedLeadTyped(db, { leadId: 10, campaignLeadId: 10, type: 'Restaurant' });
+  seedTypedSend(db, { id: 1, campaignLeadId: 10, touch_number: 1 });
+  seedTypedSend(db, { id: 2, campaignLeadId: 10, touch_number: 2 });
+  seedOpen(db, { send_id: 1 });
+  seedOpen(db, { send_id: 1, detected_at: '2026-05-16T18:00:00Z' });
+  seedOpen(db, { send_id: 2, machine: true });
+
+  const s = new MetricsService({ db }).campaignSummary(1, { now: new Date('2026-05-20T12:00:00Z') });
+
+  assert.equal(s.totals.sent, 2);
+  assert.equal(s.totals.opened, 1, 'repeat opens of one send count once');
+  assert.equal(s.totals.open_rate.toFixed(2), '0.50');
+  assert.equal(s.by_touch.find((r) => r.touch === 1).opened, 1);
+  assert.equal(s.by_touch.find((r) => r.touch === 2).opened, 0, 'machine open must not count');
 });
 
 test('campaignSummary returns null for an unknown campaign', () => {

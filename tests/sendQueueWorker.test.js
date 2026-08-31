@@ -4,6 +4,7 @@ import { initDb } from '../src/web/lib/db.js';
 import { CampaignService } from '../src/services/campaignService.js';
 import { SendQueueWorker } from '../src/services/sendQueueWorker.js';
 import { SuppressionService } from '../src/services/suppressionService.js';
+import { SystemSettingsService } from '../src/services/systemSettingsService.js';
 
 const ENV = {
   BUSINESS_LEGAL_NAME: 'Gleam & Lift Solutions',
@@ -72,6 +73,48 @@ describe('SendQueueWorker', () => {
     assert.strictEqual(send.status, 'sent');
     assert.strictEqual(send.gmail_message_id, 'msg-1');
     assert.strictEqual(send.gmail_rfc_message_id, '<msg-1@mail.gmail.com>');
+  });
+
+  async function sendOnce(db) {
+    const sent = [];
+    const worker = new SendQueueWorker({
+      db,
+      env: ENV,
+      validator: permissiveValidator,
+      mailer: {
+        send: async (message) => { sent.push(message); return { gmail_message_id: 'm' }; },
+      },
+    });
+    await worker.tick({ now: new Date('2026-05-04T16:00:00.000Z'), limit: 1 });
+    return sent[0];
+  }
+
+  // Tracking is a deliverability and consent decision, so it stays off until
+  // somebody deliberately turns it on.
+  it('sends without a tracking pixel by default', async () => {
+    seedCampaign(db);
+    const message = await sendOnce(db);
+
+    assert.ok(!message.html.includes('/api/track/o/'), 'pixel should be off by default');
+  });
+
+  it('includes the tracking pixel when outreach.tracking_enabled is set', async () => {
+    seedCampaign(db);
+    new SystemSettingsService({ db }).setSetting('outreach.tracking_enabled', 'true');
+
+    const message = await sendOnce(db);
+
+    assert.ok(message.html.includes('https://bot.gleamlift.ca/api/track/o/'), 'pixel missing');
+    assert.ok(!message.body.includes('/api/track/'), 'text part must stay clean');
+  });
+
+  it('leaves the pixel off when the setting is explicitly false', async () => {
+    seedCampaign(db);
+    new SystemSettingsService({ db }).setSetting('outreach.tracking_enabled', 'false');
+
+    const message = await sendOnce(db);
+
+    assert.ok(!message.html.includes('/api/track/o/'));
   });
 
   it('defers instead of sending when the warm-up cap is reached', async () => {
