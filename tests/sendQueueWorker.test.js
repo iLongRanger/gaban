@@ -224,6 +224,26 @@ describe('SendQueueWorker', () => {
     assert.match(evt.raw_payload, /invalid_recipient/);
   });
 
+  // A DNS outage must not permanently drop a lead out of its sequence.
+  it('defers instead of cancelling when recipient validation is temporarily unavailable', async () => {
+    const { worker, db: testDb, mailer } = createTestWorker({
+      validator: { validate: async () => ({ valid: false, reason: 'mx_lookup_failed', retryable: true }) },
+    });
+    const sendId = seedScheduledSend(testDb, { recipient_email: 'real@example.com' });
+
+    const result = await worker.tick({ now: new Date('2026-05-21T17:00:00Z'), limit: 1 });
+
+    assert.deepStrictEqual(result, [{ id: sendId, status: 'deferred' }]);
+    assert.equal(mailer.calls.length, 0);
+    const row = testDb.prepare('SELECT status, error_message FROM email_sends WHERE id = ?').get(sendId);
+    assert.equal(row.status, 'scheduled');
+    assert.match(row.error_message, /validation unavailable/);
+
+    const evt = testDb.prepare('SELECT type, raw_payload FROM email_events WHERE send_id = ?').get(sendId);
+    assert.equal(evt.type, 'deferred');
+    assert.match(evt.raw_payload, /validation_unavailable/);
+  });
+
   it('passes through to mailer when validator approves', async () => {
     const { worker, db: testDb, mailer } = createTestWorker({
       validator: { validate: async () => ({ valid: true, reason: null }) },

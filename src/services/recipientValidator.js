@@ -12,29 +12,36 @@ export class RecipientValidator {
 
   async validate(email) {
     const value = String(email || '').trim();
-    if (!SYNTAX.test(value)) return { valid: false, reason: 'invalid_syntax' };
+    if (!SYNTAX.test(value)) return { valid: false, reason: 'invalid_syntax', retryable: false };
     const domain = value.split('@')[1].toLowerCase();
 
     const cached = this.cache.get(domain);
     if (cached && cached.expiresAt > this.now()) {
       return cached.result.valid
-        ? { valid: true, reason: null }
-        : { valid: false, reason: cached.result.reason };
+        ? { valid: true, reason: null, retryable: false }
+        : { valid: false, reason: cached.result.reason, retryable: false };
     }
 
     let result;
     try {
       const records = await this.dns.resolveMx(domain);
       result = records?.length
-        ? { valid: true, reason: null }
-        : { valid: false, reason: 'no_mx_records' };
+        ? { valid: true, reason: null, retryable: false }
+        : { valid: false, reason: 'no_mx_records', retryable: false };
     } catch (err) {
       const code = err?.code || '';
-      const reason = code === 'ENOTFOUND' || code === 'ENODATA' ? 'domain_not_found' : 'mx_lookup_failed';
-      result = { valid: false, reason };
+      // ENOTFOUND/ENODATA are answers: the resolver replied and the domain has no
+      // mail. Anything else means the resolver never answered — a verdict on the
+      // network, not on the address. Those must not be cached or treated as final.
+      const permanent = code === 'ENOTFOUND' || code === 'ENODATA';
+      result = permanent
+        ? { valid: false, reason: 'domain_not_found', retryable: false }
+        : { valid: false, reason: 'mx_lookup_failed', retryable: true };
     }
 
-    this.cache.set(domain, { result, expiresAt: this.now() + this.ttlMs });
+    if (!result.retryable) {
+      this.cache.set(domain, { result, expiresAt: this.now() + this.ttlMs });
+    }
     return result;
   }
 }

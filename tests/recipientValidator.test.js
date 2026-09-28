@@ -40,6 +40,45 @@ test('rejects domains where MX lookup throws ENOTFOUND', async () => {
   assert.equal(result.reason, 'domain_not_found');
 });
 
+function throwingResolver(code) {
+  let calls = 0;
+  return {
+    calls: () => calls,
+    resolveMx: async () => {
+      calls += 1;
+      throw Object.assign(new Error(code), { code });
+    },
+  };
+}
+
+// A resolver that cannot answer is not the same as a domain that does not exist.
+// Treating the former as permanent silently drops leads whenever the network blips.
+test('marks transient DNS failures as retryable', async () => {
+  const dns = throwingResolver('EAI_AGAIN');
+  const v = new RecipientValidator({ dns });
+  const result = await v.validate('owner@real-domain.com');
+  assert.equal(result.valid, false);
+  assert.equal(result.reason, 'mx_lookup_failed');
+  assert.equal(result.retryable, true);
+});
+
+test('does not mark a missing domain as retryable', async () => {
+  const dns = throwingResolver('ENOTFOUND');
+  const v = new RecipientValidator({ dns });
+  const result = await v.validate('owner@nx.example');
+  assert.equal(result.reason, 'domain_not_found');
+  assert.equal(result.retryable, false);
+});
+
+// Caching a network error poisons the domain for the whole TTL.
+test('does not cache transient DNS failures', async () => {
+  const dns = throwingResolver('ETIMEDOUT');
+  const v = new RecipientValidator({ dns });
+  await v.validate('a@flaky.example');
+  await v.validate('b@flaky.example');
+  assert.equal(dns.calls(), 2);
+});
+
 test('accepts emails on domains with MX records', async () => {
   const dns = fakeResolver({ ok: new Set(['gleampro.ca']) });
   const v = new RecipientValidator({ dns });

@@ -90,6 +90,21 @@ export class SendQueueWorker {
     ).run(send.id, now.toISOString(), JSON.stringify({ reason: 'warmup_cap' }));
   }
 
+  // Validation could not be completed (DNS unreachable). Hold the send and try
+  // again shortly rather than dropping the lead out of its sequence for good.
+  deferForRetry(send, now, { reason, retryMinutes = 60 } = {}) {
+    const next = nextSendTime(new Date(now.getTime() + retryMinutes * 60 * 1000), campaignOptions(send));
+    this.db.prepare(
+      `UPDATE email_sends
+       SET scheduled_for = ?, error_message = ?
+       WHERE id = ?`
+    ).run(next.toISOString(), `deferred: recipient validation unavailable (${reason})`, send.id);
+    this.db.prepare(
+      `INSERT INTO email_events (send_id, type, detected_at, raw_payload)
+       VALUES (?, 'deferred', ?, ?)`
+    ).run(send.id, now.toISOString(), JSON.stringify({ reason: 'validation_unavailable', detail: reason }));
+  }
+
   cancel(send, reason, now) {
     this.db.prepare(
       `UPDATE email_sends SET status = 'cancelled', error_message = ? WHERE id = ?`
@@ -115,6 +130,10 @@ export class SendQueueWorker {
 
     const validation = await this.validator.validate(send.recipient_email);
     if (!validation.valid) {
+      if (validation.retryable) {
+        this.deferForRetry(send, now, { reason: validation.reason });
+        return { id: send.id, status: 'deferred' };
+      }
       this.cancel(send, `invalid_recipient: ${validation.reason}`, now);
       return { id: send.id, status: 'cancelled', reason: `invalid_recipient: ${validation.reason}` };
     }
