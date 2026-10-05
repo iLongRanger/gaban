@@ -1,17 +1,23 @@
 import { nextSendTime, scheduleSequence, clampToWindowStart, parseTime } from './sequenceScheduler.js';
 import { MetricsService } from './metricsService.js';
 
-// Stored on the campaign for sequence length / finalize count. Slot 0 ('touch_1') is a
-// length placeholder only — the per-send touch-1 style is always set by openerArm() to
-// touch_1_poke or touch_1_route. Slots 1-3 ARE used as draft-lookup keys for touches 2-4.
+// Stored on the campaign for sequence length / finalize count. In this cold sequence slot 0
+// ('touch_1') is a length placeholder only — the per-send touch-1 style is set by openerArm()
+// to touch_1_poke or touch_1_route. Slots 1-3 ARE used as draft-lookup keys for touches 2-4.
+// Other sequences (e.g. ['recycle_1','recycle_2']) name a real style in slot 0 and it is used
+// verbatim; the placeholder behaviour is keyed on the literal 'touch_1'.
 const DEFAULT_TOUCH_STYLES = ['touch_1', 'touch_2', 'touch_3', 'touch_4'];
 
 // follow_up_later is included: it's an operator note to revisit manually and does not
 // cancel future sends, so once the sequence finishes it must not pin the campaign open.
+// 'recycled' means the lead was carried into a later campaign with fresh copy. It is
+// terminal here because the old row's sequence will never advance again, and leads
+// whose sends were cancelled sit below maxTouches forever, so nothing else releases
+// the campaign.
 const TERMINAL_LEAD_STATUSES = new Set([
   'replied', 'bounced', 'auto_replied', 'unsubscribed',
   'interested', 'not_interested', 'out_of_scope', 'follow_up_later',
-  'meeting_booked', 'contract_signed',
+  'meeting_booked', 'contract_signed', 'recycled',
 ]);
 
 function readSetting(db, key) {
@@ -102,7 +108,10 @@ export class CampaignService {
         });
 
         for (const scheduled of sequence) {
-          const style = scheduled.touchNumber === 1
+          // Slot 0 is only a placeholder when it holds 'touch_1': that is the cold
+          // sequence, whose opener is split across two arms. A campaign that names a
+          // real style in slot 0 (a recycle sequence, say) gets exactly that style.
+          const style = scheduled.touchNumber === 1 && touchStyles[0] === 'touch_1'
             ? openerArm(leadId)
             : (touchStyles[scheduled.touchNumber - 1] || touchStyles[0]);
           const draft = this.db.prepare(

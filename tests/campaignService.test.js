@@ -290,4 +290,33 @@ describe('CampaignService', () => {
     const cancelled = db.prepare("SELECT COUNT(*) AS c FROM email_sends WHERE status = 'cancelled'").get();
     assert.strictEqual(cancelled.c, 4);
   });
+
+  it('honors an explicit touch-1 style instead of the cold opener arms', () => {
+    const preset = seedPreset(db);
+    const now = new Date().toISOString();
+    const leadId = seedLeadWithDrafts(db, 'recycle');
+    for (const style of ['recycle_1', 'recycle_2']) {
+      db.prepare(`INSERT INTO outreach_drafts
+        (lead_id, style, email_subject, email_body, dm, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)`)
+        .run(leadId, style, `Subject ${style}`, `Body ${style}`, `DM ${style}`, now, now);
+    }
+
+    const campaign = new CampaignService({ db }).createCampaign({
+      presetId: preset.id,
+      name: 'Recycle',
+      leadIds: [leadId],
+      startAt: '2026-05-04T16:00:00.000Z',
+      touchStyles: ['recycle_1', 'recycle_2'],
+    });
+
+    const sends = db.prepare(
+      'SELECT touch_number, template_style FROM email_sends ORDER BY touch_number'
+    ).all();
+    assert.deepStrictEqual(
+      sends.map((s) => s.template_style),
+      ['recycle_1', 'recycle_2']
+    );
+    assert.deepStrictEqual(campaign.touch_styles, ['recycle_1', 'recycle_2']);
+  });
 });

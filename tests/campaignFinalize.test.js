@@ -81,6 +81,18 @@ test('finishes when all leads terminate early even though touch 3 never sent', (
   assert.equal(db.prepare('SELECT status FROM campaigns WHERE id = 1').get().status, 'finished');
 });
 
+test('finishes a campaign whose leads were all moved to a recycle campaign', () => {
+  const db = initDb(':memory:');
+  setGrace(db, 48);
+  seedCampaign(db);
+  // Short of maxTouches because the DNS bug cancelled touch 3, so the "exhausted"
+  // test can never pass for this lead. Only the terminal status releases the campaign.
+  seedLead(db, { leadId: 1, campaignLeadId: 1, status: 'recycled', touch_count: 2, last_touch_at: '2026-05-19T12:00:00Z' });
+  const res = new CampaignService({ db }).finalizeIfDone(1, NOW);
+  assert.equal(res.finished, true);
+  assert.equal(db.prepare('SELECT status FROM campaigns WHERE id = 1').get().status, 'finished');
+});
+
 test('does not finish when a lead is still queued', () => {
   const db = initDb(':memory:');
   seedCampaign(db);

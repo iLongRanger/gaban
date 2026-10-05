@@ -46,6 +46,51 @@ test('prompt describes both opener arms and the 1-2-3 breakup, and drops the inv
   assert.doesNotMatch(prompt, /Who handles your cleaning/i);
 });
 
+const RECYCLE_RESPONSE = JSON.stringify({
+  recycle_1: { email_subject: 'your cleaners', email_body: 'Hi, ...', dm: 'Hey ...' },
+  recycle_2: { email_subject: 'closing the file', email_body: 'Hi, ...', dm: 'Hey ...' },
+});
+
+test('draftRecycle returns both re-engagement touches', async () => {
+  const service = new DraftingService({ apiKey: 'test', model: 'gpt-5-mini', client: createMockClient(RECYCLE_RESPONSE) });
+  const drafts = await service.draftRecycle(SAMPLE_LEAD);
+  for (const key of ['recycle_1', 'recycle_2']) {
+    assert.ok(drafts[key], `${key} missing`);
+    assert.ok(drafts[key].email_subject, `${key}.email_subject missing`);
+    assert.ok(drafts[key].email_body, `${key}.email_body missing`);
+    assert.ok(drafts[key].dm, `${key}.dm missing`);
+  }
+});
+
+test('recycle prompt owns the earlier contact instead of pretending it is a first email', () => {
+  const service = new DraftingService({ apiKey: 'test', model: 'gpt-5-mini', client: createMockClient(RECYCLE_RESPONSE) });
+  const prompt = service.buildRecyclePrompt(SAMPLE_LEAD);
+  // The honesty about the earlier emails is the entire justification for a second sequence.
+  assert.match(prompt, /emailed/i);
+  assert.match(prompt, /never pretend this is the first time/i);
+  // It must inherit the same global guardrails as the cold prompt.
+  assert.match(prompt, /never state a street address/i);
+  assert.match(prompt, /never claim to be nearby, a neighbour/i);
+  assert.doesNotMatch(prompt, /123 Main St/);
+  assert.match(prompt, /Vertical:\s*restaurant/);
+  // Two touches only.
+  assert.match(prompt, /RECYCLE TOUCH 1/);
+  assert.match(prompt, /RECYCLE TOUCH 2/);
+  assert.doesNotMatch(prompt, /RECYCLE TOUCH 3/);
+});
+
+test('sanitizeDrafts cleans the recycle keys too', () => {
+  const drafts = sanitizeDrafts({
+    recycle_1: { email_subject: 'your **cleaners**', email_body: 'I am a neighbour. We clean well.', dm: 'Hi — there' },
+    recycle_2: { email_subject: 'closing', email_body: 'Two blocks away. Reply with a number.', dm: 'Bye' },
+  });
+  // sanitizeMessageText capitalizes sentence starts, subjects included — same as the cold keys.
+  assert.equal(drafts.recycle_1.email_subject, 'Your cleaners');
+  assert.equal(drafts.recycle_1.email_body, 'We clean well.');
+  assert.doesNotMatch(drafts.recycle_1.dm, /—/);
+  assert.equal(drafts.recycle_2.email_body, 'Reply with a number.');
+});
+
 test('prompt never feeds the lead address as the sender location or invites proximity claims', () => {
   const service = new DraftingService({ apiKey: 'test', model: 'gpt-5-mini', client: createMockClient(DRAFT_RESPONSE) });
   const prompt = service.buildDraftingPrompt(SAMPLE_LEAD);

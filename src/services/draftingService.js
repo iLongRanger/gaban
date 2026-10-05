@@ -1,7 +1,9 @@
 import OpenAiJsonClient, { createJsonCompletion } from './openAiJsonClient.js';
 import { classifyVertical } from './verticalClassifier.js';
 
-const TOUCH_KEYS = ['touch_1_poke', 'touch_1_route', 'touch_2', 'touch_3', 'touch_4'];
+const COLD_TOUCH_KEYS = ['touch_1_poke', 'touch_1_route', 'touch_2', 'touch_3', 'touch_4'];
+const RECYCLE_TOUCH_KEYS = ['recycle_1', 'recycle_2'];
+const TOUCH_KEYS = [...COLD_TOUCH_KEYS, ...RECYCLE_TOUCH_KEYS];
 
 const VERTICAL_COPY = {
   restaurant: {
@@ -78,6 +80,15 @@ const VERTICAL_COPY = {
 
 const CREDENTIAL_PROOF = 'an insured, registered crew of five working across Metro Vancouver';
 
+// Shared by the cold and recycle prompts so the safety guardrails (no invented clients, no
+// sender street address, no proximity or neighbour claims) can never drift apart between them.
+const GLOBAL_RULES = `GLOBAL RULES:
+- Never invent a company name, person name, phone, website, email, street address, or a client you do not have. A real signature with the sender's name and address is appended by the system; do not write a sign-off, closing salutation, or trailing name/phone/website/address.
+- Refer to the sender only as "I" or "we". Each email under 80 words. Each DM under 40 words. Plain prose, normal punctuation only. No em dashes, double hyphens, tildes, markdown, bullets, or emojis.
+- You-dominant: the reader's situation should lead, not who we are. Use contractions. Aim for a 5th-grade reading level. No "quick question", no "I hope this finds you well", no "just checking in".
+- The sender is a commercial cleaning operator based in Metro Vancouver who serves the wider region. Refer to the reader's location only in general terms (e.g. "around Metro Vancouver" or "your area"). The recipient's mailing address is THEIRS, never yours: never state a street address in the body, and never claim to be nearby, a neighbour, or to walk or drive past their location.
+- Subjects: lowercase, 2 to 4 words, plain and topical so they honestly describe what the email is about (e.g. "office cleaning", "your cleaners", "nightly clean", "floor care"). Never disguise the email as internal company mail, a personal note, or a reply. No clickbait, no question marks, no "free"/"quote"/"price".`;
+
 export default class DraftingService {
   constructor({ apiKey, model, logger, client, usageRecorder } = {}) {
     this.model = model || 'gpt-5-mini';
@@ -107,6 +118,64 @@ export default class DraftingService {
     }
   }
 
+  async draftRecycle(lead) {
+    const prompt = this.buildRecyclePrompt(lead);
+    try {
+      const text = await createJsonCompletion(this.client, {
+        model: this.model,
+        maxTokens: 2048,
+        prompt,
+        operation: 'outreach_recycle_drafting',
+      });
+      return sanitizeDrafts(JSON.parse(text));
+    } catch (error) {
+      this.logger?.warn(`Recycle drafting failed for ${lead.business_name}: ${error.message}`);
+      return { error: `Recycle drafting failed: ${error.message}` };
+    }
+  }
+
+  // Re-engagement copy for a lead who already absorbed a full cold sequence and never
+  // replied. The earlier emails are a fact the reader remembers, so the copy owns them;
+  // pretending otherwise is both dishonest and the fastest route to a spam complaint.
+  buildRecyclePrompt(lead) {
+    const vertical = classifyVertical(lead);
+    const copy = VERTICAL_COPY[vertical] || VERTICAL_COPY.office;
+
+    return `You are writing a two-touch re-engagement sequence for the owner of a small commercial cleaning crew in Metro Vancouver. The reader was emailed a few times months ago by this same sender and never replied. The sender is a real local operator. Identify honestly.
+
+WHY WE ARE WRITING AGAIN: the earlier emails used a weaker pitch that has since been rewritten. That is the honest reason, and it is the only reason the reader gets a second sequence. Own it plainly in touch 1: we wrote before, we did not hear back, and the earlier note did a poor job explaining what we actually do. Never pretend this is the first time we have written, never imply the reader replied, and never invent a past conversation, call, visit, or quote.
+
+WHAT MAKES THIS CREW DIFFERENT (weave in naturally, never list as features): a small insured crew of five, so the same people clean the space every week and the reader is not chasing a call centre when something is off. That consistency is the hook. The core pain we solve is cleaners who start strong and quietly coast after the first month.
+
+${GLOBAL_RULES}
+- This is a second attempt, so earn it with brevity. Touch 1 must read as shorter and plainer than a cold pitch, not longer.
+- No guilt, no "I noticed you never got back to me", no "following up again", no implication the reader owes a reply.
+
+BUSINESS:
+- Name: ${lead.business_name}
+- Type: ${lead.type || 'service location'}
+- Vertical: ${vertical}
+- Rating: ${lead.rating ?? 'N/A'}/5 (${lead.reviews_count ?? 0} reviews)
+
+VERTICAL CONTEXT:
+- Drift examples for this vertical (the reader's cleaners quietly slid to this; use ONE, paraphrased): ${copy.gap_examples}
+- Noun for this vertical: ${copy.noun}
+
+WRITE THESE TWO PIECES:
+
+RECYCLE TOUCH 1 (own the earlier emails, then restate the offer cleanly) — open by naming the earlier emails in one short clause and that the pitch in them was weak. Then, in one line, what we actually do: the same insured crew of five every week, so the cleaning does not quietly slide to ONE of the drift examples above (paraphrased, tied to their ${copy.noun}). Close with a no-charge 15-minute walkthrough offer and a one-line reply ask such as "reply with a day that works". No pricing talk, no pressure, no guilt.
+
+RECYCLE TOUCH 2 (close the file, 1-2-3) — say plainly that this is the last email and you will close the file, then offer a one-line reply menu exactly in this spirit: "reply with a number: 1 — worth a quick chat, 2 — not now, check back in a few months, 3 — not for us." Write the menu once and introduce it once: do not say "reply with a number" in a sentence before the menu as well. Three sentences max plus the menu. No new pitch.
+
+For each of the two pieces, also write a short DM variant under the same rules.
+
+Respond with ONLY this JSON (no markdown):
+{
+  "recycle_1": {"email_subject": "...", "email_body": "...", "dm": "..."},
+  "recycle_2": {"email_subject": "...", "email_body": "...", "dm": "..."}
+}`;
+  }
+
   buildDraftingPrompt(lead) {
     const vertical = classifyVertical(lead);
     const copy = VERTICAL_COPY[vertical] || VERTICAL_COPY.office;
@@ -123,12 +192,7 @@ export default class DraftingService {
 
 WHAT MAKES THIS CREW DIFFERENT (weave in naturally, never list as features): a small insured crew of five, so the same people clean the space every week and the reader is not chasing a call centre when something is off. That consistency is the hook. The core pain we solve is cleaners who start strong and quietly coast after the first month.
 
-GLOBAL RULES:
-- Never invent a company name, person name, phone, website, email, street address, or a client you do not have. A real signature with the sender's name and address is appended by the system; do not write a sign-off, closing salutation, or trailing name/phone/website/address.
-- Refer to the sender only as "I" or "we". Each email under 80 words. Each DM under 40 words. Plain prose, normal punctuation only. No em dashes, double hyphens, tildes, markdown, bullets, or emojis.
-- You-dominant: the reader's situation should lead, not who we are. Use contractions. Aim for a 5th-grade reading level. No "quick question", no "I hope this finds you well", no "just checking in".
-- The sender is a commercial cleaning operator based in Metro Vancouver who serves the wider region. Refer to the reader's location only in general terms (e.g. "around Metro Vancouver" or "your area"). The recipient's mailing address is THEIRS, never yours: never state a street address in the body, and never claim to be nearby, a neighbour, or to walk or drive past their location.
-- Subjects: lowercase, 2 to 4 words, plain and topical so they honestly describe what the email is about (e.g. "office cleaning", "your cleaners", "nightly clean", "floor care"). Never disguise the email as internal company mail, a personal note, or a reply. No clickbait, no question marks, no "free"/"quote"/"price".
+${GLOBAL_RULES}
 
 BUSINESS:
 - Name: ${lead.business_name}
