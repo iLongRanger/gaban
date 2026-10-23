@@ -16,8 +16,41 @@ export const RECYCLED_STATUS = 'recycled';
 const RECYCLE_PRESET_NAME = 'Recycle (no discovery)';
 
 /**
+ * Collapse leads that share an inbox down to one recipient.
+ *
+ * The lead set holds duplicate listings of the same business (two Cockney Kings rows, two
+ * LifeLabs facilities, three storefronts on one Trattoria address), and they share an email
+ * address. Two copies of the same "our last pitch was weak" email landing in one inbox on
+ * one day reads worse than never writing again, so one lead speaks for the address: the one
+ * with the longest touch history, oldest row first on a tie. The rest ride along as
+ * duplicateCampaignLeadIds and get retired without being mailed.
+ */
+function dedupeByEmail(rows) {
+  const byAddress = new Map();
+  for (const row of rows) {
+    const key = String(row.email).trim().toLowerCase();
+    const group = byAddress.get(key);
+    if (group) group.push(row);
+    else byAddress.set(key, [row]);
+  }
+
+  const cohort = [];
+  for (const group of byAddress.values()) {
+    const [keeper, ...duplicates] = group.sort(
+      (a, b) => (b.touchCount - a.touchCount) || (a.campaignLeadId - b.campaignLeadId)
+    );
+    cohort.push({
+      ...keeper,
+      duplicateCampaignLeadIds: duplicates.map((row) => row.campaignLeadId),
+    });
+  }
+
+  return cohort.sort((a, b) => a.campaignLeadId - b.campaignLeadId);
+}
+
+/**
  * Leads eligible for re-engagement: still active on a campaign whose copy generation has
- * since been retired, with nothing left in flight.
+ * since been retired, with nothing left in flight, one per email address.
  *
  * Deliberately NOT keyed on `touch_count >= 4` — half the campaigns only ever ran three
  * touches, so that test silently drops the leads who did complete their sequence.
@@ -51,9 +84,11 @@ export function selectRecycleCohort({ db }) {
 
   // Suppression is stored as a hash plus a domain list, so it cannot be joined in SQL.
   const suppression = new SuppressionService({ db });
-  return rows
+  const eligible = rows
     .filter((row) => !suppression.isSuppressed(row.email))
     .map((row) => ({ ...row, hasRecycleDrafts: Boolean(row.hasRecycleDrafts) }));
+
+  return dedupeByEmail(eligible);
 }
 
 export function ensureRecyclePreset({ db, officeLat, officeLng, location = 'Metro Vancouver' }) {
@@ -90,7 +125,14 @@ export function createRecycleCampaign({ db, presetId, name, cohort, startAt, dai
     const retire = db.prepare(
       `UPDATE campaign_leads SET status = ?, completed_at = ? WHERE id = ? AND status = 'active'`
     );
-    for (const row of cohort) retire.run(RECYCLED_STATUS, now, row.campaignLeadId);
+    for (const row of cohort) {
+      retire.run(RECYCLED_STATUS, now, row.campaignLeadId);
+      // Siblings sharing this address are not mailed, but they still have to leave 'active'
+      // or they pin their campaign open and a later run picks the duplicate up again.
+      for (const duplicateId of row.duplicateCampaignLeadIds || []) {
+        retire.run(RECYCLED_STATUS, now, duplicateId);
+      }
+    }
 
     return campaign;
   });

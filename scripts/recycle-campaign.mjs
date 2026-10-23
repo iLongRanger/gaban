@@ -17,6 +17,10 @@
 //   --name="..."   campaign name (default: "Recycle - retired copy YYYY-MM-DD")
 //   --cap=N        campaign daily cap (default 10)
 //   --start=ISO    first send time (default: now)
+//   --db=path      run against a different SQLite file (default: data/gaban.sqlite).
+//                  Point this at a copy to rehearse the whole run on real data without
+//                  touching production: nothing sends, because the worker only reads the
+//                  real database.
 //
 // Safe to re-run: leads that already have recycle drafts are not redrafted, so an OpenAI
 // failure partway through costs only the leads it had not reached yet.
@@ -34,12 +38,13 @@ import {
 
 const DRY = process.argv.includes('--dry');
 const DRAFT_ONLY = process.argv.includes('--draft-only');
-const DB_PATH = path.resolve(process.cwd(), 'data/gaban.sqlite');
 
 function flag(name, fallback) {
   const match = process.argv.find((arg) => arg.startsWith(`--${name}=`));
   return match ? match.slice(name.length + 3).replace(/^["']|["']$/g, '') : fallback;
 }
+
+const DB_PATH = path.resolve(process.cwd(), flag('db', 'data/gaban.sqlite'));
 
 const today = new Date().toISOString().slice(0, 10);
 const CAMPAIGN_NAME = flag('name', `Recycle - retired copy ${today}`);
@@ -63,10 +68,22 @@ for (const row of cohort) {
   byCampaign.set(styles, (byCampaign.get(styles) || 0) + 1);
 }
 
-console.log(`Cohort: ${cohort.length} leads (${needDrafts.length} still need drafts).`);
+const duplicates = cohort.reduce((total, row) => total + row.duplicateCampaignLeadIds.length, 0);
+
+console.log(`Database: ${DB_PATH}`);
+console.log(`Cohort: ${cohort.length} recipients (${needDrafts.length} still need drafts).`);
 for (const [styles, count] of byCampaign) console.log(`  ${count.toString().padStart(4)}  from [${styles}]`);
+if (duplicates > 0) {
+  console.log(`Deduped: ${duplicates} extra lead row(s) share an address with a kept recipient;`
+    + ` they will be retired without being mailed.`);
+}
 console.log(`Campaign: "${CAMPAIGN_NAME}", cap ${DAILY_CAP}/day, starting ${START_AT}`);
-console.log(`Sends to schedule: ${cohort.length * RECYCLE_TOUCH_STYLES.length} (${RECYCLE_TOUCH_STYLES.join(' then ')}, day 0 and day 4).`);
+console.log(`Sends to schedule: ${cohort.length * RECYCLE_TOUCH_STYLES.length} (${RECYCLE_TOUCH_STYLES.join(' then ')},`
+  + ` the second 4 business days after the first).`);
+// The daily cap is a send-time throttle (warmupCapService defers over-cap sends), not a
+// scheduling one: every touch-1 send lands on the start date and the worker spreads them.
+console.log(`Note: all touch-1 sends are scheduled for the start date; the ${DAILY_CAP}/day cap is`
+  + ` applied by the worker at send time, which defers the rest.`);
 
 if (cohort.length === 0) {
   console.log('Nothing to recycle. Exiting.');

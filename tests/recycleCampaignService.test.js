@@ -124,6 +124,31 @@ describe('selectRecycleCohort', () => {
     assert.deepEqual(selectRecycleCohort({ db }), []);
   });
 
+  it('keeps one lead per email address and records the duplicate siblings', () => {
+    seedCampaign(db, { id: 1, touchStyles: ['touch_1', 'touch_2', 'touch_3'] });
+    // Two listings of the same business, one shared inbox. Sending the same
+    // re-engagement email twice to one address is worse than not sending it.
+    const keeper = seedLead(db, 'keeper', { email: 'info@shared.example' });
+    const dupe = seedLead(db, 'dupe', { email: 'INFO@Shared.example  ' });
+    const other = seedLead(db, 'other', { email: 'solo@example.com' });
+    const keeperRow = joinCampaign(db, { campaignId: 1, leadId: keeper, touchCount: 3 });
+    const dupeRow = joinCampaign(db, { campaignId: 1, leadId: dupe, touchCount: 1 });
+    joinCampaign(db, { campaignId: 1, leadId: other });
+
+    const cohort = selectRecycleCohort({ db });
+
+    assert.equal(cohort.length, 2);
+    const kept = cohort.find((row) => row.campaignLeadId === keeperRow);
+    // The lead with the longer touch history is the one that stays.
+    assert.ok(kept, 'expected the lead with more touches to be kept');
+    assert.deepEqual(kept.duplicateCampaignLeadIds, [dupeRow]);
+    assert.equal(cohort.some((row) => row.leadId === dupe), false);
+    assert.deepEqual(
+      cohort.find((row) => row.leadId === other).duplicateCampaignLeadIds,
+      []
+    );
+  });
+
   it('reports which leads already have recycle drafts so a rerun can skip them', () => {
     seedCampaign(db, { id: 1, touchStyles: ['touch_1', 'touch_2', 'touch_3'] });
     const drafted = seedLead(db, 'drafted', { styles: RECYCLE_TOUCH_STYLES });
@@ -196,6 +221,33 @@ describe('createRecycleCampaign', () => {
     const oldRow = db.prepare('SELECT status, completed_at FROM campaign_leads WHERE id = ?').get(oldRowId);
     assert.equal(oldRow.status, RECYCLED_STATUS);
     assert.ok(oldRow.completed_at);
+  });
+
+  it('retires the duplicate siblings too so they cannot pin a campaign open or be re-picked', () => {
+    const keeper = seedLead(db, 'keeper', { email: 'info@shared.example' });
+    const dupe = seedLead(db, 'dupe', { email: 'info@shared.example' });
+    const keeperRow = joinCampaign(db, { campaignId: 1, leadId: keeper, touchCount: 3 });
+    const dupeRow = joinCampaign(db, { campaignId: 1, leadId: dupe, touchCount: 1 });
+    const cohort = selectRecycleCohort({ db });
+
+    createRecycleCampaign({ db, presetId: 1, name: 'Recycle 1', cohort, startAt: NOW, dailyCap: 10 });
+
+    for (const rowId of [keeperRow, dupeRow]) {
+      const row = db.prepare('SELECT status FROM campaign_leads WHERE id = ?').get(rowId);
+      assert.equal(row.status, RECYCLED_STATUS, `campaign_lead ${rowId} should be retired`);
+    }
+    // Only the keeper gets mail.
+    const recipients = db.prepare(`
+      SELECT DISTINCT es.recipient_email FROM email_sends es
+      JOIN campaign_leads cl ON cl.id = es.campaign_lead_id
+      WHERE cl.campaign_id = (SELECT id FROM campaigns WHERE name = 'Recycle 1')
+    `).all();
+    assert.equal(recipients.length, 1);
+    assert.equal(db.prepare(`
+      SELECT COUNT(*) AS c FROM email_sends es
+      JOIN campaign_leads cl ON cl.id = es.campaign_lead_id
+      WHERE cl.campaign_id = (SELECT id FROM campaigns WHERE name = 'Recycle 1')
+    `).get().c, RECYCLE_TOUCH_STYLES.length);
   });
 
   it('leaves the old row and the new campaign untouched when a draft is missing', () => {

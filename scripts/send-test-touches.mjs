@@ -5,7 +5,9 @@ import { createGmailClientFromEnv, GmailService } from '../src/services/gmailSer
 
 dotenv.config();
 
-const recipient = process.argv[2] || 'rortiz.dev@gmail.com';
+// --recycle sends the two-touch re-engagement sequence instead of the five cold pieces.
+const RECYCLE = process.argv.includes('--recycle');
+const recipient = process.argv.slice(2).find((arg) => !arg.startsWith('--')) || 'rortiz.dev@gmail.com';
 
 // Simulated clinic lead. The address is the LEAD's (recipient's) — it must
 // never appear in the body, which exercises the sender-location sanitizer too.
@@ -36,23 +38,31 @@ const config = {
   senderRole: process.env.BUSINESS_SENDER_ROLE,
   senderPhone: process.env.BUSINESS_SENDER_PHONE,
   senderWebsite: process.env.BUSINESS_SENDER_WEBSITE,
+  // The send worker reads this from outreach.tracking_enabled. Forced on here so a test
+  // send exercises the same pixel path as production rather than a quieter one.
+  trackingEnabled: true,
 };
 
 const armLabel = openerArm === 'touch_1_poke' ? 'Touch 1 (poke)' : 'Touch 1 (route)';
-const PIECES = [
+const COLD_PIECES = [
   [openerArm, armLabel],
   ['touch_2', 'Touch 2 (social proof)'],
   ['touch_3', 'Touch 3 (give-first)'],
   ['touch_4', 'Touch 4 (breakup)'],
 ];
+const RECYCLE_PIECES = [
+  ['recycle_1', 'Recycle 1 (own the earlier emails)'],
+  ['recycle_2', 'Recycle 2 (close the file)'],
+];
+const PIECES = RECYCLE ? RECYCLE_PIECES : COLD_PIECES;
 
 const drafter = new DraftingService({
   apiKey: process.env.OPENAI_API_KEY,
   logger: console,
 });
 
-console.log(`Drafting restaurant sequence for "${lead.business_name}"...`);
-const drafts = await drafter.draftOutreach(lead);
+console.log(`Drafting ${RECYCLE ? 'recycle' : 'cold'} sequence for "${lead.business_name}"...`);
+const drafts = RECYCLE ? await drafter.draftRecycle(lead) : await drafter.draftOutreach(lead);
 if (drafts.error) {
   console.error(drafts.error);
   process.exit(1);
@@ -75,10 +85,23 @@ for (const [key, label] of PIECES) {
     body: piece.email_body,
     config,
   });
-  await mail.send({ to: recipient, subject: composed.subject, body: composed.body });
+  // html matters: the tracking pixel only rides in the HTML part, so a body-only send
+  // would silently skip the thing you are trying to test.
+  await mail.send({
+    to: recipient,
+    subject: composed.subject,
+    body: composed.body,
+    html: composed.html,
+  });
   console.log(`\n=== ${label} ===`);
   console.log(`Subject: ${piece.email_subject}`);
   console.log(piece.email_body);
+  console.log(`Pixel in HTML: ${composed.html.includes('/api/track/o/') ? 'yes' : 'NO'}`);
 }
 
 console.log(`\nSent ${i} emails to ${recipient}.`);
+console.log(
+  'Note: these use synthetic send ids with no email_sends row, so opening them will NOT'
+  + ' record an email_events row — recordOpen rejects an unknown send. The pixel URL itself'
+  + ' is real; this only tests that it ships in the message.'
+);
