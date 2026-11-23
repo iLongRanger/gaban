@@ -116,7 +116,16 @@ test('industrial uses credential-only social proof (no fabricated client)', () =
   const service = new DraftingService({ apiKey: 'test', model: 'gpt-5-mini', client: createMockClient(DRAFT_RESPONSE) });
   const prompt = service.buildDraftingPrompt({ ...SAMPLE_LEAD, type: 'Warehouse' });
   assert.match(prompt, /Vertical:\s*industrial/);
-  assert.match(prompt, /insured, registered crew of five/i);
+  assert.match(prompt, /insured, registered crew/i);
+});
+
+test('no prompt states or invites a crew headcount', () => {
+  const service = new DraftingService({ apiKey: 'test', model: 'gpt-5-mini', client: createMockClient(DRAFT_RESPONSE) });
+  for (const prompt of [service.buildDraftingPrompt(SAMPLE_LEAD), service.buildRecyclePrompt(SAMPLE_LEAD)]) {
+    assert.doesNotMatch(prompt, /crew of (five|four|three|two|\d+)/i);
+    assert.doesNotMatch(prompt, /\b(five|team of \d+)\b.{0,20}\b(crew|cleaners|people|staff)\b/i);
+    assert.match(prompt, /Never state a crew size, headcount/i);
+  }
 });
 
 test('draftOutreach handles API error gracefully', async () => {
