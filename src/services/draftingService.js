@@ -1,9 +1,14 @@
 import OpenAiJsonClient, { createJsonCompletion } from './openAiJsonClient.js';
 import { classifyVertical } from './verticalClassifier.js';
 
-// touch_1_wet is a third opener arm, not a replacement: a campaign opts into it by naming
-// it in touch_styles slot 0. SEASONAL, see seasonal_gap below for the window.
-const COLD_TOUCH_KEYS = ['touch_1_poke', 'touch_1_route', 'touch_1_wet', 'touch_2', 'touch_3', 'touch_4'];
+// touch_1_wet / touch_2_wet are the wet-season arms, not replacements: a campaign opts in by
+// naming them in touch_styles slots 0 and 1. They pair — the seasonal opener followed by the
+// general touch 2 reads as two unrelated pitches, because touch 2 names a drift example
+// instead of the entry-water thread the opener raised. SEASONAL, see seasonal_gap below.
+const COLD_TOUCH_KEYS = [
+  'touch_1_poke', 'touch_1_route', 'touch_1_wet',
+  'touch_2', 'touch_2_wet', 'touch_3', 'touch_4',
+];
 const RECYCLE_TOUCH_KEYS = ['recycle_1', 'recycle_2'];
 const TOUCH_KEYS = [...COLD_TOUCH_KEYS, ...RECYCLE_TOUCH_KEYS];
 
@@ -123,8 +128,9 @@ export default class DraftingService {
     try {
       const text = await createJsonCompletion(this.client, {
         model: this.model,
-        // Six pieces now (three opener arms plus touches 2-4), each with a DM variant.
-        maxTokens: 5120,
+        // Seven pieces now (three opener arms, two touch-2 variants, touches 3-4), each
+        // with a DM variant.
+        maxTokens: 6144,
         prompt,
         operation: 'outreach_drafting',
       });
@@ -221,27 +227,29 @@ VERTICAL CONTEXT:
 - Drift examples for this vertical (the reader's cleaners quietly slid to this; use ONE, paraphrased): ${copy.gap_examples}
 - Social proof for touch 2: ${proof}
 - Useful tip for touch 3 (give-first, no pitch): ${copy.value_tip}
-- Wet-season gap for this vertical (touch 1 arm C only): ${copy.seasonal_gap}
+- Wet-season gap for this vertical (touch 1 arm C and touch 2 arm wet only): ${copy.seasonal_gap}
 - Noun for this vertical: ${copy.noun}
 
-REVIEW SNIPPETS (touch 1 trigger: if any snippet names a concrete detail about THIS business — wear, smell, layout, busy nights, line length — paraphrase it as the opening observation. Otherwise open from the gap examples. Ignore generic praise like "great food"):
+REVIEW SNIPPETS (touch 1 trigger: if any snippet names a concrete detail about THIS business — wear, smell, layout, busy nights, line length — paraphrase it as the opening observation. Otherwise open from the gap examples. For ARM C, prefer a snippet that touches the entry, doorway, floors, wet weather, queueing outside or how busy it gets, and tie it to the wet-season gap; if none fits, open from the wet-season gap alone. Ignore generic praise like "great food"):
 ${reviewSnippets || 'No reviews available'}
 
-WRITE THESE SIX PIECES:
+WRITE THESE SEVEN PIECES:
 
 TOUCH 1 ARM A (poke + soft walkthrough) — open with the real pain as a poke: ask whether their cleaners still do everything they did the first month, or whether it has quietly slid to ONE of the drift examples above (paraphrased, tied to their ${copy.noun}). Land the consistency hook in one line (same insured crew, no call centre). Close by offering a no-charge 15-minute walkthrough to point out what usually gets missed, with a one-line reply ask such as "reply with a day that works". No pricing talk, no hard pitch.
 
 TOUCH 1 ARM B (routing question) — open with one short observation from the drift examples, then ask plainly who looks after the cleaning there. Offer to share what we'd do if they're the right person, and give an easy out if not. One identity line. Keep it shorter than Arm A.
 
-TOUCH 1 ARM C (wet season) — same structure as Arm A, but the opening observation is the WET-SEASON GAP above (paraphrased, tied to their ${copy.noun}) instead of a general drift example. One factual line on why it matters: WorkSafeBC names tracked-in water and grit at entrances as a slip hazard, and holding that through a wet day takes good mats plus drying during the day, not one mop at close. Then the consistency hook in one line (same insured crew every week, no call centre), then the no-charge 15-minute walkthrough with a one-line reply ask such as "reply with a day that works". Say nothing about fines, liability, inspections, lawsuits or insurance consequences, and do not claim their floors are currently unsafe. No pricing talk.
+TOUCH 1 ARM C (wet season) — open with the reader's own situation: the WET-SEASON GAP above, paraphrased and tied to their ${copy.noun}, personalized from a review snippet where one fits. Add at most ONE short factual line that WorkSafeBC names tracked-in water and grit at entrances as a slip hazard. Then the consistency hook in one line (same insured crew every week, no call centre), then the no-charge 15-minute walkthrough with a one-line reply ask such as "reply with a day that works". Do NOT prescribe a fix: no mats advice, no drying schedule, no mopping cadence — the walkthrough is the offer and the how-to belongs to touch 3. Say nothing about fines, liability, inspections, lawsuits or insurance consequences, and do not claim their floors are currently unsafe. No pricing talk. The subject must name the topic without asserting they have a problem: "entry mats" or "wet season entry" are good, "entry mat issue" and "slip risk" are not.
 
 TOUCH 2 (social proof + walkthrough) — reference the touch 1 drift once, mention the social proof above naturally, then re-offer the no-obligation 15-minute walkthrough to point out what usually gets missed. No pressure. Do not ask for any financial document, budget figure, or current contract.
+
+TOUCH 2 ARM WET (social proof, wet-season thread) — the touch 2 that follows ARM C, so it must continue the SAME thread: reference the WET-SEASON GAP once, never a general drift example, so the two emails read as one conversation. Then the social proof above naturally, then re-offer the no-obligation 15-minute walkthrough. Same prohibitions as ARM C: no prescribed fix, nothing about fines, liability or inspections, no claim their floors are unsafe. Do not ask for any financial document, budget figure, or current contract.
 
 TOUCH 3 (give-first with a human face) — open by making clear there's no pitch, just something useful. Introduce yourself in ONE clause as the owner of a small insured cleaning crew that works across Metro Vancouver (do NOT write a name; the appended signature supplies it). Then state the useful tip above INLINE as a genuinely helpful note tied to their ${copy.noun}. Deliver the actual content in the email itself; never promise a list, checklist, PDF, link, or attachment you are not including, and never claim an authority ranks or counts items unless the tip says so. End with "no reply needed". No ask.
 
 TOUCH 4 (breakup, 1-2-3) — acknowledge no reply, say you'll close the file, then offer a one-line reply menu exactly in this spirit: "reply with a number: 1 — worth a quick chat, 2 — not now, check back in a few months, 3 — not for us." Three sentences max plus the menu.
 
-For each of the six pieces, also write a short DM variant under the same rules.
+For each of the seven pieces, also write a short DM variant under the same rules.
 
 Respond with ONLY this JSON (no markdown):
 {
@@ -249,6 +257,7 @@ Respond with ONLY this JSON (no markdown):
   "touch_1_route": {"email_subject": "...", "email_body": "...", "dm": "..."},
   "touch_1_wet":   {"email_subject": "...", "email_body": "...", "dm": "..."},
   "touch_2":       {"email_subject": "...", "email_body": "...", "dm": "..."},
+  "touch_2_wet":   {"email_subject": "...", "email_body": "...", "dm": "..."},
   "touch_3":       {"email_subject": "...", "email_body": "...", "dm": "..."},
   "touch_4":       {"email_subject": "...", "email_body": "...", "dm": "..."}
 }`;

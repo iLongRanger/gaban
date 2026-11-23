@@ -119,6 +119,72 @@ test('industrial uses credential-only social proof (no fabricated client)', () =
   assert.match(prompt, /insured, registered crew/i);
 });
 
+test('every vertical carries a seasonal gap so none silently falls back to office copy', () => {
+  const service = new DraftingService({ apiKey: 'test', model: 'gpt-5-mini', client: createMockClient(DRAFT_RESPONSE) });
+  const types = ['Restaurant', 'Brewery', 'Warehouse', 'Store', 'Office', 'Clinic', 'Physiotherapist', 'Spa', 'Community centre'];
+  const seen = new Set();
+  for (const type of types) {
+    const prompt = service.buildDraftingPrompt({ ...SAMPLE_LEAD, type });
+    const match = prompt.match(/Wet-season gap for this vertical \(touch 1 arm C and touch 2 arm wet only\): (.+)/);
+    assert.ok(match, `no seasonal gap for ${type}`);
+    assert.ok(match[1].trim().length > 10, `seasonal gap too short for ${type}`);
+    seen.add(match[1].trim());
+  }
+  // A vertical missing seasonal_gap would fall back to the office line and collide.
+  assert.ok(seen.size >= 7, `expected distinct seasonal gaps, got ${seen.size}`);
+});
+
+test('the wet-season arm stays an observation, not a lecture, and its subject asserts nothing', () => {
+  const service = new DraftingService({ apiKey: 'test', model: 'gpt-5-mini', client: createMockClient(DRAFT_RESPONSE) });
+  const prompt = service.buildDraftingPrompt(SAMPLE_LEAD);
+  assert.match(prompt, /TOUCH 1 ARM C/);
+  // The how-to-fix advice belongs to touch 3, not the opener.
+  assert.doesNotMatch(prompt, /good mats plus drying during the day, not one mop at close/);
+  assert.match(prompt, /do not prescribe a fix/i);
+  // Subject must describe the topic without claiming they have a problem.
+  assert.match(prompt, /without asserting/i);
+  assert.match(prompt, /entry mat issue/i); // named as a bad example
+  // Review personalization must reach arm C too.
+  assert.match(prompt, /arm C/i);
+  assert.match(prompt, /wet entry|entry.{0,30}review|doorway/i);
+});
+
+test('the wet-season sequence keeps one thread: touch 2 arm wet references the same gap', () => {
+  const service = new DraftingService({ apiKey: 'test', model: 'gpt-5-mini', client: createMockClient(DRAFT_RESPONSE) });
+  const prompt = service.buildDraftingPrompt(SAMPLE_LEAD);
+  assert.match(prompt, /TOUCH 2 ARM WET/);
+  assert.match(prompt, /WET-SEASON GAP/);
+  assert.match(prompt, /"touch_2_wet"/);
+  assert.match(prompt, /SEVEN PIECES/);
+});
+
+test('draftOutreach returns the wet-season pieces alongside the cold ones', async () => {
+  const response = JSON.stringify({
+    touch_1_poke:  { email_subject: 'overnight clean', email_body: 'Hi, ...', dm: 'Hey ...' },
+    touch_1_route: { email_subject: 'cleaning', email_body: 'Hi, ...', dm: 'Hey ...' },
+    touch_1_wet:   { email_subject: 'entry mats', email_body: 'Hi, ...', dm: 'Hey ...' },
+    touch_2_wet:   { email_subject: 'wet entries', email_body: 'Hi, ...', dm: 'Hey ...' },
+    touch_2:       { email_subject: 'spots that slip', email_body: 'Hi, ...', dm: 'Hey ...' },
+    touch_3:       { email_subject: 'one quick thing', email_body: 'Hi, ...', dm: 'Hey ...' },
+    touch_4:       { email_subject: 'closing the file', email_body: 'Hi, ...', dm: 'Hey ...' },
+  });
+  const service = new DraftingService({ apiKey: 'test', model: 'gpt-5-mini', client: createMockClient(response) });
+  const drafts = await service.draftOutreach(SAMPLE_LEAD);
+  for (const key of ['touch_1_wet', 'touch_2_wet']) {
+    assert.ok(drafts[key]?.email_body, `${key} missing`);
+  }
+});
+
+test('sanitizeDrafts cleans the wet-season keys too', () => {
+  const drafts = sanitizeDrafts({
+    touch_1_wet: { email_subject: 'entry **mats**', email_body: 'I walk past your door daily. Grit builds up.', dm: 'Hi — there' },
+    touch_2_wet: { email_subject: 'wet entries', email_body: 'A few blocks away we did this. Mats help.', dm: 'Bye' },
+  });
+  assert.equal(drafts.touch_1_wet.email_subject, 'Entry mats');
+  assert.equal(drafts.touch_1_wet.email_body, 'Grit builds up.');
+  assert.equal(drafts.touch_2_wet.email_body, 'Mats help.');
+});
+
 test('no prompt states or invites a crew headcount', () => {
   const service = new DraftingService({ apiKey: 'test', model: 'gpt-5-mini', client: createMockClient(DRAFT_RESPONSE) });
   for (const prompt of [service.buildDraftingPrompt(SAMPLE_LEAD), service.buildRecyclePrompt(SAMPLE_LEAD)]) {
