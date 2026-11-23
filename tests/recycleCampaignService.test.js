@@ -166,13 +166,23 @@ describe('selectRecycleCohort', () => {
 describe('ensureRecyclePreset', () => {
   it('creates the preset once and reuses it afterwards', () => {
     const db = initDb(':memory:');
-    const first = ensureRecyclePreset({ db, officeLat: 49.26, officeLng: -122.99 });
-    const second = ensureRecyclePreset({ db, officeLat: 49.26, officeLng: -122.99 });
+    const home = seedPreset(db);
+    const first = ensureRecyclePreset({ db });
+    const second = ensureRecyclePreset({ db });
 
     assert.equal(first.id, second.id);
-    assert.equal(db.prepare('SELECT COUNT(*) AS c FROM presets').get().c, 1);
+    assert.equal(db.prepare('SELECT COUNT(*) AS c FROM presets').get().c, 2);
     // Nothing should ever run discovery from this preset.
     assert.equal(first.categories, '[]');
+    assert.equal(first.radius_km, 0);
+    // Coordinates are borrowed from the default preset only because the columns are NOT NULL.
+    assert.equal(first.office_lat, home.office_lat);
+    assert.equal(first.office_lng, home.office_lng);
+  });
+
+  it('refuses to invent coordinates when no preset exists to borrow from', () => {
+    const db = initDb(':memory:');
+    assert.throws(() => ensureRecyclePreset({ db }), /borrow office coordinates/);
   });
 });
 

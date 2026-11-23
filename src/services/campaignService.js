@@ -10,14 +10,16 @@ const DEFAULT_TOUCH_STYLES = ['touch_1', 'touch_2', 'touch_3', 'touch_4'];
 
 // follow_up_later is included: it's an operator note to revisit manually and does not
 // cancel future sends, so once the sequence finishes it must not pin the campaign open.
-// 'recycled' means the lead was carried into a later campaign with fresh copy. It is
-// terminal here because the old row's sequence will never advance again, and leads
-// whose sends were cancelled sit below maxTouches forever, so nothing else releases
-// the campaign.
+// 'recycled' means the lead was carried into a later campaign with fresh copy; 'reassigned'
+// means it was moved to another campaign without ever being emailed. Both are terminal here
+// because the old row's sequence will never advance again, and leads whose sends were
+// cancelled sit below maxTouches forever, so nothing else releases the campaign. 'reassigned'
+// additionally releases campaigns that a never-contacted 'queued' lead would otherwise pin
+// open indefinitely, since finalizeIfDone blocks on 'queued' at any age.
 const TERMINAL_LEAD_STATUSES = new Set([
   'replied', 'bounced', 'auto_replied', 'unsubscribed',
   'interested', 'not_interested', 'out_of_scope', 'follow_up_later',
-  'meeting_booked', 'contract_signed', 'recycled',
+  'meeting_booked', 'contract_signed', 'recycled', 'reassigned',
 ]);
 
 function readSetting(db, key) {

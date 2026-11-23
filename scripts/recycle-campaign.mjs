@@ -156,21 +156,7 @@ if (DRAFT_ONLY) {
   process.exit(0);
 }
 
-// The preset's coordinates are never used for this campaign (discovery does not run from
-// it), but the columns are NOT NULL, so borrow them from whichever preset is the default.
-const home = db.prepare(
-  'SELECT office_lat, office_lng, location FROM presets ORDER BY is_default DESC, id LIMIT 1'
-).get();
-if (!home) {
-  console.error('No presets exist to borrow office coordinates from.');
-  process.exit(1);
-}
-const preset = ensureRecyclePreset({
-  db,
-  officeLat: home.office_lat,
-  officeLng: home.office_lng,
-  location: home.location,
-});
+const preset = ensureRecyclePreset({ db });
 
 // Re-select so the cohort reflects the drafts just written and anything that changed
 // underneath us while the API calls were in flight.
